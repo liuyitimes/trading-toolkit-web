@@ -10,28 +10,31 @@
 
 ---
 
-## 🚀 第一步：在 GitHub 仓库启用 Pages
+## 🚀 第一步：在 GitHub 仓库启用 Pages（使用 GitHub Actions）
+
+> **重要**：根据 [GitHub 官方文档](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)，配置步骤如下：
 
 ### 1.1 打开仓库设置页面
 
-1. 登录 GitHub，进入你的仓库页面（例如 `https://github.com/你的用户名/trading-toolkit-web`）
-2. 点击仓库顶部的 **Settings**（设置）选项卡
-
-![Settings 位置](https://docs.github.com/assets/cb-28360/mw-1440/images/help/repository/repo-actions-settings.webp)
+1. 登录 GitHub，进入你的仓库页面（例如 `https://github.com/amostodo/trading-toolkit-web`）
+2. 在仓库名称下方，点击 **Settings** 选项卡
+   - 如果看不到 "Settings" 标签，点击下拉菜单，然后选择 **Settings**
 
 ### 1.2 找到 Pages 设置
 
-1. 在左侧菜单中，找到 **Pages** 选项（在 "Code and automation" 分类下）
-2. 点击进入 Pages 设置页面
+1. 在左侧边栏的 **"Code and automation"** 区域
+2. 点击 **Pages**
 
-### 1.3 配置 Pages Source
+### 1.3 配置 Source 为 GitHub Actions
 
-在 **Build and deployment** 区域：
+在 **"Build and deployment"** 区域：
 
-1. **Source** 下拉框：选择 **GitHub Actions**（不是 "Deploy from a branch"！）
-2. 页面会提示 "Use a suggested workflow" 或 "Configure a custom workflow"，直接忽略即可（我们已经准备好了工作流文件）
+1. 在 **"Source"** 下拉框中，选择 **GitHub Actions**
+2. GitHub 会建议一些工作流模板
+   - **因为我们已经准备好了工作流文件，可以跳过这一步**
+   - 如果提示选择模板，直接忽略即可
 
-完成后点击 **Save** 保存。
+> **注意**：GitHub Pages 不会关联特定的工作流到设置中，但设置页面会链接到最近部署你站点的工作流运行。
 
 ---
 
@@ -52,6 +55,15 @@
 |------|------|----------|
 | `ci.yml` | 每次提交代码自动检查是否能构建成功 | push 到任意分支、PR |
 | `deploy.yml` | 自动构建并发布到 GitHub Pages | push 到 `main` 分支 |
+
+> **工作流流程**（根据官方文档）：
+> 1. 当有 push 到默认分支时触发
+> 2. 使用 `actions/checkout` 检出仓库内容
+> 3. 构建静态站点文件（如果需要）
+> 4. 使用 `actions/upload-pages-artifact` 上传静态文件作为 artifact
+> 5. 使用 `actions/deploy-pages` 部署 artifact
+
+> **注意**：工作流模板使用名为 `github-pages` 的部署环境。如果你的仓库还没有这个环境，会自动创建。
 
 ---
 
@@ -186,6 +198,10 @@ VITE_API_BASE_URL=https://你的后端地址
 2. 检查 Settings → Pages，确认 Source 是 "GitHub Actions"
 3. 等待 1-2 分钟再访问
 
+> **官方文档提示**：
+> - 如果你的站点没有自动发布，确保有 admin 权限且已验证邮箱的用户已推送到发布源
+> - 使用 `GITHUB_TOKEN` 的 GitHub Actions 工作流推送的提交不会触发 GitHub Pages 构建
+
 ### 问题 2：Actions 显示失败（红色 ×）
 
 **原因**：构建过程中有错误
@@ -227,7 +243,8 @@ base: '/trading-toolkit-web/'  // 或你的仓库名
 
 1. 先查看 Actions 页面的日志，大部分错误都有详细提示
 2. 检查本文档的「常见问题排查」部分
-3. 如果还是解决不了，可以：
+3. 查看官方文档：[Configuring a publishing source for your GitHub Pages site](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
+4. 如果还是解决不了，可以：
    - 在 GitHub Issues 中提问
    - 搜索错误信息（复制日志中的错误信息到 Google 搜索）
 
