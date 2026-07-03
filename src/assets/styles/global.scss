@@ -1,0 +1,75 @@
+@use './variables' as *;
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+}
+
+.page-container {
+  padding: 20px;
+}
+
+.page-header {
+  margin-bottom: 20px;
+
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+}
+
+.signal-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.signal-premium {
+    background: #fef0f0;
+    color: #f56c6c;
+  }
+
+  &.signal-discount {
+    background: #f0f9eb;
+    color: #67c23a;
+  }
+
+  &.signal-force {
+    background: #fdf6ec;
+    color: #e6a23c;
+  }
+
+  &.signal-double-low {
+    background: #ecf5ff;
+    color: #409eff;
+  }
+
+  &.signal-downward {
+    background: #fce4ec;
+    color: #e91e63;
+  }
+}
+
+.dark .signal-tag {
+  &.signal-premium {
+    background: rgba(245, 108, 108, 0.15);
+  }
+
+  &.signal-discount {
+    background: rgba(103, 194, 58, 0.15);
+  }
+
+  &.signal-force {
+    background: rgba(230, 162, 60, 0.15);
+  }
+
+  &.signal-double-low {
+    background: rgba(64, 158, 255, 0.15);
+  }
+
+  &.signal-downward {
+    background: rgba(233, 30, 99, 0.15);
+  }
+}
