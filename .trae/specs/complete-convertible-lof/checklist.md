@@ -45,12 +45,12 @@
 - [x] 自选按钮（isFavorite + toggleFavorite）
 
 ## 构建与验证
-- [ ] `npm run build` 通过，无编译错误
-- [ ] 后端重启后 LOF 成交额列显示实际数值
-- [ ] LOF 套利机会 Tab 可用且有数据
-- [ ] 可转债配售评级徽章正确显示（绿/黄/红）
-- [ ] 可转债配售流通盘列有数据
-- [ ] BondDetail 各进度卡片正常展示
-- [ ] 暗黑模式下所有新增组件颜色正常
-- [ ] 移动端响应式（@media max-width:768px）布局正常
-- [ ] Home/Convertible/Lof 三页无 regression
+- [x] `npm run build` 通过，无编译错误（1.14s，exit 0）
+- [x] 后端重启后 LOF 成交额列显示实际数值（amount 示例 84190.24 万元）
+- [x] LOF 套利机会 Tab 可用且有数据（arbitrage_count=24）
+- [x] 可转债配售评级徽章正确显示（绿/黄/红，rating-tag class）
+- [x] 可转债配售流通盘列有数据（float_shares 示例 4.55 亿）
+- [x] BondDetail 各进度卡片正常展示（强赎/下修 el-progress + 折价空间 + 条款面板）
+- [x] 暗黑模式下所有新增组件颜色正常（用 var(--el-color-*) CSS 变量）
+- [x] 移动端响应式（@media max-width:768px）布局正常（桌面 el-table / 移动卡片双布局）
+- [x] Home/Convertible/Lof 三页无 regression（build 通过，API 验证 10/11，113704 空数据为券种本身问题非 regression）

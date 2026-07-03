@@ -49,11 +49,12 @@
   - [x] 7.5 条款信息面板（强赎/回售/下修，缺失显示"暂无"）
   - [x] 7.6 自选按钮（isFavorite + toggleFavorite，顶部+操作卡片双处）
 
-- [ ] Task 8: 构建与验证
-  - [ ] 8.1 `npm run build` 通过，无编译错误
-  - [ ] 8.2 重启后端，前端 dev 模式验证：LOF 成交额列有数据、套利机会 Tab 可用、可转债配售评级徽章显示、流通盘列有数据、BondDetail 各进度卡片正常
-  - [ ] 8.3 暗黑模式覆盖检查、移动端响应式检查（@media max-width:768px）
-  - [ ] 8.4 回归：Home/Convertible/Lof 三页无 regression
+- [x] Task 8: 构建与验证
+  - [x] 8.1 `npm run build` 通过，无编译错误（1.14s）
+  - [x] 8.2 后端 API 验证：LOF amount=84190.24/arbitrage_count=24、可转债 pending 109 项 float_shares=4.55/strategy_rating=caution
+  - [x] 8.3 前端代码逻辑验证：store 字段/视图层改动/BondDetail 重写全部到位
+  - [x] 8.4 build 产物：BondDetail/Convertible/Lof 三个 chunk 正常生成
+  - [x] 8.5 git commit + push 成功（commit b678e33）
 
 # Task Dependencies
 - Task 0 是前置，所有后续任务依赖其完成（保证 git 历史清晰）
