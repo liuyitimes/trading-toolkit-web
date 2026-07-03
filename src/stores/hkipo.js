@@ -6,32 +6,40 @@ function safeNum(val, def = 0) {
   return typeof val === 'number' && !isNaN(val) ? val : def
 }
 
+function safeFloatStr(val) {
+  const n = parseFloat(val)
+  return isNaN(n) ? '' : n.toString()
+}
+
+// 估值评级：根据 PE 差值判断
+function getPeRating(peDiff) {
+  if (peDiff < 0) return { label: '低估', type: 'success' }
+  if (peDiff <= 5) return { label: '合理', type: 'warning' }
+  return { label: '偏高', type: 'danger' }
+}
+
 // 归一化港股 IPO 项：后端蛇形 → 前端驼峰
 function normalizeIpoItem(raw) {
   if (!raw || typeof raw !== 'object') return null
+  const peDiff = safeNum(raw.pe_diff)
   return {
     code: raw.code || '',
     name: raw.name || '--',
     ipoPrice: safeNum(raw.ipo_price),
-    priceRange: raw.price_range || '',
-    lotSize: safeNum(raw.lot_size),
     applyDate: raw.apply_date || '',
     startDate: raw.apply_date || raw.start_date || '',
     endDate: raw.end_date || raw.apply_date || '',
     listDate: raw.list_date || '',
-    firstDayReturn: safeNum(raw.first_day_return),
-    currentPrice: safeNum(raw.current_price),
     winRate: raw.win_rate || '',
     peRatio: raw.pe_ratio || '',
     industryPe: raw.industry_pe || '',
-    // 状态判定
+    peDiff,
+    peRating: getPeRating(peDiff),
     status: raw.status || _inferStatus(raw),
-    darkTrade: raw.dark_trade || null,
   }
 }
 
 function _inferStatus(item) {
-  // 根据字段推断状态
   const hasListDate = item.list_date && item.list_date !== ''
   const hasApplyDate = item.apply_date && item.apply_date !== ''
   if (hasListDate) return 'listed'
@@ -42,6 +50,7 @@ function _inferStatus(item) {
 export const useHkipoStore = defineStore('hkipo', () => {
   const ipoList = ref([])
   const upcomingList = ref([])
+  const summary = ref(null)
   const currentDetail = ref(null)
   const loading = ref(false)
 
@@ -67,6 +76,15 @@ export const useHkipoStore = defineStore('hkipo', () => {
     }
   }
 
+  async function loadSummary() {
+    try {
+      const data = await hkipoApi.summary()
+      summary.value = data
+    } catch {
+      summary.value = null
+    }
+  }
+
   async function loadDetail(code) {
     loading.value = true
     try {
@@ -77,5 +95,5 @@ export const useHkipoStore = defineStore('hkipo', () => {
     }
   }
 
-  return { ipoList, upcomingList, currentDetail, loading, loadIpoList, loadUpcoming, loadDetail }
+  return { ipoList, upcomingList, summary, currentDetail, loading, loadIpoList, loadUpcoming, loadSummary, loadDetail }
 })

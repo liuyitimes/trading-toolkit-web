@@ -7,6 +7,9 @@ export const hkipoApi = {
   upcoming() {
     return api.get('/api/v1/hkipo/upcoming')
   },
+  summary() {
+    return api.get('/api/v1/hkipo/summary')
+  },
   detail(code) {
     return api.get(`/api/v1/hkipo/detail/${code}`)
   }
