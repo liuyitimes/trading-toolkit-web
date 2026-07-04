@@ -4,7 +4,6 @@
       <h2>新股申购</h2>
     </div>
 
-    <!-- 市场概览卡片 -->
     <div class="summary-cards" v-if="summary">
       <el-card shadow="hover" class="summary-card">
         <div class="summary-value">{{ summary.upcoming_count ?? 0 }}</div>
@@ -22,34 +21,36 @@
 
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">
       <el-tab-pane label="申购中" name="upcoming">
-        <!-- 桌面表格 -->
         <el-table :data="upcomingList" v-loading="loading" stripe @row-click="goDetail" class="desktop-table">
-          <el-table-column prop="code" label="代码" width="100" />
-          <el-table-column prop="name" label="名称" min-width="140" />
-          <el-table-column label="发行价" width="100" align="right">
-            <template #default="{ row }">{{ formatNumber(row.ipoPrice) }}</template>
-          </el-table-column>
-          <el-table-column label="发行PE" width="90" align="right">
+          <el-table-column prop="code" label="代码" width="90" />
+          <el-table-column prop="name" label="名称" min-width="120" />
+          <el-table-column prop="applyCode" label="申购代码" width="100" />
+          <el-table-column label="发行价" width="90" align="right">
             <template #default="{ row }">
-              <span v-if="row.peRatio && row.peRatio !== '-'">{{ row.peRatio }}</span>
-              <span v-else class="text-muted">--</span>
+              <span v-if="row.ipoPrice > 0">{{ formatNumber(row.ipoPrice) }}</span>
+              <span v-else class="text-muted">待定</span>
             </template>
           </el-table-column>
-          <el-table-column label="行业PE" width="90" align="right">
-            <template #default="{ row }">
-              <span v-if="row.industryPe && row.industryPe !== '-'">{{ row.industryPe }}</span>
-              <span v-else class="text-muted">--</span>
-            </template>
+          <el-table-column label="发行总量(万)" width="110" align="right">
+            <template #default="{ row }">{{ formatNumber(row.issueTotal) }}</template>
           </el-table-column>
-          <el-table-column label="估值" width="90" align="center">
+          <el-table-column label="申购上限(万)" width="110" align="right">
+            <template #default="{ row }">{{ formatNumber(row.applyLimit) }}</template>
+          </el-table-column>
+          <el-table-column label="顶格配市值(万)" width="120" align="right">
+            <template #default="{ row }">{{ formatNumber(row.topValue) }}</template>
+          </el-table-column>
+          <el-table-column label="估值" width="80" align="center">
             <template #default="{ row }">
               <el-tag :type="row.peRating.type" size="small" effect="light">{{ row.peRating.label }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="applyDate" label="申购日期" width="130" />
+          <el-table-column prop="applyDate" label="申购日期" width="120" />
+          <el-table-column prop="payDate" label="缴款日" width="110">
+            <template #default="{ row }">{{ row.payDate || '--' }}</template>
+          </el-table-column>
         </el-table>
 
-        <!-- 移动端卡片 -->
         <div class="mobile-cards" v-loading="loading">
           <el-card
             v-for="item in upcomingList"
@@ -64,41 +65,27 @@
               <el-tag :type="item.peRating.type" size="small" effect="light">{{ item.peRating.label }}</el-tag>
             </div>
             <div class="card-info-row">
-              <span>发行价: <b>{{ formatNumber(item.ipoPrice) }}</b></span>
-              <span v-if="item.peRatio && item.peRatio !== '-'">PE: {{ item.peRatio }}</span>
-              <span v-if="item.industryPe && item.industryPe !== '-'">行业: {{ item.industryPe }}</span>
+              <span>发行价: <b>{{ item.ipoPrice > 0 ? formatNumber(item.ipoPrice) : '待定' }}</b></span>
+              <span>申购上限: {{ formatNumber(item.applyLimit) }}万股</span>
             </div>
-            <div class="card-date">{{ item.applyDate }}</div>
+            <div class="card-info-row">
+              <span>申购代码: {{ item.applyCode }}</span>
+              <span>顶格市值: {{ formatNumber(item.topValue) }}万</span>
+            </div>
+            <div class="card-date">申购: {{ item.applyDate }} | 缴款: {{ item.payDate || '--' }}</div>
           </el-card>
         </div>
       </el-tab-pane>
 
       <el-tab-pane label="已上市" name="listed">
         <el-table :data="listedList" v-loading="loading" stripe @row-click="goDetail" class="desktop-table">
-          <el-table-column prop="code" label="代码" width="100" />
-          <el-table-column prop="name" label="名称" min-width="140" />
-          <el-table-column label="发行价" width="100" align="right">
-            <template #default="{ row }">{{ formatNumber(row.ipoPrice) }}</template>
-          </el-table-column>
-          <el-table-column label="发行PE" width="90" align="right">
+          <el-table-column prop="code" label="代码" width="90" />
+          <el-table-column prop="name" label="名称" min-width="120" />
+          <el-table-column label="发行价" width="90" align="right">
             <template #default="{ row }">
-              <span v-if="row.peRatio && row.peRatio !== '-'">{{ row.peRatio }}</span>
+              <span v-if="row.ipoPrice > 0">{{ formatNumber(row.ipoPrice) }}</span>
               <span v-else class="text-muted">--</span>
             </template>
-          </el-table-column>
-          <el-table-column label="行业PE" width="90" align="right">
-            <template #default="{ row }">
-              <span v-if="row.industryPe && row.industryPe !== '-'">{{ row.industryPe }}</span>
-              <span v-else class="text-muted">--</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="估值" width="90" align="center">
-            <template #default="{ row }">
-              <el-tag :type="row.peRating.type" size="small" effect="light">{{ row.peRating.label }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="listDate" label="上市日期" width="120">
-            <template #default="{ row }">{{ row.listDate || '--' }}</template>
           </el-table-column>
           <el-table-column label="中签率" width="90" align="right">
             <template #default="{ row }">
@@ -106,9 +93,32 @@
               <span v-else class="text-muted">--</span>
             </template>
           </el-table-column>
+          <el-table-column label="打新收益" width="110" align="right">
+            <template #default="{ row }">
+              <span v-if="row.plateGain">{{ row.plateGain }}</span>
+              <span v-else class="text-muted">--</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="首日涨幅" width="100" align="right">
+            <template #default="{ row }">
+              <span v-if="row.firstDayGain" class="text-success">{{ row.firstDayGain }}</span>
+              <span v-else class="text-muted">--</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="连板天数" width="90" align="center">
+            <template #default="{ row }">
+              <span v-if="row.continuousDays">{{ row.continuousDays }}天</span>
+              <span v-else class="text-muted">--</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="估值" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.peRating.type" size="small" effect="light">{{ row.peRating.label }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="listDate" label="上市日期" width="120" />
         </el-table>
 
-        <!-- 移动端卡片 -->
         <div class="mobile-cards" v-loading="loading">
           <el-card
             v-for="item in listedList"
@@ -123,8 +133,12 @@
               <el-tag :type="item.peRating.type" size="small" effect="light">{{ item.peRating.label }}</el-tag>
             </div>
             <div class="card-info-row">
-              <span>发行价: <b>{{ formatNumber(item.ipoPrice) }}</b></span>
+              <span>发行价: <b>{{ item.ipoPrice > 0 ? formatNumber(item.ipoPrice) : '--' }}</b></span>
               <span v-if="item.winRate">中签率: {{ item.winRate }}%</span>
+            </div>
+            <div class="card-info-row">
+              <span v-if="item.firstDayGain" class="text-success">首日: {{ item.firstDayGain }}</span>
+              <span v-if="item.plateGain">收益: {{ item.plateGain }}</span>
             </div>
             <div class="card-date">上市: {{ item.listDate || '--' }}</div>
           </el-card>
@@ -194,6 +208,11 @@ function goDetail(row) {
   font-size: 13px;
 }
 
+.text-success {
+  color: var(--el-color-success);
+  font-weight: 600;
+}
+
 .desktop-table {
   cursor: pointer;
 }
@@ -240,6 +259,7 @@ function goDetail(row) {
   .card-date {
     font-size: 12px;
     color: var(--text-color-secondary);
+    margin-top: 4px;
   }
 }
 

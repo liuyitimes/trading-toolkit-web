@@ -22,8 +22,17 @@
               <el-descriptions :column="{ xs: 1, sm: 2 }" border>
                 <el-descriptions-item label="股票代码">{{ detail.code }}</el-descriptions-item>
                 <el-descriptions-item label="股票名称">{{ detail.name }}</el-descriptions-item>
-                <el-descriptions-item label="发行价格">{{ formatNumber(detail.ipoPrice) }} 元</el-descriptions-item>
+                <el-descriptions-item label="申购代码">{{ detail.applyCode || '--' }}</el-descriptions-item>
+                <el-descriptions-item label="发行价格">
+                  <span v-if="detail.ipoPrice > 0">{{ formatNumber(detail.ipoPrice) }} 元</span>
+                  <span v-else class="text-muted">待定</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="发行总量">{{ formatNumber(detail.issueTotal) }} 万股</el-descriptions-item>
+                <el-descriptions-item label="网上发行">{{ formatNumber(detail.onlineIssue) }} 万股</el-descriptions-item>
+                <el-descriptions-item label="申购上限">{{ formatNumber(detail.applyLimit) }} 万股</el-descriptions-item>
+                <el-descriptions-item label="顶格配市值">{{ formatNumber(detail.topValue) }} 万元</el-descriptions-item>
                 <el-descriptions-item label="申购日期">{{ detail.applyDate || '--' }}</el-descriptions-item>
+                <el-descriptions-item label="中签缴款日">{{ detail.payDate || '--' }}</el-descriptions-item>
                 <el-descriptions-item label="上市日期">{{ detail.listDate || '未上市' }}</el-descriptions-item>
                 <el-descriptions-item label="中签率">
                   <span v-if="detail.winRate">{{ detail.winRate }}%</span>
@@ -43,12 +52,12 @@
               <div class="pe-comparison">
                 <div class="pe-item">
                   <div class="pe-label">发行 PE</div>
-                  <div class="pe-value">{{ detail.peRatio && detail.peRatio !== '-' ? detail.peRatio : '--' }}</div>
+                  <div class="pe-value">{{ detail.peRatio || '--' }}</div>
                 </div>
                 <div class="pe-divider">vs</div>
                 <div class="pe-item">
                   <div class="pe-label">行业 PE</div>
-                  <div class="pe-value">{{ detail.industryPe && detail.industryPe !== '-' ? detail.industryPe : '--' }}</div>
+                  <div class="pe-value">{{ detail.industryPe || '--' }}</div>
                 </div>
                 <div class="pe-item">
                   <div class="pe-label">差值</div>
@@ -67,6 +76,30 @@
                 <span v-else-if="detail.peDiff <= 5">发行 PE 接近行业 PE，估值合理。</span>
                 <span v-else>发行 PE 高于行业 PE，估值偏高，需关注溢价风险。</span>
               </div>
+            </el-card>
+
+            <!-- 上市表现（已上市） -->
+            <el-card shadow="hover" style="margin-top: 16px" v-if="detail.status === 'listed'">
+              <template #header>
+                <div class="section-header">
+                  <el-icon><TrendCharts /></el-icon>
+                  <span>上市表现</span>
+                </div>
+              </template>
+              <el-descriptions :column="{ xs: 1, sm: 3 }" border>
+                <el-descriptions-item label="打新收益">
+                  <span v-if="detail.plateGain" class="text-success">{{ detail.plateGain }}</span>
+                  <span v-else class="text-muted">--</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="首日最高涨幅">
+                  <span v-if="detail.firstDayGain" class="text-success">{{ detail.firstDayGain }}</span>
+                  <span v-else class="text-muted">--</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="连板天数">
+                  <span v-if="detail.continuousDays">{{ detail.continuousDays }} 天</span>
+                  <span v-else class="text-muted">--</span>
+                </el-descriptions-item>
+              </el-descriptions>
             </el-card>
 
             <!-- 时间线 -->
@@ -133,6 +166,14 @@
                   <span class="label">中签率</span>
                   <span class="value">{{ detail.winRate }}%</span>
                 </div>
+                <div class="summary-row" v-if="detail.ipoPrice > 0">
+                  <span class="label">发行价</span>
+                  <span class="value">{{ formatNumber(detail.ipoPrice) }}</span>
+                </div>
+                <div class="summary-row" v-if="detail.applyLimit > 0">
+                  <span class="label">申购上限</span>
+                  <span class="value">{{ formatNumber(detail.applyLimit) }}万股</span>
+                </div>
               </div>
             </el-card>
           </el-col>
@@ -150,7 +191,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { hkipoApi } from '@/api/hkipo'
 import { useUserStore } from '@/stores/user'
 import { formatNumber } from '@/utils/format'
-import { ArrowLeft, InfoFilled, DataAnalysis, Clock, Operation, Star, StarFilled, Tickets } from '@element-plus/icons-vue'
+import {
+  ArrowLeft, InfoFilled, DataAnalysis, Clock, Operation,
+  Star, StarFilled, Tickets, TrendCharts
+} from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -170,14 +214,16 @@ const peDiffClass = computed(() => {
 
 const statusTag = computed(() => {
   if (!detail.value) return { type: 'info', label: '--' }
-  if (!detail.value.listDate) return { type: 'warning', label: '申购中' }
-  return { type: 'success', label: '已上市' }
+  if (detail.value.status === 'listed') return { type: 'success', label: '已上市' }
+  if (detail.value.status === 'upcoming') return { type: 'warning', label: '申购中' }
+  return { type: 'info', label: '待申购' }
 })
 
 const timeline = computed(() => {
   if (!detail.value) return []
   const items = []
   if (detail.value.applyDate) items.push({ date: detail.value.applyDate, text: '申购日期', type: 'primary' })
+  if (detail.value.payDate) items.push({ date: detail.value.payDate, text: '中签缴款日', type: 'warning' })
   if (detail.value.listDate) items.push({ date: detail.value.listDate, text: '上市日期', type: 'success' })
   return items
 })
@@ -186,7 +232,6 @@ onMounted(async () => {
   try {
     const data = await hkipoApi.detail(route.params.code)
     if (data) {
-      // 用 store 的 normalizeIpoItem 逻辑处理
       const peDiff = data.pe_diff ?? 0
       const getPeRating = (diff) => {
         if (diff < 0) return { label: '低估', type: 'success' }
@@ -196,14 +241,24 @@ onMounted(async () => {
       detail.value = {
         code: data.code || '',
         name: data.name || '--',
+        applyCode: data.apply_code || '',
         ipoPrice: data.ipo_price ?? 0,
+        issueTotal: data.issue_total ?? 0,
+        onlineIssue: data.online_issue ?? 0,
+        applyLimit: data.apply_limit ?? 0,
+        topValue: data.top_value ?? 0,
         applyDate: data.apply_date || '',
+        payDate: data.pay_date || '',
         listDate: data.list_date || '',
         winRate: data.win_rate || '',
         peRatio: data.pe_ratio || '',
         industryPe: data.industry_pe || '',
         peDiff,
         peRating: getPeRating(peDiff),
+        firstDayGain: data.first_day_gain || '',
+        plateGain: data.plate_gain || '',
+        continuousDays: data.continuous_days || '',
+        status: data.status || 'pending',
       }
     }
   } catch {
@@ -232,7 +287,7 @@ function toggleFav() {
 
 .text-success {
   color: var(--el-color-success);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .text-danger {
