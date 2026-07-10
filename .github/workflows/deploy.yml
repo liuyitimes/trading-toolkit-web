@@ -36,9 +36,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Copy screenshots to dist
-        run: cp -r test_screenshots dist/test_screenshots
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

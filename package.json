@@ -6,7 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "debug:filter": "node scripts/browser/debug_filter.mjs",
+    "debug:page": "node scripts/browser/debug_page.mjs",
+    "verify:gap": "node scripts/browser/verify_gap.mjs",
+    "verify:held": "node scripts/browser/verify_held.mjs",
+    "verify:list": "node scripts/browser/verify_list.mjs",
+    "verify:timeline": "node scripts/browser/verify_timeline.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
@@ -19,7 +28,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.7",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "playwright": "^1.61.1",
+    "prettier": "^3.9.5",
     "vite": "^8.1.1"
   }
 }

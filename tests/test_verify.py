@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-OUT_DIR = Path("test_screenshots")
+OUT_DIR = Path("tests/screenshots")
 OUT_DIR.mkdir(exist_ok=True)
 BASE = "http://localhost:5173"
 

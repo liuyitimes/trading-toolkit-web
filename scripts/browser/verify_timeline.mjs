@@ -13,7 +13,8 @@ page.on('console', (m) => {
   if (m.type() === 'error') errors.push('console.error: ' + m.text())
 })
 page.on('requestfailed', (r) => {
-  if (!r.url().includes('favicon')) failedRequests.push(r.url() + ' :: ' + r.failure()?.errorText)
+  if (!r.url().includes('favicon'))
+    failedRequests.push(r.url() + ' :: ' + r.failure()?.errorText)
 })
 
 await page.goto('http://localhost:5173/', { waitUntil: 'networkidle' })
@@ -21,14 +22,14 @@ await page.waitForTimeout(1500)
 
 // 导航到可转债 tab
 const convertibleTab = page.getByText('可转债', { exact: false }).first()
-if (await convertibleTab.count() > 0) {
+if ((await convertibleTab.count()) > 0) {
   await convertibleTab.click()
   await page.waitForTimeout(2000)
 }
 
 // 查找 "配售中" 或类似标签，点击进入配售列表
 const placeTab = page.locator('text=配售中').first()
-if (await placeTab.count() > 0) {
+if ((await placeTab.count()) > 0) {
   await placeTab.click()
   await page.waitForTimeout(2000)
 }
@@ -59,9 +60,9 @@ if (timelineCount > 0) {
 
   // 截图
   const dialog = page.locator('.el-dialog__body').first()
-  if (await dialog.count() > 0) {
-    await dialog.screenshot({ path: 'test_screenshots/timeline_dates.png' })
-    console.log('截图: test_screenshots/timeline_dates.png')
+  if ((await dialog.count()) > 0) {
+    await dialog.screenshot({ path: 'tests/screenshots/timeline_dates.png' })
+    console.log('截图: tests/screenshots/timeline_dates.png')
   }
 }
 

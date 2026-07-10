@@ -20,7 +20,7 @@ with sync_playwright() as p:
         page.wait_for_timeout(1500)
 
     # 截图
-    page.screenshot(path='test_screenshots/convertible_placement.png', full_page=True)
+    page.screenshot(path='tests/screenshots/convertible_placement.png', full_page=True)
 
     # 检查排序按钮
     sort_buttons = page.locator('.sort-btn')

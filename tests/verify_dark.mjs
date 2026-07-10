@@ -33,22 +33,39 @@ await page.waitForTimeout(800)
 const tooltip = page.locator('.el-popper').last()
 const tipText = await tooltip.innerText().catch(() => '')
 console.log('tooltip text:', tipText.replace(/\n/g, ' | '))
-const bColor = await tooltip.locator('b').first().evaluate(el => getComputedStyle(el).color)
-const bgColor = await tooltip.evaluate(el => getComputedStyle(el).backgroundColor)
+const bColor = await tooltip
+  .locator('b')
+  .first()
+  .evaluate((el) => getComputedStyle(el).color)
+const bgColor = await tooltip.evaluate(
+  (el) => getComputedStyle(el).backgroundColor
+)
 console.log('tooltip <b> color:', bColor, 'tooltip bg:', bgColor)
-await tooltip.screenshot({ path: 'test_screenshots/dark_tooltip.png' })
+await tooltip.screenshot({ path: 'tests/screenshots/dark_tooltip.png' })
 
 await row.click()
 await page.waitForTimeout(500)
 const dialog = page.locator('.pending-dialog')
 const box = await dialog.boundingBox()
 const vh = await page.evaluate(() => window.innerHeight)
-console.log('dialog box:', box, 'viewport height:', vh, 'bottom:', box ? box.y + box.height : null)
+console.log(
+  'dialog box:',
+  box,
+  'viewport height:',
+  vh,
+  'bottom:',
+  box ? box.y + box.height : null
+)
 const body = dialog.locator('.el-dialog__body')
-const overflow = await body.evaluate(el => getComputedStyle(el).overflowY)
-const clientHeight = await body.evaluate(el => el.clientHeight)
-const scrollHeight = await body.evaluate(el => el.scrollHeight)
-console.log('dialog body overflowY:', overflow, 'scrollable:', scrollHeight > clientHeight)
-await dialog.screenshot({ path: 'test_screenshots/dark_dialog.png' })
+const overflow = await body.evaluate((el) => getComputedStyle(el).overflowY)
+const clientHeight = await body.evaluate((el) => el.clientHeight)
+const scrollHeight = await body.evaluate((el) => el.scrollHeight)
+console.log(
+  'dialog body overflowY:',
+  overflow,
+  'scrollable:',
+  scrollHeight > clientHeight
+)
+await dialog.screenshot({ path: 'tests/screenshots/dark_dialog.png' })
 
 await browser.close()

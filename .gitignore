@@ -39,6 +39,10 @@ start-wangcai.ps1
 
 # Test artifacts
 tests/screenshots/
+output/
+playwright-report/
+test-results/
+coverage/
 
 # Docs superpowers
 docs/superpowers/

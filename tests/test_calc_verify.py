@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright
 
 BASE_API = "http://localhost:8080"
 BASE_WEB = "http://localhost:5173"
-OUT_DIR = "test_screenshots"
+OUT_DIR = "tests/screenshots"
 
 DASH = '--'
 

@@ -4,7 +4,7 @@ const browser = await chromium.launch({ headless: true })
 const page = await browser.newPage()
 
 const consoleErrors = []
-page.on('console', msg => {
+page.on('console', (msg) => {
   if (msg.type() === 'error') consoleErrors.push(msg.text())
 })
 
@@ -14,13 +14,16 @@ await page.waitForTimeout(2000)
 
 // 切换到配售 Tab
 const placementTab = page.locator('button.tab-btn:has-text("配售")')
-if (await placementTab.count() > 0) {
+if ((await placementTab.count()) > 0) {
   await placementTab.first().click()
   await page.waitForTimeout(1500)
 }
 
 // 截图
-await page.screenshot({ path: 'test_screenshots/convertible_placement.png', fullPage: true })
+await page.screenshot({
+  path: 'tests/screenshots/convertible_placement.png',
+  fullPage: true
+})
 
 // 检查排序按钮
 const sortButtons = page.locator('.sort-btn')
@@ -38,7 +41,9 @@ for (let i = 0; i < Math.min(tagCount, 5); i++) {
   const text = await progressTags.nth(i).innerText()
   const html = await progressTags.nth(i).innerHTML()
   const hasHtml = html.includes('<br') || html.includes('<span')
-  console.log(`  [${i}] text=${JSON.stringify(text)} | has_html_tags=${hasHtml}`)
+  console.log(
+    `  [${i}] text=${JSON.stringify(text)} | has_html_tags=${hasHtml}`
+  )
 }
 
 // 检查登记日徽章
@@ -61,7 +66,7 @@ if (rowCount > 0) {
 }
 
 console.log(`\n=== Console 错误数: ${consoleErrors.length} ===`)
-consoleErrors.forEach(err => console.log(`  ${err}`))
+consoleErrors.forEach((err) => console.log(`  ${err}`))
 
 await browser.close()
 console.log('\n验证完成')
