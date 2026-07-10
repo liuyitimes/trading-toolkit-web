@@ -139,7 +139,7 @@
         <template #default="{ row }">
           <div class="name-cell">
             <div class="name-line">
-              <span class="exchange-badge" :class="exchangeClass(row.exchange)">{{ row.exchange }}</span>
+              <ExchangeBadge :exchange="row.exchange" />
               <span class="fund-name">{{ row.name }}</span>
             </div>
             <div class="code-line">
@@ -246,7 +246,7 @@
         @click="openDetail(row)"
       >
         <div class="mc-head">
-          <span class="exchange-badge" :class="exchangeClass(row.exchange)">{{ row.exchange }}</span>
+          <ExchangeBadge :exchange="row.exchange" />
           <span class="fund-name">{{ row.name }}</span>
           <el-icon class="fav-icon mc-fav" :class="{ active: row.isFavorite }" @click.stop="toggleFav(row)">
             <StarFilled v-if="row.isFavorite" />
@@ -313,7 +313,7 @@
         <template #default="{ row }">
           <div class="name-cell">
             <div class="name-line">
-              <span class="exchange-badge" :class="exchangeClass(row.exchange)">{{ row.exchange }}</span>
+              <ExchangeBadge :exchange="row.exchange" />
               <span class="fund-name">{{ row.name }}</span>
             </div>
             <div class="code-line">
@@ -378,7 +378,7 @@
         @click="openDetail(row)"
       >
         <div class="mc-head">
-          <span class="exchange-badge" :class="exchangeClass(row.exchange)">{{ row.exchange }}</span>
+          <ExchangeBadge :exchange="row.exchange" />
           <span class="fund-name">{{ row.name }}</span>
           <span class="code-text">{{ row.code }}</span>
         </div>
@@ -660,6 +660,7 @@ import { useUserStore } from '@/stores/user'
 import TierBadge from '@/components/TierBadge.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
 import FormulaInfo from '@/components/FormulaInfo.vue'
+import ExchangeBadge from '@/components/ExchangeBadge.vue'
 import SensitivitySlider from '@/components/SensitivitySlider.vue'
 import FormulaRecall from '@/components/FormulaRecall.vue'
 import ArbitrageChart from '@/components/ArbitrageChart.vue'
@@ -866,18 +867,11 @@ function statusTagType(status) {
 }
 
 function riskTagType(level) {
-  if (level === 'low') return 'success'
+  if (level === 'low') return 'danger'
   if (level === 'medium') return 'warning'
-  if (level === 'high') return 'danger'
-  if (level === 'extreme') return 'danger'
+  if (level === 'high') return 'success'
+  if (level === 'extreme') return 'success'
   return 'info'
-}
-
-function exchangeClass(ex) {
-  if (ex === '沪') return 'ex-sh'
-  if (ex === '深') return 'ex-sz'
-  if (ex === '京') return 'ex-bj'
-  return ''
 }
 
 function amountClass(row) {
@@ -1131,21 +1125,6 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-  }
-
-  .exchange-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    font-size: 11px;
-    color: #fff;
-
-    &.ex-sh { background: #d4380d; }
-    &.ex-sz { background: #0958d9; }
-    &.ex-bj { background: #531dab; }
   }
 
   .fav-icon {

@@ -76,7 +76,7 @@
         <template #default="{ row }">
           <div class="name-cell">
             <div class="name-line">
-              <span class="exchange-badge" :class="exchangeClass(row.exchange)">{{ row.exchange }}</span>
+              <ExchangeBadge :exchange="row.exchange" />
               <span class="fund-name">{{ row.name }}</span>
             </div>
             <div class="code-line">
@@ -163,7 +163,7 @@
         @click="openDetail(row)"
       >
         <div class="mc-head">
-          <span class="exchange-badge" :class="exchangeClass(row.exchange)">{{ row.exchange }}</span>
+          <ExchangeBadge :exchange="row.exchange" />
           <span class="fund-name">{{ row.name }}</span>
           <el-icon class="fav-icon mc-fav" :class="{ active: row.isFavorite }" @click.stop="toggleFav(row)">
             <StarFilled v-if="row.isFavorite" />
@@ -331,6 +331,7 @@ import { useClosedEndStore } from '@/stores/closedEnd'
 import TierBadge from '@/components/TierBadge.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
 import FormulaInfo from '@/components/FormulaInfo.vue'
+import ExchangeBadge from '@/components/ExchangeBadge.vue'
 
 const store = useClosedEndStore()
 const searchKeyword = ref('')
@@ -382,13 +383,6 @@ function formatDiscountStr(val) {
   if (val == null) return '--'
   const num = parseFloat(val)
   return (num > 0 ? '+' : '') + val + '%'
-}
-
-function exchangeClass(ex) {
-  if (ex === '沪') return 'ex-sh'
-  if (ex === '深') return 'ex-sz'
-  if (ex === '北') return 'ex-bj'
-  return ''
 }
 
 function amountClass(row) {
@@ -564,21 +558,6 @@ onActivated(() => {
       .code-sep { color: var(--el-border-color); }
     }
 
-    .exchange-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      font-size: 11px;
-      color: #fff;
-
-      &.ex-sh { background: #d4380d; }
-      &.ex-sz { background: #0958d9; }
-      &.ex-bj { background: #531dab; }
-    }
-
     .price-cell {
       display: flex;
       flex-direction: column;
@@ -659,21 +638,6 @@ onActivated(() => {
 
     .mc-fav {
       margin-left: auto;
-    }
-
-    .exchange-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      font-size: 11px;
-      color: #fff;
-
-      &.ex-sh { background: #d4380d; }
-      &.ex-sz { background: #0958d9; }
-      &.ex-bj { background: #531dab; }
     }
 
     .mc-code {

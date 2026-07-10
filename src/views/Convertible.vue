@@ -158,7 +158,7 @@
           <template #default="{ row }">
             <div class="name-cell">
               <div class="name-line">
-                <span class="exchange-badge" :class="exchangeClass(row.exchange)" v-if="row.exchange">{{ row.exchange }}</span>
+                <ExchangeBadge v-if="row.exchange" :exchange="row.exchange" />
                 <span class="bond-name">{{ row.stockName }}</span>
                 <el-tag v-if="row.riskLevel" size="small" :type="riskTagType(row.riskClass)" effect="light">{{ row.riskLabel }}</el-tag>
                 <el-tag v-if="row.regBadge" size="small" :type="row.regBadgeClass === 'hot' ? 'danger' : 'warning'" effect="dark">{{ row.regBadge }}</el-tag>
@@ -192,9 +192,9 @@
                   <div class="ft-detail">· 正股趋势（短期动能）</div>
                   <div class="ft-divider"></div>
                   <div class="ft-subtitle">分档标准</div>
-                  <div class="ft-detail"><b style="color:#67c23a">推荐</b>：评分 ≥ 80</div>
+                  <div class="ft-detail"><b style="color:#f56c6c">推荐</b>：评分 ≥ 80</div>
                   <div class="ft-detail"><b style="color:#e6a23c">可关注</b>：60 ≤ 评分 &lt; 80</div>
-                  <div class="ft-detail"><b style="color:#f56c6c">谨慎</b>：评分 &lt; 60</div>
+                  <div class="ft-detail"><b style="color:#67c23a">谨慎</b>：评分 &lt; 60</div>
                 </div>
               </template>
               <el-tag :class="`rating-tag rating-${row.strategyRatingClass}`" size="small">
@@ -297,7 +297,7 @@
       <div class="mobile-cards">
         <el-card v-for="row in filteredPlacement" :key="row.stockCode" class="mobile-card" shadow="hover" @click="openPendingDetail(row)">
           <div class="mc-head">
-            <span class="exchange-badge" :class="exchangeClass(row.exchange)" v-if="row.exchange">{{ row.exchange }}</span>
+            <ExchangeBadge v-if="row.exchange" :exchange="row.exchange" />
             <span class="bond-name">{{ row.stockName }}</span>
             <el-tag :class="`rating-tag rating-${row.strategyRatingClass}`" size="small">{{ row.strategyRating }}</el-tag>
             <el-tag v-if="row.regBadge" size="small" :type="row.regBadgeClass === 'hot' ? 'danger' : 'warning'" effect="dark">{{ row.regBadge }}</el-tag>
@@ -322,6 +322,31 @@
 
     <!-- 信号 Tab（双低/强赎/折价/下修） -->
     <div v-else class="tab-content">
+      <div class="sub-toolbar signal-toolbar">
+        <div class="sub-tabs">
+          <button
+            v-for="s in signalQuickStats"
+            :key="s.key"
+            class="sub-btn signal-stat"
+            disabled
+          >
+            {{ s.label }}
+            <span class="sub-count" :class="{ hot: s.hot }">{{ s.value }}</span>
+          </button>
+        </div>
+        <div class="sort-row">
+          <button
+            v-for="f in signalSortFields"
+            :key="f.field"
+            class="sort-btn"
+            :class="{ active: signalSortBy === f.field }"
+            @click="toggleSignalSort(f.field)"
+          >
+            {{ f.label }}<span v-if="signalSortBy === f.field">{{ signalSortAsc ? '↑' : '↓' }}</span>
+          </button>
+        </div>
+      </div>
+
       <el-empty v-if="!signalList.length" description="暂无符合条件的标的" />
 
       <el-table
@@ -335,8 +360,9 @@
           <template #default="{ row }">
             <div class="name-cell">
               <div class="name-line">
-                <span class="exchange-badge" :class="exchangeClass(row.exchange)" v-if="row.exchange">{{ row.exchange }}</span>
+                <ExchangeBadge v-if="row.exchange" :exchange="row.exchange" />
                 <span class="bond-name">{{ row.bondName }}</span>
+                <el-tag size="small" effect="light" :type="signalTagType(row)">{{ signalTagText(row) }}</el-tag>
                 <el-icon class="fav-icon" :class="{ active: row.isFavorite }" @click.stop="toggleFav(row)">
                   <StarFilled v-if="row.isFavorite" /><Star v-else />
                 </el-icon>
@@ -349,65 +375,157 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="价格" width="110" align="right">
-          <template #default="{ row }">
-            <div>{{ row.price }}</div>
-            <div class="price-sub">{{ row.stockPrice }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column width="110" align="right">
-          <template #header>
-            溢价率<FormulaInfo
-              formula="(转债价格 - 转股价值) / 转股价值 × 100%"
-              example="价格 110，转股价值 120 → 溢价率 = -8.33%"
-              note="负溢价说明转债被低估，存在套利空间"
-            />
-          </template>
-          <template #default="{ row }">
-            <span :class="['premium-value', row.premiumClass]">{{ row.premium }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          v-for="col in signalColumns"
-          :key="col.key"
-          :width="col.width"
-          align="right"
-        >
-          <template #header>
-            {{ col.label }}<FormulaInfo
-              v-if="col.formula"
-              :formula="col.formula"
-              :example="col.example"
-              :note="col.note"
-            />
-          </template>
-          <template #default="{ row }">
-            <span :class="col.cls(row)">{{ col.val(row) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="剩余规模" width="100" align="right">
-          <template #default="{ row }">
-            <span class="hover-value">{{ row.remainingSize }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="成交量" width="100" align="right">
-          <template #default="{ row }">
-            <span class="hover-value">{{ row.volume }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="成交额" width="110" align="right">
-          <template #default="{ row }">
-            <span class="hover-value">{{ row.amount }}</span>
-          </template>
-        </el-table-column>
+        <template v-if="activeTab === 'double_low'">
+          <el-table-column label="双低值" width="90" align="right">
+            <template #default="{ row }">
+              <el-tooltip placement="top" :show-after="300">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">双低值 = 转债价格 + 溢价率</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">当前数据</div>
+                      <div class="ft-detail">转债价格：<b>{{ row.price }}</b></div>
+                      <div class="ft-detail">溢价率：<b>{{ row.premium }}</b></div>
+                    </div>
+                    <div v-if="row.price !== '--' && row.premium !== '--'" class="ft-step">
+                      计算：{{ row.price }} + {{ row.premium }} = {{ row.doubleLow }}
+                    </div>
+                    <div class="ft-note">双低值越低，转债的价格与估值组合越有吸引力。</div>
+                  </div>
+                </template>
+                <span class="hover-value hl">{{ row.doubleLow }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column label="价格" width="90" align="right">
+            <template #default="{ row }">
+              <span>{{ row.price }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="溢价率" width="110" align="right">
+            <template #default="{ row }">
+              <el-tooltip placement="top" :show-after="300">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">溢价率 = (转债价格 - 转股价值) / 转股价值 × 100%</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">当前数据</div>
+                      <div class="ft-detail">转债价格：<b>{{ row.price }}</b></div>
+                      <div class="ft-detail">转股价值：<b>{{ row.conversionValue }}</b></div>
+                    </div>
+                    <div v-if="row.price !== '--' && row.conversionValue !== '--'" class="ft-step">
+                      计算：({{ row.price }} - {{ row.conversionValue }}) / {{ row.conversionValue }} × 100% = {{ row.premium }}
+                    </div>
+                    <div class="ft-note">负溢价表示转债价格低于转股价值，可作为转股套利的观察信号。</div>
+                  </div>
+                </template>
+                <span :class="['hover-value', 'premium-value', row.premiumClass]">{{ row.premium }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column label="剩余规模" width="100" align="right">
+            <template #default="{ row }">
+              <span>{{ row.remainingSize }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="成交额" width="110" align="right">
+            <template #default="{ row }">
+              <span>{{ row.amount }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="到期收益率" width="100" align="right">
+            <template #default="{ row }">
+              <span :class="{ positive: row._ytmRaw != null && row._ytmRaw > 0, negative: row._ytmRaw != null && row._ytmRaw < 0 }">{{ row.ytm }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="纯债价值" width="90" align="right">
+            <template #default="{ row }">
+              <span>{{ row.pureBondValue }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="成交量" width="100" align="right">
+            <template #default="{ row }">
+              <span>{{ row.volume }}</span>
+            </template>
+          </el-table-column>
+        </template>
+        <template v-else>
+          <el-table-column label="价格" width="90" align="right">
+            <template #default="{ row }">
+              <span>{{ row.price }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="溢价率" width="110" align="right">
+            <template #default="{ row }">
+              <el-tooltip placement="top" :show-after="300">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">溢价率 = (转债价格 - 转股价值) / 转股价值 × 100%</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">当前数据</div>
+                      <div class="ft-detail">转债价格：<b>{{ row.price }}</b></div>
+                      <div class="ft-detail">转股价值：<b>{{ row.conversionValue }}</b></div>
+                    </div>
+                    <div v-if="row.price !== '--' && row.conversionValue !== '--'" class="ft-step">
+                      计算：({{ row.price }} - {{ row.conversionValue }}) / {{ row.conversionValue }} × 100% = {{ row.premium }}
+                    </div>
+                    <div class="ft-note">负溢价表示转债价格低于转股价值，可作为转股套利的观察信号。</div>
+                  </div>
+                </template>
+                <span :class="['hover-value', 'premium-value', row.premiumClass]">{{ row.premium }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-for="col in signalColumns"
+            :key="col.key"
+            :label="col.label"
+            :width="col.width"
+            align="right"
+          >
+            <template #default="{ row }">
+              <el-tooltip v-if="col.formula" placement="top" :show-after="300">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">{{ col.formula }}</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">当前数据</div>
+                      <div class="ft-detail">{{ col.label }}：<b>{{ col.val(row) }}</b></div>
+                      <div class="ft-detail" v-if="col.example">示例：{{ col.example }}</div>
+                    </div>
+                    <div v-if="col.note" class="ft-note">{{ col.note }}</div>
+                  </div>
+                </template>
+                <span class="hover-value" :class="col.cls(row)">{{ col.val(row) }}</span>
+              </el-tooltip>
+              <span v-else :class="col.cls(row)">{{ col.val(row) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="剩余规模" width="100" align="right">
+            <template #default="{ row }">
+              <span>{{ row.remainingSize }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="成交量" width="100" align="right">
+            <template #default="{ row }">
+              <span>{{ row.volume }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="成交额" width="110" align="right">
+            <template #default="{ row }">
+              <span>{{ row.amount }}</span>
+            </template>
+          </el-table-column>
+        </template>
       </el-table>
 
       <!-- 移动端卡片 -->
       <div class="mobile-cards">
         <el-card v-for="row in signalList" :key="row.bondCode" class="mobile-card" shadow="hover" @click="openSignalDetail(row)">
           <div class="mc-head">
-            <span class="exchange-badge" :class="exchangeClass(row.exchange)" v-if="row.exchange">{{ row.exchange }}</span>
+            <ExchangeBadge v-if="row.exchange" :exchange="row.exchange" />
             <span class="bond-name">{{ row.bondName }}</span>
+            <el-tag size="small" effect="light" :type="signalTagType(row)">{{ signalTagText(row) }}</el-tag>
             <span class="rating-badge">{{ row.rating }}</span>
             <el-icon class="fav-icon" :class="{ active: row.isFavorite }" @click.stop="toggleFav(row)">
               <StarFilled v-if="row.isFavorite" /><Star v-else />
@@ -600,7 +718,7 @@
             <el-table-column prop="ratio" label="成功率档位" width="100" align="center">
               <template #default="{ row }">
                 <span :class="{ 'tier-recommended': row.isRecommended }">{{ row.ratio }}</span>
-                <el-tag v-if="row.isRecommended" size="small" type="warning" effect="plain" style="margin-left: 4px;">推荐</el-tag>
+                <el-tag v-if="row.isRecommended" size="small" type="danger" effect="plain" style="margin-left: 4px;">推荐</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="rawShares" label="理论股数" align="center" />
@@ -655,6 +773,15 @@
               {{ signalDetail.bondName }} ({{ signalDetail.bondCode }})
             </span>
             <el-tag
+              v-if="signalDetail"
+              size="small"
+              :type="signalTagType(signalDetail, signalDetailTab)"
+              effect="light"
+              class="dialog-sector-tag"
+            >
+              {{ signalDetailStrategyLabel }}
+            </el-tag>
+            <el-tag
               v-if="signalDetail && signalDetail.rating !== '--'"
               size="small"
               type="info"
@@ -679,72 +806,79 @@
       </template>
       <template v-if="signalDetail">
         <div class="detail-section">
-          <div class="detail-section-title">基础信息</div>
-          <el-descriptions :column="2" border size="small">
-            <el-descriptions-item label="转债名称">{{ signalDetail.bondName }}</el-descriptions-item>
-            <el-descriptions-item label="转债代码">{{ signalDetail.bondCode }}</el-descriptions-item>
-            <el-descriptions-item label="正股名称">{{ signalDetail.stockName }}</el-descriptions-item>
-            <el-descriptions-item label="正股代码">{{ signalDetail.stockCode || '--' }}</el-descriptions-item>
-            <el-descriptions-item label="交易所">
-              <span :class="exchangeClass(signalDetail.exchange) + ' exchange-text'">{{ signalDetail.exchange || '--' }}</span>
-            </el-descriptions-item>
-            <el-descriptions-item label="评级">{{ signalDetail.rating || '--' }}</el-descriptions-item>
-            <el-descriptions-item label="转债价格">
-              <span class="hl">{{ signalDetail.price }}</span>
-            </el-descriptions-item>
-            <el-descriptions-item label="正股价格">
-              <span>{{ signalDetail.stockPrice }}</span>
-            </el-descriptions-item>
-            <el-descriptions-item label="溢价率">
-              <span :class="['premium-value', signalDetail.premiumClass]">{{ signalDetail.premium }}</span>
-            </el-descriptions-item>
-            <el-descriptions-item label="转股价值">
-              <span>{{ signalDetail.conversionValue }}</span>
-            </el-descriptions-item>
-          </el-descriptions>
+          <div class="detail-section-title">策略指标</div>
+          <div class="detail-grid">
+            <div
+              v-for="col in signalDetailColumns"
+              :key="col.key"
+              class="detail-item hl-box"
+            >
+              <span class="detail-label">{{ col.label }}</span>
+              <el-tooltip placement="top" :show-after="300">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">{{ col.formula || col.label }}</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">当前数据</div>
+                      <div class="ft-detail">{{ col.label }}：<b>{{ col.val(signalDetail) }}</b></div>
+                      <div class="ft-detail" v-if="col.example">示例：{{ col.example }}</div>
+                    </div>
+                    <div v-if="col.note" class="ft-note">{{ col.note }}</div>
+                  </div>
+                </template>
+                <span class="detail-value hover-value" :class="col.cls(signalDetail)">{{ col.val(signalDetail) }}</span>
+              </el-tooltip>
+            </div>
+            <div class="detail-item hl-box">
+              <span class="detail-label">溢价率</span>
+              <span class="detail-value" :class="['premium-value', signalDetail.premiumClass]">{{ signalDetail.premium }}</span>
+            </div>
+            <div class="detail-item hl-box">
+              <span class="detail-label">转股价值</span>
+              <span class="detail-value hl">{{ signalDetail.conversionValue }}</span>
+            </div>
+          </div>
         </div>
 
         <div class="detail-section">
-          <div class="detail-section-title">关键指标</div>
-          <div class="metric-grid">
-            <div class="metric-item">
-              <div class="metric-label">双低值</div>
-              <div class="metric-value" :class="{ hl: signalDetail._doubleLowRaw > 0 }">{{ signalDetail.doubleLow }}</div>
+          <div class="detail-section-title">行情与估值</div>
+          <div class="detail-grid">
+            <div class="detail-item"><span class="detail-label">转债价格</span><span class="detail-value hl">{{ signalDetail.price }}</span></div>
+            <div class="detail-item"><span class="detail-label">正股价格</span><span class="detail-value">{{ signalDetail.stockPrice }}</span></div>
+            <div class="detail-item"><span class="detail-label">转股价</span><span class="detail-value">{{ signalDetail.conversionPrice }}</span></div>
+            <div class="detail-item"><span class="detail-label">纯债价值</span><span class="detail-value">{{ signalDetail.pureBondValue }}</span></div>
+            <div class="detail-item"><span class="detail-label">到期收益率</span><span class="detail-value" :class="{ positive: signalDetail._ytmRaw != null && signalDetail._ytmRaw > 0, negative: signalDetail._ytmRaw != null && signalDetail._ytmRaw < 0 }">{{ signalDetail.ytm }}</span></div>
+            <div class="detail-item"><span class="detail-label">剩余规模</span><span class="detail-value">{{ signalDetail.remainingSize }}</span></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">转债信息</div>
+          <div class="detail-grid">
+            <div class="detail-item"><span class="detail-label">转债名称</span><span class="detail-value">{{ signalDetail.bondName }}</span></div>
+            <div class="detail-item"><span class="detail-label">转债代码</span><span class="detail-value copyable" @click="copyText(signalDetail.bondCode)">{{ signalDetail.bondCode }}</span></div>
+            <div class="detail-item"><span class="detail-label">正股名称</span><span class="detail-value">{{ signalDetail.stockName }}</span></div>
+            <div class="detail-item"><span class="detail-label">正股代码</span><span class="detail-value copyable" @click="copyText(signalDetail.stockCode)">{{ signalDetail.stockCode || '--' }}</span></div>
+            <div class="detail-item">
+              <span class="detail-label">交易所</span>
+              <span class="detail-value"><ExchangeBadge :exchange="signalDetail.exchange || '--'" /></span>
             </div>
-            <div class="metric-item">
-              <div class="metric-label">纯债价值</div>
-              <div class="metric-value">{{ signalDetail.pureBondValue }}</div>
-            </div>
-            <div class="metric-item">
-              <div class="metric-label">到期收益率</div>
-              <div class="metric-value" :class="{ positive: signalDetail._ytmRaw != null && signalDetail._ytmRaw > 0 }">{{ signalDetail.ytm }}</div>
-            </div>
-            <div class="metric-item">
-              <div class="metric-label">剩余规模</div>
-              <div class="metric-value">{{ signalDetail.remainingSize }}</div>
-            </div>
-            <div class="metric-item">
-              <div class="metric-label">成交量</div>
-              <div class="metric-value">{{ signalDetail.volume }}</div>
-            </div>
-            <div class="metric-item">
-              <div class="metric-label">成交额</div>
-              <div class="metric-value">{{ signalDetail.amount }}</div>
-            </div>
+            <div class="detail-item"><span class="detail-label">信用评级</span><span class="detail-value">{{ signalDetail.rating || '--' }}</span></div>
+            <div class="detail-item"><span class="detail-label">成交量</span><span class="detail-value">{{ signalDetail.volume }}</span></div>
+            <div class="detail-item"><span class="detail-label">成交额</span><span class="detail-value">{{ signalDetail.amount }}</span></div>
+            <div class="detail-item"><span class="detail-label">到期日</span><span class="detail-value">{{ signalDetail.maturityDate }}</span></div>
           </div>
         </div>
 
         <div class="detail-section">
           <div class="detail-section-title">强赎风险</div>
           <div v-if="signalDetail._conversionPriceRaw > 0" class="risk-block">
-            <el-descriptions :column="2" border size="small">
-              <el-descriptions-item label="转股价">{{ signalDetail.conversionPrice }}</el-descriptions-item>
-              <el-descriptions-item label="强赎触发价">{{ signalDetail.forceTriggerPrice }}</el-descriptions-item>
-              <el-descriptions-item label="距强赎线">
-                <span :class="signalDetail.forceRedemptionClass ? 'warning' : ''">{{ signalDetail.forceRedemptionGap }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="正股价">{{ signalDetail.stockPrice }}</el-descriptions-item>
-            </el-descriptions>
+            <div class="detail-grid">
+              <div class="detail-item"><span class="detail-label">转股价</span><span class="detail-value">{{ signalDetail.conversionPrice }}</span></div>
+              <div class="detail-item"><span class="detail-label">强赎触发价</span><span class="detail-value hl">{{ signalDetail.forceTriggerPrice }}</span></div>
+              <div class="detail-item"><span class="detail-label">距强赎线</span><span class="detail-value" :class="signalDetail.forceRedemptionClass ? 'warning' : ''">{{ signalDetail.forceRedemptionGap }}</span></div>
+              <div class="detail-item"><span class="detail-label">正股价</span><span class="detail-value">{{ signalDetail.stockPrice }}</span></div>
+            </div>
             <div class="risk-hint" :class="signalDetail.forceRedemptionClass ? 'risk-warning' : ''">
               <el-icon><Warning v-if="signalDetail._forcePriceGap >= 0" /><Check v-else /></el-icon>
               {{ signalDetail._forcePriceGap >= 0 ? '已接近/触发强赎区域，注意风险' : '处于安全区域' }}
@@ -756,14 +890,12 @@
         <div class="detail-section">
           <div class="detail-section-title">下修机会</div>
           <div v-if="signalDetail._conversionPriceRaw > 0" class="risk-block">
-            <el-descriptions :column="2" border size="small">
-              <el-descriptions-item label="转股价">{{ signalDetail.conversionPrice }}</el-descriptions-item>
-              <el-descriptions-item label="下修触发价">{{ signalDetail.reviseTriggerPrice }}</el-descriptions-item>
-              <el-descriptions-item label="距下修线">
-                <span :class="signalDetail.downReviseClass ? 'warning' : ''">{{ signalDetail.downReviseGap }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="到期日">{{ signalDetail.maturityDate }}</el-descriptions-item>
-            </el-descriptions>
+            <div class="detail-grid">
+              <div class="detail-item"><span class="detail-label">转股价</span><span class="detail-value">{{ signalDetail.conversionPrice }}</span></div>
+              <div class="detail-item"><span class="detail-label">下修触发价</span><span class="detail-value hl">{{ signalDetail.reviseTriggerPrice }}</span></div>
+              <div class="detail-item"><span class="detail-label">距下修线</span><span class="detail-value" :class="signalDetail.downReviseClass ? 'warning' : ''">{{ signalDetail.downReviseGap }}</span></div>
+              <div class="detail-item"><span class="detail-label">到期日</span><span class="detail-value">{{ signalDetail.maturityDate }}</span></div>
+            </div>
             <div class="risk-hint" :class="signalDetail.downReviseClass ? 'risk-warning' : ''">
               <el-icon><InfoFilled v-if="signalDetail._revisePriceGap < 0" /><Check v-else /></el-icon>
               {{ signalDetail._revisePriceGap < 0 ? '正股已跌破下修线，可能触发下修' : '未触发下修' }}
@@ -802,7 +934,7 @@ import { useConvertibleStore } from '@/stores/convertible'
 import { useUserStore } from '@/stores/user'
 import TierBadge from '@/components/TierBadge.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
-import FormulaInfo from '@/components/FormulaInfo.vue'
+import ExchangeBadge from '@/components/ExchangeBadge.vue'
 import SensitivitySlider from '@/components/SensitivitySlider.vue'
 import FormulaRecall from '@/components/FormulaRecall.vue'
 import { useAppStore } from '@/stores/app'
@@ -871,6 +1003,9 @@ const costDialogVisible = ref(false)
 const costDialogRow = ref(null)
 const signalDialogVisible = ref(false)
 const signalDetail = ref(null)
+const signalDetailTab = ref('')
+const signalSortBy = ref('doubleLow')
+const signalSortAsc = ref(true)
 const costTableData = computed(() => {
   const row = costDialogRow.value
   if (!row || !row._sharesPerLotRaw) return []
@@ -989,9 +1124,7 @@ const filteredPlacement = computed(() => {
   return matchSearch(list)
 })
 
-// 信号 Tab 动态列：按策略显示关键参数
-const signalColumns = computed(() => {
-  const tab = activeTab.value
+function getSignalColumnsForTab(tab) {
   if (tab === 'double_low') return [
     { key: 'doubleLow', label: '双低值', width: 90, val: r => r.doubleLow, cls: () => 'hl',
       formula: '双低值 = 转债价格 + 溢价率', example: '价格 105，溢价 5% → 双低 = 110', note: '双低值越低投资价值越高，低于 150 可入场' },
@@ -1019,6 +1152,54 @@ const signalColumns = computed(() => {
     { key: 'rating', label: '评级', width: 70, val: r => r.rating, cls: () => '' }
   ]
   return []
+}
+
+// 信号 Tab 动态列：按策略显示关键参数
+const signalColumns = computed(() => getSignalColumnsForTab(activeTab.value))
+const signalDetailColumns = computed(() => getSignalColumnsForTab(signalDetailTab.value || activeTab.value))
+
+const signalDetailStrategyLabel = computed(() => {
+  const tab = signalDetailTab.value || activeTab.value
+  return tabs.find(t => t.key === tab)?.label || '策略'
+})
+
+const signalQuickStats = computed(() => {
+  const list = rawSignalList.value
+  const shown = signalList.value.length
+  return [
+    { key: 'total', label: '全部', value: list.length, hot: false },
+    { key: 'shown', label: searchKeyword.value ? '匹配' : '当前显示', value: shown, hot: searchKeyword.value && shown > 0 },
+    { key: 'favorite', label: '自选', value: list.filter(i => i.isFavorite).length, hot: false }
+  ]
+})
+
+const signalSortFields = computed(() => {
+  if (activeTab.value === 'double_low') return [
+    { field: 'doubleLow', label: '双低值' },
+    { field: 'premium', label: '溢价率' },
+    { field: 'price', label: '价格' },
+    { field: 'ytm', label: '到期收益' },
+    { field: 'remainingSize', label: '规模' }
+  ]
+  if (activeTab.value === 'force_redeem') return [
+    { field: 'forceGap', label: '距强赎' },
+    { field: 'premium', label: '溢价率' },
+    { field: 'price', label: '价格' },
+    { field: 'remainingSize', label: '规模' }
+  ]
+  if (activeTab.value === 'discount') return [
+    { field: 'discount', label: '折价空间' },
+    { field: 'premium', label: '溢价率' },
+    { field: 'conversionValue', label: '转股价值' },
+    { field: 'remainingSize', label: '规模' }
+  ]
+  if (activeTab.value === 'down_revised') return [
+    { field: 'reviseGap', label: '距下修' },
+    { field: 'price', label: '价格' },
+    { field: 'premium', label: '溢价率' },
+    { field: 'ytm', label: '到期收益' }
+  ]
+  return []
 })
 
 const rawSignalList = computed(() => store.signals[activeTab.value] || [])
@@ -1035,16 +1216,37 @@ function discountRank(item) {
   return p != null && p < 0 ? Math.abs(p) : -1
 }
 
+function signalSortDefault(tab) {
+  if (tab === 'double_low') return { field: 'doubleLow', asc: true }
+  if (tab === 'force_redeem') return { field: 'forceGap', asc: false }
+  if (tab === 'discount') return { field: 'discount', asc: false }
+  if (tab === 'down_revised') return { field: 'reviseGap', asc: true }
+  return { field: 'price', asc: true }
+}
+
+function signalSortValue(item, field) {
+  if (!item) return 0
+  if (field === 'doubleLow') return item.doubleLowNum ?? 9999
+  if (field === 'forceGap') return item._forcePriceGap ?? -9999
+  if (field === 'discount') return discountRank(item)
+  if (field === 'reviseGap') return item._revisePriceGap ?? 9999
+  if (field === 'premium') return item.premiumNum ?? 9999
+  if (field === 'price') return item.priceNum ?? 0
+  if (field === 'ytm') return item._ytmRaw ?? -9999
+  if (field === 'remainingSize') return item._remainingSizeRaw ?? 0
+  if (field === 'conversionValue') return item.conversionValueNum ?? 0
+  return 0
+}
+
 const sortedSignalList = computed(() => {
   const list = rawSignalList.value
-  const tab = activeTab.value
   if (!list || list.length <= 1) return list || []
+  const field = signalSortBy.value
+  const asc = signalSortAsc.value
   return [...list].sort((a, b) => {
-    if (tab === 'double_low') return (a.doubleLowNum ?? 9999) - (b.doubleLowNum ?? 9999)
-    if (tab === 'force_redeem') return (b._forcePriceGap ?? -9999) - (a._forcePriceGap ?? -9999)
-    if (tab === 'discount') return discountRank(b) - discountRank(a)
-    if (tab === 'down_revised') return (a._revisePriceGap ?? 9999) - (b._revisePriceGap ?? 9999)
-    return 0
+    const va = signalSortValue(a, field)
+    const vb = signalSortValue(b, field)
+    return asc ? va - vb : vb - va
   })
 })
 
@@ -1134,6 +1336,9 @@ function switchTab(key) {
   showAll.value = false
   if (key !== 'placement') {
     placementSubTab.value = 'all'
+    const sort = signalSortDefault(key)
+    signalSortBy.value = sort.field
+    signalSortAsc.value = sort.asc
   }
 }
 
@@ -1147,6 +1352,17 @@ function toggleSort(field) {
   } else {
     placementSortBy.value = field
     placementSortAsc.value = false
+  }
+}
+
+function toggleSignalSort(field) {
+  if (signalSortBy.value === field) {
+    signalSortAsc.value = !signalSortAsc.value
+  } else {
+    signalSortBy.value = field
+    signalSortAsc.value = signalSortDefault(activeTab.value).field === field
+      ? signalSortDefault(activeTab.value).asc
+      : false
   }
 }
 
@@ -1164,6 +1380,7 @@ function openCostDialog(row) {
 
 function openSignalDetail(row) {
   signalDetail.value = row
+  signalDetailTab.value = activeTab.value
   signalDialogVisible.value = true
 }
 
@@ -1192,12 +1409,35 @@ function formatPremiumMedian(v) {
   return v + '%'
 }
 
-function exchangeClass(ex) {
-  return { '沪': 'ex-sh', '深': 'ex-sz', '京': 'ex-bj' }[ex] || ''
+function riskTagType(cls) {
+  return { high: 'success', mid: 'warning', low: 'danger' }[cls] || 'info'
 }
 
-function riskTagType(cls) {
-  return { high: 'danger', mid: 'warning', low: 'success' }[cls] || 'info'
+function signalTagText(row, tab = activeTab.value) {
+  if (!row) return tabs.find(t => t.key === tab)?.label || '策略'
+  if (tab === 'double_low') {
+    if ((row.doubleLowNum || 9999) < 130) return '双低优选'
+    return '双低观察'
+  }
+  if (tab === 'force_redeem') {
+    return row._forcePriceGap >= 0 ? '强赎临界' : '强赎观察'
+  }
+  if (tab === 'discount') {
+    return row.premiumNum < 0 ? '折价套利' : '折价观察'
+  }
+  if (tab === 'down_revised') {
+    return row._revisePriceGap < 0 ? '已破下修线' : '下修观察'
+  }
+  return tabs.find(t => t.key === tab)?.label || '策略'
+}
+
+function signalTagType(row, tab = activeTab.value) {
+  if (!row) return 'info'
+  if (tab === 'double_low') return (row.doubleLowNum || 9999) < 130 ? 'danger' : 'warning'
+  if (tab === 'force_redeem') return row._forcePriceGap >= 0 ? 'success' : 'warning'
+  if (tab === 'discount') return row.premiumNum < 0 ? 'danger' : 'warning'
+  if (tab === 'down_revised') return row._revisePriceGap < 0 ? 'danger' : 'warning'
+  return 'info'
 }
 
 function safetyPadClass(raw) {
@@ -1463,6 +1703,15 @@ onUnmounted(() => {
           color: var(--el-color-primary);
           background: var(--el-color-primary-light-9);
         }
+
+        &.signal-stat {
+          cursor: default;
+          opacity: 1;
+
+          &:disabled {
+            color: var(--text-color-regular);
+          }
+        }
       }
 
       .sort-row {
@@ -1526,27 +1775,12 @@ onUnmounted(() => {
     }
   }
 
-  .exchange-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    font-size: 11px;
-    color: #fff;
-
-    &.ex-sh { background: #d4380d; }
-    &.ex-sz { background: #0958d9; }
-    &.ex-bj { background: #531dab; }
-  }
-
   /* 评级 tag：推荐绿/可关注黄/谨慎红，兼容暗黑模式 */
   .rating-tag {
     border: none;
 
     &.rating-recommend {
-      background-color: var(--el-color-success);
+      background-color: var(--el-color-danger);
       color: #fff;
     }
     &.rating-watch {
@@ -1554,7 +1788,7 @@ onUnmounted(() => {
       color: #fff;
     }
     &.rating-caution {
-      background-color: var(--el-color-danger);
+      background-color: var(--el-color-success);
       color: #fff;
     }
   }
@@ -1569,6 +1803,21 @@ onUnmounted(() => {
 
   .hl { color: var(--el-color-primary); font-weight: 600; }
   .price-sub { font-size: 12px; color: var(--text-color-secondary); }
+
+  .quote-cell {
+    line-height: 1.4;
+  }
+
+  .rating-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--text-color-secondary);
+    background: var(--el-fill-color);
+  }
 
   .premium-value {
     &.negative { color: var(--el-color-success); }
@@ -2068,12 +2317,6 @@ onUnmounted(() => {
       color: var(--el-color-warning);
       background: var(--el-color-warning-light-9);
     }
-  }
-
-  .exchange-text {
-    &.ex-sh { color: var(--el-color-danger); }
-    &.ex-sz { color: var(--el-color-primary); }
-    &.ex-bj { color: var(--el-color-warning); }
   }
 
   /* 响应式 */

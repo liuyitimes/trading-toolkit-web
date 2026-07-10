@@ -1,6 +1,6 @@
 <template>
   <el-container class="layout-container">
-    <el-aside :width="isCollapse ? '64px' : '220px'" class="layout-aside">
+    <el-aside :width="asideWidth" class="layout-aside">
       <div class="logo" @click="router.push('/home')">
         <el-icon :size="28"><Coin /></el-icon>
         <span v-show="!isCollapse" class="logo-text">旺财百宝箱</span>
@@ -91,7 +91,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useFloatingStore } from '@/stores/floating'
@@ -104,6 +104,27 @@ const router = useRouter()
 const appStore = useAppStore()
 const floatStore = useFloatingStore()
 const isCollapse = ref(false)
+const isMobile = ref(false)
+const asideWidth = computed(() => {
+  if (isMobile.value && isCollapse.value) return '0px'
+  return isCollapse.value ? '64px' : '220px'
+})
+
+let mobileQuery
+function updateMobileLayout(event) {
+  isMobile.value = event.matches
+  if (isMobile.value) isCollapse.value = true
+}
+
+onMounted(() => {
+  mobileQuery = window.matchMedia('(max-width: 768px)')
+  updateMobileLayout(mobileQuery)
+  mobileQuery.addEventListener('change', updateMobileLayout)
+})
+
+onUnmounted(() => {
+  mobileQuery?.removeEventListener('change', updateMobileLayout)
+})
 
 // 路由切换时自动绑定当前策略
 const strategyMap = {
@@ -193,5 +214,28 @@ watch(() => route.path, (path) => {
 .layout-main {
   background-color: var(--bg-color);
   overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .layout-aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1001;
+    height: 100vh;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.16);
+  }
+
+  .layout-header {
+    padding: 0 12px;
+
+    .header-left {
+      gap: 10px;
+    }
+
+    .header-update {
+      display: none;
+    }
+  }
 }
 </style>

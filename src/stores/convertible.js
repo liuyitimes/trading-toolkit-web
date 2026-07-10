@@ -489,6 +489,13 @@ export const useConvertibleStore = defineStore('convertible', () => {
 
   function applySignals(rawSignals, pending, bondListData = []) {
     const normalized = emptySignals()
+    const signalPayload = rawSignals?.data && typeof rawSignals.data === 'object'
+      ? rawSignals.data
+      : (rawSignals || {})
+    const pendingPayload = Array.isArray(pending)
+      ? pending
+      : (Array.isArray(pending?.data) ? pending.data : [])
+
     // 将完整转债列表构建为映射表，用于补充信号数据中缺失的字段
     const bondMap = new Map()
     for (const item of bondListData) {
@@ -499,8 +506,8 @@ export const useConvertibleStore = defineStore('convertible', () => {
     // 信号 Tab 仅处理已上市转债的 4 类信号；配售 Tab 使用独立的 pendingList
     const fields = ['double_low', 'force_redeem', 'discount', 'down_revised']
     fields.forEach(field => {
-      if (rawSignals && Array.isArray(rawSignals[field])) {
-        normalized[field] = sortByBest(rawSignals[field].map(signalItem => {
+      if (Array.isArray(signalPayload[field])) {
+        normalized[field] = sortByBest(signalPayload[field].map(signalItem => {
           const code = signalItem.bond_code || signalItem.bondCode
           const fullItem = bondMap.get(code)
           if (fullItem) {
@@ -513,7 +520,7 @@ export const useConvertibleStore = defineStore('convertible', () => {
     signals.value = normalized
 
     const today = new Date().toISOString().slice(0, 10)
-    pendingList.value = (pending || [])
+    pendingList.value = pendingPayload
       .map(normalizePendingItem)
       .filter(Boolean)
       .filter(item => isPendingPlacementVisible(item, today))
@@ -564,21 +571,48 @@ export const useConvertibleStore = defineStore('convertible', () => {
     loading.value = true
     error.value = null
     try {
-      // 各接口独立请求，互不影响；任一失败也能加载其他数据
-      let rawSignals = null
-      let pending = null
-      let overview = null
-      let bondListData = null
-      try { rawSignals = await convertibleApi.signals() } catch (e) { console.error('加载信号失败:', e) }
-      try { pending = await convertibleApi.pending() } catch (e) { console.error('加载配售数据失败:', e) }
-      try { overview = await marketApi.overview() } catch (e) { console.error('加载市场概览失败:', e) }
-      try { bondListData = await convertibleApi.list({ page: 1, pageSize: 500 }) } catch (e) { console.error('加载转债列表失败:', e) }
+      const signalsPromise = convertibleApi.signals().catch(e => {
+        console.error('加载信号失败:', e)
+        return null
+      })
+      const listPromise = convertibleApi.list({ page: 1, pageSize: 500 }).catch(e => {
+        console.error('加载转债列表失败:', e)
+        return null
+      })
+      const overviewPromise = marketApi.overview().catch(e => {
+        console.error('加载市场概览失败:', e)
+        return null
+      })
+      const pendingPromise = convertibleApi.pending().catch(e => {
+        console.error('加载配售数据失败:', e)
+        return null
+      })
 
-      applySignals(rawSignals, pending, bondListData?.items || [])
-      applyMarketTemp(rawSignals, overview)
+      let bondItems = []
+      let pendingData = []
+
+      // 信号策略不等待配售、概览、全量列表接口；慢接口返回后再补齐。
+      const rawSignals = await signalsPromise
+      applySignals(rawSignals, pendingData, bondItems)
+      applyMarketTemp(rawSignals, null)
+
+      listPromise.then(bondListData => {
+        bondItems = bondListData?.items || bondListData?.data?.items || []
+        applySignals(rawSignals, pendingData, bondItems)
+      })
+
+      pendingPromise.then(pending => {
+        pendingData = pending
+        applySignals(rawSignals, pendingData, bondItems)
+      })
+
+      overviewPromise.then(overview => {
+        applyMarketTemp(rawSignals, overview)
+      })
 
       // 若 overview 未返回温度，再单独请求温度接口兜底
-      if (!overview?.convertible_bond) {
+      overviewPromise.then(async overview => {
+        if (overview?.convertible_bond) return
         try {
           const temp = await convertibleApi.temperature()
           if (temp && marketTemp.value) {
@@ -589,7 +623,7 @@ export const useConvertibleStore = defineStore('convertible', () => {
             marketTemp.value.marketStatus = temp.market_status ?? marketTemp.value.marketStatus
           }
         } catch (e) { /* ignore */ }
-      }
+      })
       lastUpdated.value = new Date().toISOString()
       useAppStore().setLastUpdated()
     } catch (err) {
