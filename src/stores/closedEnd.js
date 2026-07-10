@@ -53,6 +53,7 @@ function normalizeFundItem(raw) {
     sizeRaw: safeNum(raw.size),
     topHoldings: raw.top_holdings || [],
     type: raw.type || '封闭式基金',
+    lowLiquidity: amount < 500000,
     isFavorite: false
   }
 }
@@ -88,14 +89,14 @@ export const useClosedEndStore = defineStore('closedEnd', () => {
 
   // Mock 数据（后端 API 未就绪时的兜底）
   const mockData = [
-    { code: '505888', name: '科创50ETF封闭', nav: 1.0234, price: 0.952, maturity_date: '2027-06-30', size: 28.5, top_holdings: ['中芯国际', '海光信息', '中微公司'] },
-    { code: '505999', name: '创新药封闭', nav: 1.1567, price: 0.985, maturity_date: '2026-12-15', size: 15.2, top_holdings: ['恒瑞医药', '药明康德', '百济神州'] },
-    { code: '506000', name: '新能源封闭', nav: 0.8945, price: 0.721, maturity_date: '2025-09-30', size: 12.8, top_holdings: ['宁德时代', '隆基绿能', '通威股份'] },
-    { code: '506111', name: '消费封闭', nav: 1.3456, price: 1.198, maturity_date: '2028-03-15', size: 8.6, top_holdings: ['贵州茅台', '五粮液', '伊利股份'] },
-    { code: '506222', name: '半导体封闭', nav: 1.5678, price: 1.235, maturity_date: '2026-06-30', size: 10.3, top_holdings: ['北方华创', '韦尔股份', '兆易创新'] },
-    { code: '506333', name: '军工封闭', nav: 1.0892, price: 0.912, maturity_date: '2027-01-15', size: 6.5, top_holdings: ['中航沈飞', '航发动力', '中航光电'] },
-    { code: '506444', name: '金融封闭', nav: 1.2345, price: 1.089, maturity_date: '2025-12-31', size: 22.1, top_holdings: ['招商银行', '中信证券', '中国平安'] },
-    { code: '506555', name: '科技封闭', nav: 1.4567, price: 1.312, maturity_date: '2028-09-30', size: 18.7, top_holdings: ['海康威视', '科大讯飞', '立讯精密'] }
+    { code: '505888', name: '科创50ETF封闭', exchange: '沪', nav: 1.0234, price: 0.952, change_pct: 0.35, amount: 2850000, maturity_date: '2027-06-30', size: 28.5, top_holdings: ['中芯国际', '海光信息', '中微公司'] },
+    { code: '505999', name: '创新药封闭', exchange: '沪', nav: 1.1567, price: 0.985, change_pct: -0.82, amount: 1520000, maturity_date: '2026-12-15', size: 15.2, top_holdings: ['恒瑞医药', '药明康德', '百济神州'] },
+    { code: '506000', name: '新能源封闭', exchange: '沪', nav: 0.8945, price: 0.721, change_pct: 1.23, amount: 380000, maturity_date: '2025-09-30', size: 12.8, top_holdings: ['宁德时代', '隆基绿能', '通威股份'] },
+    { code: '150611', name: '消费封闭', exchange: '深', nav: 1.3456, price: 1.198, change_pct: -0.15, amount: 860000, maturity_date: '2028-03-15', size: 8.6, top_holdings: ['贵州茅台', '五粮液', '伊利股份'] },
+    { code: '150622', name: '半导体封闭', exchange: '深', nav: 1.5678, price: 1.235, change_pct: 2.15, amount: 5200000, maturity_date: '2026-06-30', size: 10.3, top_holdings: ['北方华创', '韦尔股份', '兆易创新'] },
+    { code: '150633', name: '军工封闭', exchange: '深', nav: 1.0892, price: 0.912, change_pct: 0.56, amount: 120000, maturity_date: '2027-01-15', size: 6.5, top_holdings: ['中航沈飞', '航发动力', '中航光电'] },
+    { code: '506444', name: '金融封闭', exchange: '沪', nav: 1.2345, price: 1.089, change_pct: -0.42, amount: 2210000, maturity_date: '2025-12-31', size: 22.1, top_holdings: ['招商银行', '中信证券', '中国平安'] },
+    { code: '506555', name: '科技封闭', exchange: '沪', nav: 1.4567, price: 1.312, change_pct: 1.78, amount: 1870000, maturity_date: '2028-09-30', size: 18.7, top_holdings: ['海康威视', '科大讯飞', '立讯精密'] }
   ]
 
   async function loadAll() {

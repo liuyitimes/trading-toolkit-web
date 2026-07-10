@@ -4,7 +4,7 @@
 
 按 `PLAN.md` Stage 1.1，以 **Convertible.vue（可转债）单页** 作为试点重写，对齐小程序功能但 **重新设计桌面版 UI，并从设计之初兼容移动端**。范围仅限可转债列表页 + 必要的基础设施修复，不涉及 Lof/Hkipo/详情页。
 
-参考蓝本：`trading-toolkit/miniprogram/pages/convertible/`（index.js / index.wxml，作为**数据模型与业务逻辑**的权威来源，不照搬视觉）。
+参考蓝本：`trading-toolkit-mp/miniprogram/pages/convertible/`（index.js / index.wxml，作为**数据模型与业务逻辑**的权威来源，不照搬视觉）。
 
 ## 现状分析（基于实际探查）
 
@@ -13,7 +13,7 @@
 - 缺失：市场温度头、信号 Tab（配售/双低/强赎/折价/下修）、配售子 Tab+排序、行内自选星标、搜索、待发配售弹窗详情、移动端适配。
 
 ### 关键基础设施 Bug（必须先修）
-- `src/api/index.js` 响应拦截器 `response => response.data` 返回的是后端统一信封 `{ success, data, meta }`（见 `trading-toolkit/cloudrun/utils/response.py` 的 `api_response`）。
+- `src/api/index.js` 响应拦截器 `response => response.data` 返回的是后端统一信封 `{ success, data, meta }`（见 `trading-toolkit-service/cloudrun/utils/response.py` 的 `api_response`）。
 - 但所有共享 `api` 消费方都按**已解包的内层 data** 使用：
   - `stores/convertible.js` `loadBonds`: `data.items`、`data.total`
   - `stores/lof.js` `loadList`: `data.items`

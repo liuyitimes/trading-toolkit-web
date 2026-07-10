@@ -139,6 +139,8 @@ function normalizeLofItem(raw) {
     amountText: amountInfo.text,
     amountLevel: amountInfo.level,
     volumeText: volumeRaw != null ? formatVolume(volumeRaw) : '--',
+    // 预期收益（按1万元申购估算）= 10000 × 净溢价 / 100
+    expectedProfit: netPremium != null ? (100 * netPremium).toFixed(0) + '元' : '--',
     isFavorite: false
   }
 
@@ -156,6 +158,9 @@ export const useLofStore = defineStore('lof', () => {
   const tier = 'beginner'
   const threshold = 10000
   const lastUpdated = ref(null)
+  const arbitragePredict = ref(null)
+  const arbitrageLoading = ref(false)
+  const arbitrageError = ref(null)
 
   async function loadList(params = {}) {
     loading.value = true
@@ -172,19 +177,67 @@ export const useLofStore = defineStore('lof', () => {
     opportunities.value = data.items || data || []
   }
 
+  async function loadArbitragePredict(code, params = {}) {
+    arbitrageLoading.value = true
+    arbitrageError.value = null
+    try {
+      const data = await lofApi.arbitragePredict(code, params)
+      arbitragePredict.value = data
+    } catch (err) {
+      arbitrageError.value = err?.message || '加载失败'
+      arbitragePredict.value = null
+    } finally {
+      arbitrageLoading.value = false
+    }
+  }
+
+  function clearArbitragePredict() {
+    arbitragePredict.value = null
+    arbitrageError.value = null
+  }
+
   // 从列表本地计算概览（summary 接口失败时的兜底）
   function computeSummaryFromList(list) {
     if (!list || list.length === 0) return null
     const premiums = list.map(i => i.premium)
     const positiveCount = premiums.filter(p => p > 0).length
+    const discountCount = premiums.filter(p => p < 0).length
+    const netPremiums = list.filter(i => i.netPremium != null).map(i => i.netPremium)
+    const totalAmount = list.reduce((sum, i) => sum + (i.amountRaw || 0), 0)
+
+    // 按板块（交易所）分组统计平均溢价
+    const boards = {}
+    list.forEach(i => {
+      const ex = i.exchange || '其他'
+      if (!boards[ex]) boards[ex] = { count: 0, premiumSum: 0 }
+      boards[ex].count++
+      boards[ex].premiumSum += i.premium
+    })
+    let topBoard = null
+    let topBoardAvg = -Infinity
+    for (const [board, stats] of Object.entries(boards)) {
+      const avg = stats.premiumSum / stats.count
+      if (avg > topBoardAvg) {
+        topBoardAvg = avg
+        topBoard = board
+      }
+    }
+
     return {
       count: list.length,
       premium_avg: premiums.reduce((a, b) => a + b, 0) / premiums.length,
       top_premium: Math.max(...premiums),
       positive_count: positiveCount,
       positive_rate: Math.round(positiveCount / list.length * 1000) / 10,
+      discount_count: discountCount,
+      sustained_count: list.filter(i => i.sustainedPremium).length,
+      limited_count: list.filter(i => i.limitAmount).length,
       paused_count: list.filter(i => i.limitStatus === '暂停').length,
-      arbitrage_count: list.filter(i => i.canArbitrage).length
+      arbitrage_count: list.filter(i => i.canArbitrage).length,
+      avg_net_premium: netPremiums.length > 0 ? netPremiums.reduce((a, b) => a + b, 0) / netPremiums.length : null,
+      total_amount: totalAmount,
+      top_premium_board: topBoard ? topBoard + '市' : '--',
+      top_board_premium_avg: topBoard ? topBoardAvg : null
     }
   }
 
@@ -206,14 +259,22 @@ export const useLofStore = defineStore('lof', () => {
 
         if (summaryResult.status === 'fulfilled' && summaryResult.value) {
           const s = summaryResult.value
+          const fallback = computeSummaryFromList(normalized)
           summary.value = {
             count: s.count ?? normalized.length,
-            premium_avg: s.premium_avg ?? '--',
-            top_premium: s.top_premium ?? '--',
-            positive_count: s.positive_count ?? '--',
-            positive_rate: s.positive_rate ?? '--',
-            paused_count: s.paused_count ?? '--',
-            arbitrage_count: normalized.filter(i => i.canArbitrage).length
+            premium_avg: s.premium_avg ?? fallback?.premium_avg ?? '--',
+            top_premium: s.top_premium ?? fallback?.top_premium ?? '--',
+            positive_count: s.positive_count ?? fallback?.positive_count ?? '--',
+            positive_rate: s.positive_rate ?? fallback?.positive_rate ?? '--',
+            discount_count: fallback?.discount_count ?? 0,
+            sustained_count: fallback?.sustained_count ?? 0,
+            limited_count: fallback?.limited_count ?? 0,
+            paused_count: s.paused_count ?? fallback?.paused_count ?? '--',
+            arbitrage_count: fallback?.arbitrage_count ?? 0,
+            avg_net_premium: fallback?.avg_net_premium ?? null,
+            total_amount: fallback?.total_amount ?? 0,
+            top_premium_board: fallback?.top_premium_board ?? '--',
+            top_board_premium_avg: fallback?.top_board_premium_avg ?? null
           }
         } else {
           summary.value = computeSummaryFromList(normalized)
@@ -237,6 +298,8 @@ export const useLofStore = defineStore('lof', () => {
   return {
     fundList, summary, opportunities, loading, error,
     tier, threshold, lastUpdated,
-    loadList, loadOpportunities, loadAll, refreshFavorites
+    arbitragePredict, arbitrageLoading, arbitrageError,
+    loadList, loadOpportunities, loadAll, refreshFavorites,
+    loadArbitragePredict, clearArbitragePredict
   }
 })

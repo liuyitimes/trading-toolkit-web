@@ -1,9 +1,9 @@
 # GitHub Actions 自动化 CI/CD Spec
 
 ## Why
-当前项目（trading-toolkit-web 前端 + trading-toolkit 后端）没有任何 CI/CD 配置，每次代码合并与部署都需要本地手动构建并自行上传，效率低且容易出错。本变更旨在引入零成本的自动构建与发布方案：
+当前项目（trading-toolkit-web 前端 + trading-toolkit-service 后端）没有任何 CI/CD 配置，每次代码合并与部署都需要本地手动构建并自行上传，效率低且容易出错。本变更旨在引入零成本的自动构建与发布方案：
 - **前端**（trading-toolkit-web）：CI（构建校验）+ CD（GitHub Pages 自动部署，稳定可靠）
-- **后端**（trading-toolkit）：CI（依赖安装 + 导入校验 + 测试脚本执行），部署仍由现有的微信云函数流程负责（国内访问极快，免费额度充足）
+- **后端**（trading-toolkit-service）：CI（依赖安装 + 导入校验 + 测试脚本执行），部署仍由现有的微信云函数流程负责（国内访问极快，免费额度充足）
 
 使 `main` 分支的每次提交都能自动构建并发布，每次 PR/push 都能自动校验构建是否通过。
 
@@ -15,11 +15,11 @@
 - 修改 `vite.config.js`：为生产构建动态设置 `base`（默认适配 `<owner>.github.io/<repo>/` 子路径，避免资源 404），保留开发模式 `base: '/'`。
 - 在 `README.md` 追加「自动化 CI/CD 与 GitHub Pages 部署说明」小节。
 
-### 后端仓库（trading-toolkit）
+### 后端仓库（trading-toolkit-service）
 - 新增 `.github/workflows/backend-ci.yml`：在 push / pull_request 时安装 cloudrun 依赖（使用 pip 清华镜像加速）并执行 `cloudrun/scripts/test_api_logs.py` 测试脚本，确保后端可正常导入与运行。
 - 后端部署不在本次范围（继续由微信云函数/CloudBase 云托管负责，国内访问快）。
 
-> 说明：本项目为前后端分离架构，后端已独立部署在微信云开发（见 `trading-toolkit/docs/deployment.md`）。本次 CI/CD 仅覆盖「自动构建校验」与「前端自动部署」，不改变后端部署方式。
+> 说明：本项目为前后端分离架构，后端已独立部署在微信云开发（见 `trading-toolkit-service/docs/deployment.md`）。本次 CI/CD 仅覆盖「自动构建校验」与「前端自动部署」，不改变后端部署方式。
 
 ## Impact
 - Affected specs: 无（首个 CI/CD 相关 spec）
@@ -29,7 +29,7 @@
     - `.github/workflows/ci.yml`（新增）
     - `.github/workflows/deploy.yml`（新增）
     - `README.md`（追加部署说明）
-  - **后端仓库**（`d:\Develop\GitHub\trading-toolkit`）：
+  - **后端仓库**（`d:\Develop\GitHub\trading-toolkit-service`）：
     - `.github/workflows/backend-ci.yml`（新增）
 - 外部依赖：
   - 前端仓库需在 GitHub Pages 设置中将 Source 切换为 "GitHub Actions"。
@@ -65,7 +65,7 @@
 - **THEN** `vite.config.js` 的 `base` 在生产构建中设置为 `/<repo>/`（或通过环境变量 `VITE_BASE_PATH` 覆盖），确保 JS/CSS/图片等资源路径正确，无 404
 
 ### Requirement: 后端 CI 构建校验
-系统 SHALL 在后端仓库（trading-toolkit）的每次 push / pull_request 时，自动触发 GitHub Actions 工作流，安装 cloudrun 依赖并执行测试脚本，用于尽早发现依赖冲突与导入错误。
+系统 SHALL 在后端仓库（trading-toolkit-service）的每次 push / pull_request 时，自动触发 GitHub Actions 工作流，安装 cloudrun 依赖并执行测试脚本，用于尽早发现依赖冲突与导入错误。
 
 #### Scenario: 后端 push 触发 CI
 - **WHEN** 开发者 push 到后端仓库任意分支

@@ -60,7 +60,7 @@
     </el-alert>
 
     <!-- 策略沙盘：参数敏感度分析 -->
-    <el-card class="sandbox-card" shadow="never">
+    <el-card v-if="appStore.showSandbox" class="sandbox-card" shadow="never">
       <template #header>
         <div class="sandbox-header" @click="sandboxOpen = !sandboxOpen">
           <span class="sandbox-title">策略沙盘 · 双低值敏感度</span>
@@ -103,6 +103,10 @@
             <div class="result-row">
               <span class="result-label">转股价值</span>
               <span class="result-value">{{ cbConvValue.toFixed(2) }} 元</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">隐含正股价</span>
+              <span class="result-value sub">{{ cbStockPrice.toFixed(2) }} 元</span>
             </div>
             <div class="result-row">
               <span class="result-label">建议</span>
@@ -184,7 +188,7 @@
                   <div class="ft-subtitle">评分维度</div>
                   <div class="ft-detail">· 安全垫（收益风险比）</div>
                   <div class="ft-detail">· 百元含权（配售性价比）</div>
-                  <div class="ft-detail">· 流通盘（上市弹性）</div>
+                  <div class="ft-detail">· 首日可交易量（上市弹性）</div>
                   <div class="ft-detail">· 正股趋势（短期动能）</div>
                   <div class="ft-divider"></div>
                   <div class="ft-subtitle">分档标准</div>
@@ -208,11 +212,11 @@
                   <div class="ft-section">
                     <div class="ft-subtitle">计算过程</div>
                     <div class="ft-detail">预估收益 = 1000 × 20% = <b>200元</b></div>
-                    <div class="ft-detail" v-if="row._sharesFor10Raw != null && row._stockPriceRaw != null">
-                      配售成本 = {{ row._sharesFor10Raw }}股 × {{ row._stockPriceRaw.toFixed(2) }}元
+                    <div class="ft-detail" v-if="row._actualSharesFor1Lot > 0 && row._stockPriceRaw > 0">
+                      配售成本 = {{ row._actualSharesFor1Lot }}股 × {{ row._stockPriceRaw.toFixed(2) }}元
                       = <b>{{ Math.round(row._costFor10LotsRaw) }}元</b>
                     </div>
-                    <div class="ft-detail" v-if="row._safetyPadRaw != null">
+                    <div class="ft-detail" v-if="row._safetyPadRaw > 0 && row._costFor10LotsRaw > 0">
                       安全垫 = 200 ÷ {{ Math.round(row._costFor10LotsRaw) }} × 100%
                       = <b>{{ row._safetyPadRaw.toFixed(2) }}%</b>
                     </div>
@@ -224,61 +228,16 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="每股/配10手" width="170">
+        <el-table-column label="成本" width="170">
           <template #default="{ row }">
-            <el-tooltip placement="top" :show-after="300">
-              <template #content>
-                <div class="formula-tip">
-                  <div class="ft-formula">每股配售 = 发行规模 ÷ 原股东股本总数</div>
-                  <div class="ft-section" v-if="row._perShareRaw != null">
-                    <div class="ft-subtitle">计算过程</div>
-                    <div class="ft-detail" v-if="row._issueSizeRaw != null">
-                      发行规模 = <b>{{ row._issueSizeRaw.toFixed(2) }}亿</b>
-                    </div>
-                    <div class="ft-detail" v-if="row._perShareRaw != null">
-                      每股配售 = <b>{{ row._perShareRaw.toFixed(4) }}元/股</b>
-                    </div>
-                    <div class="ft-detail" v-if="row._perShareRaw != null && row._issueSizeRaw != null">
-                      推算总股本 = {{ row._issueSizeRaw.toFixed(2) }}亿 × 10000 ÷ {{ row._perShareRaw.toFixed(4) }}
-                      = <b>{{ (row._issueSizeRaw * 1e8 / row._perShareRaw / 1e8).toFixed(2) }}亿股</b>
-                    </div>
-                  </div>
-                  <div class="ft-divider"></div>
-                  <div class="ft-subtitle">配10张需股数</div>
-                  <div class="ft-detail">公式：1000 ÷ 每股配售</div>
-                  <div class="ft-detail" v-if="row._perShareRaw != null && row._sharesFor10Raw != null">
-                    计算：1000 ÷ {{ row._perShareRaw.toFixed(4) }}
-                    = <b>{{ row._sharesFor10Raw }}股</b>
-                  </div>
-                  <div class="ft-detail" v-if="row._sharesFor10Raw != null && row._stockPriceRaw != null">
-                    成本：{{ row._sharesFor10Raw }}股 × {{ row._stockPriceRaw.toFixed(2) }}元
-                    = <b>{{ Math.round(row._costFor10LotsRaw) }}元</b>
-                  </div>
-                  <div class="ft-divider"></div>
-                  <div class="ft-subtitle">沪深配售规则</div>
-                  <div class="ft-detail"><b>沪市：</b>按手配售，1手 = 10张</div>
-                  <div class="ft-detail"><b>深市：</b>按张配售，最小1张</div>
-                  <div class="ft-note">不足1手/1张部分按精确算法 rounding</div>
-                  <template v-if="row.exchange === '沪' && row._oneHandMinShares > 0">
-                    <div class="ft-divider"></div>
-                    <div class="ft-subtitle">一手党（仅沪市）</div>
-                    <div class="ft-detail">只申购1手，需正股数 ≈ 配10张股数 × 60%</div>
-                    <div class="ft-detail" v-if="row._sharesFor10Raw != null">
-                      计算：{{ row._sharesFor10Raw }} × 0.6
-                      = <b>{{ row._oneHandMinShares }}股</b>
-                    </div>
-                    <div class="ft-detail" v-if="row._stockPriceRaw != null">
-                      最低成本：{{ row._oneHandMinShares }} × {{ row._stockPriceRaw.toFixed(2) }}
-                      = <b>{{ row._oneHandMinCostRaw }}元</b>
-                    </div>
-                    <div class="ft-note">资金占用约 {{ Math.round(row._oneHandMinCostRaw / row._costFor10LotsRaw * 100) }}%，中签率也相应降低</div>
-                  </template>
-                </div>
-              </template>
-              <div class="sub-info hover-value">每股 {{ row.perShare }}</div>
-              <div class="sub-info hover-value">配1手 {{ row.sharesFor10 }} ≈ {{ row.costFor10Lots }}</div>
-              <div class="sub-info onehand hover-value" v-if="row.oneHandMinCost">一手党最低≈{{ row.oneHandMinCost }}</div>
-            </el-tooltip>
+            <div class="cost-cell" @click.stop="openCostDialog(row)">
+              <div class="sub-info">每股 {{ row.perShare }}</div>
+              <div class="sub-info cost-value" v-if="row._costPerLotRaw > 0">
+                {{ row.costPerLot }}
+                <span class="cost-shares">（需买入 {{ row._actualSharesFor1Lot }}股）</span>
+              </div>
+              <div class="sub-info onehand" v-if="row.oneHandMinCost">一手党最低≈ {{ row.oneHandMinCost }}</div>
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="百元含权" width="100" align="right">
@@ -287,7 +246,7 @@
               <template #content>
                 <div class="formula-tip">
                   <div class="ft-formula">百元含权 = 每股配售 ÷ 正股价 × 100</div>
-                  <div class="ft-section" v-if="row._perShareRaw != null && row._stockPriceRaw != null">
+                  <div class="ft-section" v-if="row._perShareRaw > 0 && row._stockPriceRaw > 0">
                     <div class="ft-subtitle">计算过程</div>
                     <div class="ft-detail">每股配售 = <b>{{ row._perShareRaw.toFixed(4) }}元</b></div>
                     <div class="ft-detail">正股价 = <b>{{ row._stockPriceRaw.toFixed(2) }}元</b></div>
@@ -303,32 +262,32 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="流通盘" width="130" align="right">
+        <el-table-column label="首日可交易量" width="130" align="right">
           <template #default="{ row }">
             <el-tooltip placement="top" :show-after="300">
               <template #content>
                 <div class="formula-tip">
-                  <div class="ft-formula">流通盘 = 发行规模 × (1 - 股东配售率)</div>
+                  <div class="ft-formula">首日可交易量 = 发行规模 − 原股东配售部分</div>
                   <div class="ft-section">
                     <div class="ft-subtitle">计算过程</div>
-                    <div class="ft-detail" v-if="row._issueSizeRaw != null">
+                    <div class="ft-detail" v-if="row._issueSizeRaw > 0">
                       发行规模 = <b>{{ row._issueSizeRaw.toFixed(2) }}亿</b>
                     </div>
-                    <div class="ft-detail" v-if="row._shareholderRatioRaw != null">
-                      股东配售率 = <b>{{ row._shareholderRatioRaw.toFixed(1) }}%</b>
+                    <div class="ft-detail" v-if="row._shareholderRatioRaw > 0">
+                      原股东配售率 = <b>{{ row._shareholderRatioRaw.toFixed(1) }}%</b>
                     </div>
-                    <div class="ft-detail" v-if="row._issueSizeRaw != null && row._shareholderRatioRaw != null">
-                      流通盘 = {{ row._issueSizeRaw.toFixed(2) }} × (1 - {{ (row._shareholderRatioRaw / 100).toFixed(2) }})
-                      = <b>{{ row._floatSharesRaw.toFixed(2) }}亿</b>
+                    <div class="ft-detail" v-if="row._issueSizeRaw > 0 && row._shareholderRatioRaw > 0">
+                      首日可交易量 = {{ row._issueSizeRaw.toFixed(2) }} × (1 − {{ (row._shareholderRatioRaw / 100).toFixed(2) }})
+                      = <b>{{ row._tradableAmountRaw.toFixed(2) }}亿</b>
                     </div>
-                    <div class="ft-detail" v-else-if="row._floatSharesRaw != null">
-                      流通盘 = <b>{{ row._floatSharesRaw.toFixed(2) }}亿</b>
+                    <div class="ft-detail" v-else-if="row._tradableAmountRaw > 0">
+                      首日可交易量 = <b>{{ row._tradableAmountRaw.toFixed(2) }}亿</b>
                     </div>
                   </div>
-                  <div class="ft-note">流通盘越小，上市后弹性越大</div>
+                  <div class="ft-note">含大股东锁定6个月部分，首日可交易量越小，上市后弹性越大</div>
                 </div>
               </template>
-              <span class="hover-value">{{ row.floatShares }}</span>
+              <span class="hover-value">{{ row.tradableAmount }}</span>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -355,7 +314,7 @@
             <div><span class="mc-label">安全垫</span><span :class="safetyPadClass(row._safetyPadRaw)">{{ row.safetyPad }}</span></div>
             <div><span class="mc-label">收益</span><span class="hl">{{ row.expectedProfit }}</span></div>
             <div><span class="mc-label">规模</span>{{ row.issueSize }}</div>
-            <div><span class="mc-label">流通盘</span>{{ row.floatShares }}</div>
+            <div><span class="mc-label">可交易量</span>{{ row.tradableAmount }}</div>
           </div>
         </el-card>
       </div>
@@ -370,9 +329,9 @@
         :data="signalList"
         class="desktop-table"
         stripe
-        @row-click="(row) => goDetail(row.bondCode)"
+        @row-click="(row) => openSignalDetail(row)"
       >
-        <el-table-column label="转债" min-width="200">
+        <el-table-column label="转债" min-width="210">
           <template #default="{ row }">
             <div class="name-cell">
               <div class="name-line">
@@ -385,6 +344,7 @@
               <div class="code-line">
                 <span class="code-text">{{ row.bondCode }}</span>
                 <span class="stock-name">{{ row.stockName }}</span>
+                <span class="rating-badge">{{ row.rating }}</span>
               </div>
             </div>
           </template>
@@ -400,26 +360,55 @@
             溢价率<FormulaInfo
               formula="(转债价格 - 转股价值) / 转股价值 × 100%"
               example="价格 110，转股价值 120 → 溢价率 = -8.33%"
-              note="负溢价说明转债被低估"
+              note="负溢价说明转债被低估，存在套利空间"
             />
           </template>
           <template #default="{ row }">
             <span :class="['premium-value', row.premiumClass]">{{ row.premium }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="extraConfig.label" width="120" align="right">
+        <el-table-column
+          v-for="col in signalColumns"
+          :key="col.key"
+          :width="col.width"
+          align="right"
+        >
+          <template #header>
+            {{ col.label }}<FormulaInfo
+              v-if="col.formula"
+              :formula="col.formula"
+              :example="col.example"
+              :note="col.note"
+            />
+          </template>
           <template #default="{ row }">
-            <span :class="extraConfig.cls(row)">{{ extraConfig.val(row) }}</span>
+            <span :class="col.cls(row)">{{ col.val(row) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="剩余规模" width="100" align="right">
+          <template #default="{ row }">
+            <span class="hover-value">{{ row.remainingSize }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="成交量" width="100" align="right">
+          <template #default="{ row }">
+            <span class="hover-value">{{ row.volume }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="成交额" width="110" align="right">
+          <template #default="{ row }">
+            <span class="hover-value">{{ row.amount }}</span>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 移动端卡片 -->
       <div class="mobile-cards">
-        <el-card v-for="row in signalList" :key="row.bondCode" class="mobile-card" shadow="hover" @click="goDetail(row.bondCode)">
+        <el-card v-for="row in signalList" :key="row.bondCode" class="mobile-card" shadow="hover" @click="openSignalDetail(row)">
           <div class="mc-head">
             <span class="exchange-badge" :class="exchangeClass(row.exchange)" v-if="row.exchange">{{ row.exchange }}</span>
             <span class="bond-name">{{ row.bondName }}</span>
+            <span class="rating-badge">{{ row.rating }}</span>
             <el-icon class="fav-icon" :class="{ active: row.isFavorite }" @click.stop="toggleFav(row)">
               <StarFilled v-if="row.isFavorite" /><Star v-else />
             </el-icon>
@@ -432,7 +421,12 @@
             <div><span class="mc-label">价格</span>{{ row.price }}</div>
             <div><span class="mc-label">正股</span>{{ row.stockPrice }}</div>
             <div><span class="mc-label">溢价</span><span :class="row.premiumClass">{{ row.premium }}</span></div>
-            <div><span class="mc-label">{{ extraConfig.label }}</span><span :class="extraConfig.cls(row)">{{ extraConfig.val(row) }}</span></div>
+            <div v-for="col in signalColumns" :key="col.key">
+              <span class="mc-label">{{ col.label }}</span>
+              <span :class="col.cls(row)">{{ col.val(row) }}</span>
+            </div>
+            <div><span class="mc-label">规模</span>{{ row.remainingSize }}</div>
+            <div><span class="mc-label">成交</span>{{ row.volume }}</div>
           </div>
         </el-card>
       </div>
@@ -453,9 +447,20 @@
     >
       <template #header>
         <div class="dialog-header-stock">
-          <span class="dialog-stock-title" v-if="pendingDetail">
-            {{ pendingDetail.stockName }} ({{ pendingDetail.stockCode }})
-          </span>
+          <div class="dialog-header-left">
+            <span class="dialog-stock-title" v-if="pendingDetail">
+              {{ pendingDetail.stockName }} ({{ pendingDetail.stockCode }})
+            </span>
+            <el-tag
+              v-if="pendingDetail && pendingDetail.sectorTag !== '--'"
+              size="small"
+              :type="pendingDetail.isHotSector ? 'danger' : 'info'"
+              effect="light"
+              class="dialog-sector-tag"
+            >
+              {{ pendingDetail.sectorTag }}<span v-if="pendingDetail.isHotSector">🔥</span>
+            </el-tag>
+          </div>
           <a
             v-if="pendingDetail && pendingDetail.stockCode && pendingDetail.stockCode !== '--'"
             class="ext-link"
@@ -470,48 +475,62 @@
         </div>
       </template>
       <template v-if="pendingDetail">
-        <!-- 核心指标 -->
-        <div class="detail-section">
-          <div class="detail-section-title">核心指标</div>
-          <div class="detail-grid">
-            <div class="detail-item hl-box"><span class="detail-label">安全垫</span><span class="detail-value hl">{{ pendingDetail.safetyPad }}</span></div>
-            <div class="detail-item hl-box"><span class="detail-label">百元含权</span><span class="detail-value hl">{{ pendingDetail.cashRatio }}</span></div>
-            <div class="detail-item hl-box"><span class="detail-label">预估收益(10张)</span><span class="detail-value hl">{{ pendingDetail.expectedProfit }}</span></div>
-            <div class="detail-item"><span class="detail-label">每股配售</span><span class="detail-value">{{ pendingDetail.perShare }}</span></div>
-            <div class="detail-item"><span class="detail-label">配10张需</span><span class="detail-value">{{ pendingDetail.sharesFor10 }}</span></div>
-            <div class="detail-item"><span class="detail-label">一手党最低</span><span class="detail-value">{{ pendingDetail.oneHandMinCost || '--' }}</span></div>
-          </div>
-        </div>
-
         <!-- 发行进度 -->
         <div class="detail-section">
           <div class="detail-section-title">发行进度</div>
-          <!-- 当前节点 & 下一节点 -->
-          <div class="stage-progress-info">
-            <div class="stage-progress-item current">
-              <span class="stage-progress-label">当前节点</span>
-              <span class="stage-progress-value">
-                {{ currentStage.name }}
-                <span v-if="currentStage.date" class="stage-progress-date">{{ currentStage.date }}</span>
-              </span>
-            </div>
-            <div v-if="hasFutureStages" class="stage-progress-item next">
-              <span class="stage-progress-label">下一节点</span>
-              <span class="stage-progress-value">
-                {{ nextStage.name }}
-                <span v-if="nextStage.date" class="stage-progress-date">{{ nextStage.date }}</span>
-              </span>
+
+          <!-- 时间轴 -->
+          <div class="detail-timeline">
+            <div
+              v-for="(s, i) in visibleStageList"
+              :key="i"
+              class="timeline-node"
+              :class="{ active: s.status === 'current', done: s.status === 'done' }"
+            >
+              <div class="timeline-dot"></div>
+              <div class="timeline-line" v-if="i < visibleStageList.length - 1"></div>
+              <div class="timeline-label">
+                <div class="timeline-name">{{ s.name }}</div>
+                <div class="timeline-date">{{ s.date || '--' }}</div>
+              </div>
             </div>
           </div>
-          <el-steps :active="currentStageIndex" align-center finish-status="success" class="detail-timeline">
-            <el-step v-for="(s, i) in visibleStageList" :key="i" :title="s.name">
-              <template #description>
-                <div v-if="s.date" class="stage-date">{{ s.date }}</div>
-                <div v-if="s.status === 'current' && getStageDaysLabel(s._origIndex)" class="stage-days" :class="getStageDaysClass(s._origIndex)">{{ getStageDaysLabel(s._origIndex) }}</div>
-                <div v-if="s.status === 'current' && getStageRegInfo(s._origIndex)" class="stage-reg-info">{{ getStageRegInfo(s._origIndex) }}</div>
-              </template>
-            </el-step>
-          </el-steps>
+
+          <!-- 当前 & 下一节点 -->
+          <div class="stage-progress-info">
+            <div class="stage-progress-item current">
+              <div class="stage-progress-dot"></div>
+              <div class="stage-progress-body">
+                <span class="stage-progress-label">当前节点</span>
+                <span class="stage-progress-value">{{ currentStage.name }}</span>
+                <span v-if="currentStage.date" class="stage-progress-date">{{ currentStage.date }}</span>
+              </div>
+            </div>
+            <div v-if="hasFutureStages" class="stage-progress-item next">
+              <div class="stage-progress-dot"></div>
+              <div class="stage-progress-body">
+                <span class="stage-progress-label">下一节点</span>
+                <span class="stage-progress-value">{{ nextStage.name }}</span>
+                <span v-if="nextStage.date" class="stage-progress-date">{{ nextStage.date }}</span>
+              </div>
+            </div>
+          </div>
+                    <!-- 登记日倒计时 -->
+          <div v-if="regCountdown.show" class="reg-countdown" :class="regCountdown.level">
+            <div class="reg-countdown-icon">
+              <el-icon :size="20"><Calendar /></el-icon>
+            </div>
+            <div class="reg-countdown-content">
+              <div class="reg-countdown-title">
+                距股权登记日还有
+                <span class="reg-countdown-days">{{ regCountdown.days }}</span>
+                天
+              </div>
+              <div class="reg-countdown-sub">{{ pendingDetail.regDate }}（{{ regCountdown.weekday }}）</div>
+            </div>
+            <div v-if="regCountdown.isToday" class="reg-countdown-badge">今日登记</div>
+          </div>
+
         </div>
 
         <!-- 正股风险 -->
@@ -544,14 +563,226 @@
           </div>
         </div>
 
-        <!-- 所属板块 -->
+        <!-- 核心指标 -->
         <div class="detail-section">
-          <div class="detail-section-title">所属板块</div>
-          <div class="sector-row">
-            <el-tag v-if="pendingDetail.sectorTag !== '--'" :type="pendingDetail.isHotSector ? 'danger' : 'info'" effect="light">
-              {{ pendingDetail.sectorTag }}<span v-if="pendingDetail.isHotSector">🔥</span>
+          <div class="detail-section-title">核心指标</div>
+          <div class="detail-grid">
+            <div class="detail-item hl-box"><span class="detail-label">安全垫</span><span class="detail-value hl">{{ pendingDetail.safetyPad }}</span></div>
+            <div class="detail-item hl-box"><span class="detail-label">百元含权</span><span class="detail-value hl">{{ pendingDetail.cashRatio }}</span></div>
+            <div class="detail-item hl-box"><span class="detail-label">预估收益(10张)</span><span class="detail-value hl">{{ pendingDetail.expectedProfit }}</span></div>
+            <div class="detail-item"><span class="detail-label">每股配售</span><span class="detail-value">{{ pendingDetail.perShare }}</span></div>
+            <div class="detail-item"><span class="detail-label">配10张需</span><span class="detail-value">{{ pendingDetail.sharesFor10 }}</span></div>
+            <div class="detail-item"><span class="detail-label">一手党最低</span><span class="detail-value">{{ pendingDetail.oneHandMinCost || '--' }}</span></div>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 获配每手成本说明弹窗 -->
+    <el-dialog v-model="costDialogVisible" title="获配每手成本说明" width="560px" :fullscreen="isMobile" class="cost-dialog">
+      <div v-if="costDialogRow">
+        <!-- 第一部分：1-5手配售参数表格 -->
+        <el-table v-if="costTableData.length" :data="costTableData" border size="small" style="width: 100%; margin-bottom: 16px;">
+          <el-table-column prop="lots" label="手数" width="70" align="center">
+            <template #default="{ row }">{{ row.lots }}手</template>
+          </el-table-column>
+          <el-table-column prop="perShare" label="每股配售额" align="center" />
+          <el-table-column prop="theoreticalShares" label="理论股数" align="center" />
+          <el-table-column prop="actualShares" label="实际所需股数" align="center" />
+          <el-table-column prop="minCost" label="最低资金" align="center" />
+        </el-table>
+        <div v-else style="text-align: center; padding: 20px; color: #999;">暂无数据</div>
+
+        <!-- 第二部分：一手党成功率参考（仅沪市） -->
+        <div v-if="oneHandTierData.length" class="tier-section">
+          <div class="tier-section-title">一手党成功率参考</div>
+          <el-table :data="oneHandTierData" border size="small" style="width: 100%; margin-bottom: 16px;">
+            <el-table-column prop="ratio" label="成功率档位" width="100" align="center">
+              <template #default="{ row }">
+                <span :class="{ 'tier-recommended': row.isRecommended }">{{ row.ratio }}</span>
+                <el-tag v-if="row.isRecommended" size="small" type="warning" effect="plain" style="margin-left: 4px;">推荐</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="rawShares" label="理论股数" align="center" />
+            <el-table-column prop="actualShares" label="实际所需股数" align="center" />
+            <el-table-column prop="cost" label="所需成本" align="center" />
+          </el-table>
+          <div class="tier-note">沪市精确算法下，不同持股比例的获配成功率参考。60% 为实操经验值。</div>
+        </div>
+
+        <!-- 第三部分：可折叠公式说明 -->
+        <el-collapse>
+          <el-collapse-item title="计算公式说明">
+            <div class="ft-formula">
+              <div class="ft-step">① 配售额度</div>
+              <div>每股配售额 = 发行规模 ÷ 总股本</div>
+              <div>配10张需股数 = 1000 ÷ 每股配售额</div>
+              <div class="ft-step">② 股数计算（A股需100股整数倍）</div>
+              <div>理论股数 = 配10张需股数 × 手数</div>
+              <div>实际购买股数 = ⌈理论股数 ÷ 100⌉ × 100</div>
+              <div class="ft-step">③ 资金计算</div>
+              <div>最低资金 = 实际购买股数 × 正股价格</div>
+            </div>
+          </el-collapse-item>
+          <el-collapse-item title="沪深配售规则">
+            <div class="ft-detail">
+              <div><b>沪市：</b>按手申购，1手 = 10张 = 1000元</div>
+              <div><b>深市：</b>按张申购，1张 = 100元</div>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--el-border-color-lighter);">
+                <div style="font-weight: 600; margin-bottom: 4px;">沪市一手党说明</div>
+                <div>一手党指只申购 1 手（10 张）可转债的投资者。</div>
+                <div>沪市采用精确算法配售，不足1手的尾数按大小排序进位。</div>
+                <div>理论最低只需持有 50% 股数（0.5手四舍五入为1手），实操建议持有 60% 以提高成功率。</div>
+                <div>实际购买股数 = ⌈配10张需股数 × 60% ÷ 100⌉ × 100（向上取整到100股整数倍）。</div>
+              </div>
+            </div>
+          </el-collapse-item>
+        </el-collapse>
+      </div>
+    </el-dialog>
+
+    <!-- 信号详情弹窗 -->
+    <el-dialog
+      v-model="signalDialogVisible"
+      width="640px"
+      :fullscreen="isMobile"
+      class="signal-dialog"
+    >
+      <template #header>
+        <div class="dialog-header-stock">
+          <div class="dialog-header-left">
+            <span class="dialog-stock-title" v-if="signalDetail">
+              {{ signalDetail.bondName }} ({{ signalDetail.bondCode }})
+            </span>
+            <el-tag
+              v-if="signalDetail && signalDetail.rating !== '--'"
+              size="small"
+              type="info"
+              effect="light"
+              class="dialog-sector-tag"
+            >
+              {{ signalDetail.rating }}
             </el-tag>
-            <span v-else>--</span>
+          </div>
+          <a
+            v-if="signalDetail && signalDetail.stockCode && signalDetail.stockCode !== '--'"
+            class="ext-link"
+            :href="`https://finance.baidu.com/stock/ab-${signalDetail.stockCode}?openFinScope=1`"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="百度财经行情"
+            @click.stop
+          >
+            <el-icon><TopRight /></el-icon>
+          </a>
+        </div>
+      </template>
+      <template v-if="signalDetail">
+        <div class="detail-section">
+          <div class="detail-section-title">基础信息</div>
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="转债名称">{{ signalDetail.bondName }}</el-descriptions-item>
+            <el-descriptions-item label="转债代码">{{ signalDetail.bondCode }}</el-descriptions-item>
+            <el-descriptions-item label="正股名称">{{ signalDetail.stockName }}</el-descriptions-item>
+            <el-descriptions-item label="正股代码">{{ signalDetail.stockCode || '--' }}</el-descriptions-item>
+            <el-descriptions-item label="交易所">
+              <span :class="exchangeClass(signalDetail.exchange) + ' exchange-text'">{{ signalDetail.exchange || '--' }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="评级">{{ signalDetail.rating || '--' }}</el-descriptions-item>
+            <el-descriptions-item label="转债价格">
+              <span class="hl">{{ signalDetail.price }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="正股价格">
+              <span>{{ signalDetail.stockPrice }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="溢价率">
+              <span :class="['premium-value', signalDetail.premiumClass]">{{ signalDetail.premium }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="转股价值">
+              <span>{{ signalDetail.conversionValue }}</span>
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">关键指标</div>
+          <div class="metric-grid">
+            <div class="metric-item">
+              <div class="metric-label">双低值</div>
+              <div class="metric-value" :class="{ hl: signalDetail._doubleLowRaw > 0 }">{{ signalDetail.doubleLow }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">纯债价值</div>
+              <div class="metric-value">{{ signalDetail.pureBondValue }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">到期收益率</div>
+              <div class="metric-value" :class="{ positive: signalDetail._ytmRaw != null && signalDetail._ytmRaw > 0 }">{{ signalDetail.ytm }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">剩余规模</div>
+              <div class="metric-value">{{ signalDetail.remainingSize }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">成交量</div>
+              <div class="metric-value">{{ signalDetail.volume }}</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">成交额</div>
+              <div class="metric-value">{{ signalDetail.amount }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">强赎风险</div>
+          <div v-if="signalDetail._conversionPriceRaw > 0" class="risk-block">
+            <el-descriptions :column="2" border size="small">
+              <el-descriptions-item label="转股价">{{ signalDetail.conversionPrice }}</el-descriptions-item>
+              <el-descriptions-item label="强赎触发价">{{ signalDetail.forceTriggerPrice }}</el-descriptions-item>
+              <el-descriptions-item label="距强赎线">
+                <span :class="signalDetail.forceRedemptionClass ? 'warning' : ''">{{ signalDetail.forceRedemptionGap }}</span>
+              </el-descriptions-item>
+              <el-descriptions-item label="正股价">{{ signalDetail.stockPrice }}</el-descriptions-item>
+            </el-descriptions>
+            <div class="risk-hint" :class="signalDetail.forceRedemptionClass ? 'risk-warning' : ''">
+              <el-icon><Warning v-if="signalDetail._forcePriceGap >= 0" /><Check v-else /></el-icon>
+              {{ signalDetail._forcePriceGap >= 0 ? '已接近/触发强赎区域，注意风险' : '处于安全区域' }}
+            </div>
+          </div>
+          <el-empty v-else description="暂无数据" :image-size="60" />
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">下修机会</div>
+          <div v-if="signalDetail._conversionPriceRaw > 0" class="risk-block">
+            <el-descriptions :column="2" border size="small">
+              <el-descriptions-item label="转股价">{{ signalDetail.conversionPrice }}</el-descriptions-item>
+              <el-descriptions-item label="下修触发价">{{ signalDetail.reviseTriggerPrice }}</el-descriptions-item>
+              <el-descriptions-item label="距下修线">
+                <span :class="signalDetail.downReviseClass ? 'warning' : ''">{{ signalDetail.downReviseGap }}</span>
+              </el-descriptions-item>
+              <el-descriptions-item label="到期日">{{ signalDetail.maturityDate }}</el-descriptions-item>
+            </el-descriptions>
+            <div class="risk-hint" :class="signalDetail.downReviseClass ? 'risk-warning' : ''">
+              <el-icon><InfoFilled v-if="signalDetail._revisePriceGap < 0" /><Check v-else /></el-icon>
+              {{ signalDetail._revisePriceGap < 0 ? '正股已跌破下修线，可能触发下修' : '未触发下修' }}
+            </div>
+          </div>
+          <el-empty v-else description="暂无数据" :image-size="60" />
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">操作</div>
+          <div class="action-buttons">
+            <el-button
+              :type="userStore.isFavorite('convertible', signalDetail.bondCode) ? 'warning' : 'default'"
+              @click="toggleFav(signalDetail)"
+              style="width: 100%"
+            >
+              <el-icon><StarFilled v-if="userStore.isFavorite('convertible', signalDetail.bondCode)" /><Star v-else /></el-icon>
+              {{ userStore.isFavorite('convertible', signalDetail.bondCode) ? '取消自选' : '加入自选' }}
+            </el-button>
           </div>
         </div>
       </template>
@@ -566,7 +797,7 @@
 import { ref, computed, onMounted, onActivated, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, Star, StarFilled, ArrowDown, TopRight } from '@element-plus/icons-vue'
+import { Search, Star, StarFilled, ArrowDown, TopRight, Calendar, Warning, Check, InfoFilled } from '@element-plus/icons-vue'
 import { useConvertibleStore } from '@/stores/convertible'
 import { useUserStore } from '@/stores/user'
 import TierBadge from '@/components/TierBadge.vue'
@@ -574,7 +805,9 @@ import TimeStamp from '@/components/TimeStamp.vue'
 import FormulaInfo from '@/components/FormulaInfo.vue'
 import SensitivitySlider from '@/components/SensitivitySlider.vue'
 import FormulaRecall from '@/components/FormulaRecall.vue'
+import { useAppStore } from '@/stores/app'
 
+const appStore = useAppStore()
 const router = useRouter()
 const store = useConvertibleStore()
 const userStore = useUserStore()
@@ -587,13 +820,20 @@ const tabs = [
   { key: 'down_revised', label: '下修' }
 ]
 
-// 策略沙盘
-const sandboxOpen = ref(false)
+// 策略沙盘（默认展开，避免用户误以为数据缺失）
+const sandboxOpen = ref(true)
 const cbSandbox = ref({ price: 105, premium: 10, convPrice: 10 })
 const cbDoubleLow = computed(() => cbSandbox.value.price + cbSandbox.value.premium)
 const cbConvValue = computed(() => {
   const s = cbSandbox.value
-  return s.convPrice > 0 ? (100 / s.convPrice * (s.price / (1 + s.premium / 100))).toFixed(2) * 1 : 0
+  // 转股价值 = 转债价格 / (1 + 溢价率/100)
+  // 由溢价率定义反推：溢价率 = (价格 - 转股价值) / 转股价值 × 100%
+  return s.convPrice > 0 ? +(s.price / (1 + s.premium / 100)).toFixed(2) : 0
+})
+const cbStockPrice = computed(() => {
+  const s = cbSandbox.value
+  // 隐含正股价 = 转股价值 × 转股价 / 100
+  return s.convPrice > 0 ? +(cbConvValue.value * s.convPrice / 100).toFixed(2) : 0
 })
 const cbAdvice = computed(() => {
   const dl = cbDoubleLow.value
@@ -627,6 +867,51 @@ const searchKeyword = ref('')
 const showAll = ref(false)
 const pendingDialogVisible = ref(false)
 const pendingDetail = ref(null)
+const costDialogVisible = ref(false)
+const costDialogRow = ref(null)
+const signalDialogVisible = ref(false)
+const signalDetail = ref(null)
+const costTableData = computed(() => {
+  const row = costDialogRow.value
+  if (!row || !row._sharesPerLotRaw) return []
+  const sharesPerLot = row._sharesPerLotRaw
+  const perShare = row._perShareRaw
+  const stockPrice = row._stockPriceRaw || 0
+
+  return Array.from({ length: 5 }, (_, i) => {
+    const n = i + 1
+    const theoreticalShares = sharesPerLot * n
+    const actualShares = Math.ceil(theoreticalShares / 100) * 100
+    const minCost = actualShares * stockPrice
+    return {
+      lots: n,
+      perShare: perShare > 0 ? perShare.toFixed(4) + '元' : '-',
+      theoreticalShares: theoreticalShares.toFixed(0) + '股',
+      actualShares: actualShares + '股',
+      minCost: minCost > 0 ? Math.round(minCost) + '元' : '-'
+    }
+  })
+})
+// 一手党多档位成功率参考（仅沪市）
+const oneHandTierData = computed(() => {
+  const row = costDialogRow.value
+  if (!row || row.exchange !== '沪' || !row._sharesFor10Raw) return []
+  const sharesFor10 = row._sharesFor10Raw
+  const stockPrice = row._stockPriceRaw || 0
+  const tiers = [0.5, 0.6, 0.7, 0.8, 1.0]
+  return tiers.map(ratio => {
+    const rawShares = sharesFor10 * ratio
+    const actualShares = Math.ceil(rawShares / 100) * 100
+    const cost = actualShares * stockPrice
+    return {
+      ratio: Math.round(ratio * 100) + '%',
+      rawShares: rawShares.toFixed(0) + '股',
+      actualShares: actualShares + '股',
+      cost: cost > 0 ? Math.round(cost) + '元' : '-',
+      isRecommended: ratio === 0.6
+    }
+  })
+})
 const premiumRate = ref(20)
 const isMobile = ref(false)
 
@@ -640,7 +925,7 @@ const placementSubs = [
 const sortFields = [
   { field: 'safetyPad', label: '安全垫' },
   { field: 'cashRatio', label: '含权' },
-  { field: 'floatShares', label: '流通盘' }
+  { field: 'tradableAmount', label: '可交易量' }
 ]
 
 const marketTemp = computed(() => store.marketTemp)
@@ -679,7 +964,7 @@ function sortPendingBy(list, field, asc) {
     if (field === 'cashRatio') { va = a._cashRatioRaw || 0; vb = b._cashRatioRaw || 0 }
     else if (field === 'safetyPad') { va = a._safetyPadRaw || 0; vb = b._safetyPadRaw || 0 }
     else if (field === 'issueSize') { va = a._issueSizeRaw || 0; vb = b._issueSizeRaw || 0 }
-    else if (field === 'floatShares') { va = a._floatSharesRaw || 0; vb = b._floatSharesRaw || 0 }
+    else if (field === 'tradableAmount') { va = a._tradableAmountRaw || 0; vb = b._tradableAmountRaw || 0 }
     else if (field === 'stockChange') { va = a._stockChangeRaw || 0; vb = b._stockChangeRaw || 0 }
     else if (field === 'composite') { va = a._compositeRankRaw || 0; vb = b._compositeRankRaw || 0 }
     return asc ? va - vb : vb - va
@@ -704,11 +989,36 @@ const filteredPlacement = computed(() => {
   return matchSearch(list)
 })
 
-const extraConfig = computed(() => {
-  if (activeTab.value === 'double_low') return { label: '双低值', val: r => r.doubleLow, cls: () => 'hl' }
-  if (activeTab.value === 'force_redeem') return { label: '距强赎', val: r => r.forceRedemptionGap, cls: r => r.forceRedemptionClass }
-  if (activeTab.value === 'discount') return { label: '折价空间', val: r => r.discountSpace, cls: r => r.discountClass }
-  return { label: '距下修', val: r => r.downReviseGap, cls: r => r.downReviseClass }
+// 信号 Tab 动态列：按策略显示关键参数
+const signalColumns = computed(() => {
+  const tab = activeTab.value
+  if (tab === 'double_low') return [
+    { key: 'doubleLow', label: '双低值', width: 90, val: r => r.doubleLow, cls: () => 'hl',
+      formula: '双低值 = 转债价格 + 溢价率', example: '价格 105，溢价 5% → 双低 = 110', note: '双低值越低投资价值越高，低于 150 可入场' },
+    { key: 'pureBondValue', label: '纯债价值', width: 90, val: r => r.pureBondValue, cls: () => '',
+      formula: '纯债价值 = 未来现金流折现', example: '持有到期本息折现值', note: '纯债价值是转债的价格底座' },
+    { key: 'ytm', label: '到期收益率', width: 100, val: r => r.ytm, cls: r => { if (!r.ytm || r.ytm === '--') return ''; return r.ytm.startsWith('+') ? 'positive' : 'negative' } }
+  ]
+  if (tab === 'force_redeem') return [
+    { key: 'forceRedemptionGap', label: '距强赎', width: 90, val: r => r.forceRedemptionGap, cls: r => r.forceRedemptionClass,
+      formula: '距强赎 = (正股价 - 强赎触发价) / 强赎触发价 × 100%', example: '正股 13，触发价 13 → 距强赎 = 0%', note: '正值表示已进入强赎倒计时' },
+    { key: 'conversionPrice', label: '转股价', width: 80, val: r => r.conversionPrice, cls: () => '' },
+    { key: 'forceTriggerPrice', label: '强赎触发价', width: 100, val: r => r.forceTriggerPrice, cls: () => 'hl',
+      formula: '强赎触发价 = 转股价 × 130%', example: '转股价 10 → 强赎触发价 = 13', note: '正股连续 15/30 日收盘价高于此价触发强赎' }
+  ]
+  if (tab === 'discount') return [
+    { key: 'conversionValue', label: '转股价值', width: 90, val: r => r.conversionValue, cls: () => '',
+      formula: '转股价值 = 100 / 转股价 × 正股价', example: '转股价 10，正股 12 → 转股价值 = 120', note: '转股价值高于转债价格即为折价' },
+    { key: 'discountSpace', label: '折价空间', width: 90, val: r => r.discountSpace, cls: r => r.discountClass,
+      formula: '折价空间 = |溢价率|（溢价率为负时）', example: '溢价率 -5% → 折价空间 = 5%', note: '折价越大，转股套利空间越大' }
+  ]
+  if (tab === 'down_revised') return [
+    { key: 'downReviseGap', label: '距下修', width: 90, val: r => r.downReviseGap, cls: r => r.downReviseClass,
+      formula: '距下修 = (正股价 - 下修触发价) / 下修触发价 × 100%', example: '正股 8，触发价 10 → 距下修 = -20%', note: '负值表示正股低于下修触发价' },
+    { key: 'ytm', label: '到期收益率', width: 100, val: r => r.ytm, cls: r => { if (!r.ytm || r.ytm === '--') return ''; return r.ytm.startsWith('+') ? 'positive' : 'negative' } },
+    { key: 'rating', label: '评级', width: 70, val: r => r.rating, cls: () => '' }
+  ]
+  return []
 })
 
 const rawSignalList = computed(() => store.signals[activeTab.value] || [])
@@ -765,7 +1075,11 @@ const hasFutureStages = computed(() => {
 const nextStage = computed(() => {
   const list = pendingDetail.value?.stageList || []
   const idx = currentStageIndex.value + 1
-  return list[idx] || { name: '--', date: '' }
+  const s = list[idx] || { name: '--', date: '' }
+  if (s.date === 'None' || s.date === 'null' || s.date === 'undefined') {
+    return { ...s, date: '' }
+  }
+  return s
 })
 
 const currentStage = computed(() => {
@@ -773,55 +1087,33 @@ const currentStage = computed(() => {
   return list[currentStageIndex.value] || { name: '--', date: '' }
 })
 
-// ALL_STAGES 索引：5=申购中、6=待上市
-const STAGE_INDEX_APPLY = 5
-const STAGE_INDEX_LIST = 6
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+
+const regCountdown = computed(() => {
+  const d = pendingDetail.value
+  if (!d || !d.regDateRaw) return { show: false }
+  const diff = daysDiff(d.regDateRaw)
+  if (diff === null || diff < 0) return { show: false }
+  const date = new Date(d.regDateRaw)
+  const weekday = WEEKDAYS[date.getDay()]
+  let level = 'normal'
+  if (diff === 0) level = 'urgent'
+  else if (diff <= 3) level = 'soon'
+  else if (diff <= 7) level = 'near'
+  return {
+    show: true,
+    days: diff,
+    weekday,
+    level,
+    isToday: diff === 0,
+  }
+})
 
 function daysDiff(dateStr) {
   if (!dateStr) return null
   const today = new Date().toISOString().slice(0, 10)
   const diff = Math.ceil((new Date(dateStr) - new Date(today)) / 86400000)
   return Number.isFinite(diff) ? diff : null
-}
-
-function getStageDate(i) {
-  const d = pendingDetail.value
-  if (!d) return ''
-  return d.stageList?.[i]?.date || ''
-}
-
-function getStageDaysLabel(i) {
-  const dateStr = getStageDate(i)
-  if (!dateStr) return ''
-  const diff = daysDiff(dateStr)
-  if (diff === null) return ''
-  const label = i === STAGE_INDEX_APPLY ? '申购' : i === STAGE_INDEX_LIST ? '上市' : ''
-  if (diff === 0) return `今日${label}`
-  if (diff > 0) return `${label} +${diff}天`
-  return `${label} ${diff}天`
-}
-
-function getStageDaysClass(i) {
-  const dateStr = getStageDate(i)
-  if (!dateStr) return ''
-  const diff = daysDiff(dateStr)
-  if (diff === null) return ''
-  if (diff === 0) return 'today'
-  if (diff > 0) return 'future'
-  return 'past'
-}
-
-// 登记日信息（附在申购中节点下展示）
-function getStageRegInfo(i) {
-  const d = pendingDetail.value
-  if (!d || i !== STAGE_INDEX_APPLY) return ''
-  const regRaw = d.regDateRaw
-  if (!regRaw) return ''
-  const diff = daysDiff(regRaw)
-  if (diff === null) return ''
-  if (diff === 0) return '今日登记'
-  if (diff > 0) return `登记日 +${diff}天`
-  return `登记日 ${diff}天`
 }
 
 const liveSafetyPad = computed(() => {
@@ -863,6 +1155,16 @@ function openPendingDetail(row) {
   pendingDetail.value = { ...row.detail }
   premiumRate.value = 20
   pendingDialogVisible.value = true
+}
+
+function openCostDialog(row) {
+  costDialogRow.value = row
+  costDialogVisible.value = true
+}
+
+function openSignalDetail(row) {
+  signalDetail.value = row
+  signalDialogVisible.value = true
 }
 
 function toggleFav(row) {
@@ -1098,6 +1400,12 @@ onUnmounted(() => {
             &.low {
               color: var(--el-color-success);
             }
+
+            &.sub {
+              font-size: 14px;
+              font-weight: 500;
+              color: var(--text-color-secondary);
+            }
           }
         }
 
@@ -1279,6 +1587,21 @@ onUnmounted(() => {
     &.onehand { color: var(--el-color-warning); }
   }
 
+  .cost-cell {
+    cursor: pointer;
+    &:hover { opacity: 0.8; }
+  }
+
+  .cost-value {
+    font-weight: 600;
+    color: var(--el-color-primary);
+  }
+  .cost-shares {
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
   .hover-value {
     cursor: help;
     border-bottom: 1px dashed var(--text-color-secondary);
@@ -1299,6 +1622,14 @@ onUnmounted(() => {
   }
 
   /* 待发详情弹窗 */
+  :deep(.pending-dialog) {
+    .el-dialog__body {
+      max-height: calc(90vh - 120px);
+      overflow-y: auto;
+      padding-right: 12px;
+    }
+  }
+
   .detail-section {
     margin-bottom: 18px;
 
@@ -1317,97 +1648,252 @@ onUnmounted(() => {
     }
   }
 
-  /* 发行时间轴节点描述 */
-  .stage-date {
-    font-size: 12px;
-    color: var(--text-color-secondary);
-    line-height: 1.4;
-    white-space: nowrap;
-  }
+  /* 登记日倒计时卡片 */
+  .reg-countdown {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(64, 158, 255, 0.02));
+    border: 1px solid rgba(64, 158, 255, 0.2);
 
-  .stage-days {
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1.4;
-    margin-top: 2px;
+    &.soon {
+      background: linear-gradient(135deg, rgba(230, 162, 60, 0.1), rgba(230, 162, 60, 0.02));
+      border-color: rgba(230, 162, 60, 0.25);
 
-    &.today {
+      .reg-countdown-icon { color: var(--el-color-warning); }
+      .reg-countdown-days { color: var(--el-color-warning); }
+    }
+    &.near {
+      background: linear-gradient(135deg, rgba(103, 194, 58, 0.08), rgba(103, 194, 58, 0.02));
+      border-color: rgba(103, 194, 58, 0.2);
+
+      .reg-countdown-icon { color: var(--el-color-success); }
+      .reg-countdown-days { color: var(--el-color-success); }
+    }
+    &.urgent {
+      background: linear-gradient(135deg, rgba(245, 108, 108, 0.1), rgba(245, 108, 108, 0.02));
+      border-color: rgba(245, 108, 108, 0.25);
+
+      .reg-countdown-icon { color: var(--el-color-danger); }
+      .reg-countdown-days { color: var(--el-color-danger); }
+    }
+
+    .reg-countdown-icon {
+      color: var(--el-color-primary);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .reg-countdown-content {
+      flex: 1;
+      min-width: 0;
+
+      .reg-countdown-title {
+        font-size: 13px;
+        color: var(--text-color-secondary);
+        line-height: 1.4;
+
+        .reg-countdown-days {
+          font-size: 20px;
+          font-weight: 700;
+          color: var(--el-color-primary);
+          margin: 0 3px;
+          vertical-align: -2px;
+        }
+      }
+      .reg-countdown-sub {
+        font-size: 12px;
+        color: var(--text-color-tertiary, var(--text-color-secondary));
+        margin-top: 2px;
+      }
+    }
+
+    .reg-countdown-badge {
+      flex-shrink: 0;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
       color: var(--el-color-danger);
-    }
-    &.future {
-      color: var(--el-color-warning);
-    }
-    &.past {
-      color: var(--text-color-secondary);
+      background: rgba(245, 108, 108, 0.12);
+      border-radius: 12px;
     }
   }
 
-  .stage-reg-info {
-    font-size: 11px;
-    line-height: 1.4;
-    margin-top: 2px;
-    color: var(--el-color-warning);
-  }
-
+  /* 发行进度节点卡 */
   .stage-progress-info {
     display: flex;
-    gap: 12px;
-    margin-bottom: 14px;
-    padding: 12px;
-    background: var(--el-fill-color-light);
-    border-radius: 8px;
+    gap: 10px;
+    margin-bottom: 18px;
 
     .stage-progress-item {
       flex: 1;
       display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding: 0 8px;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      background: var(--el-fill-color-light);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
 
       &.current {
-        border-left: 3px solid var(--el-color-primary);
+        background: linear-gradient(135deg, rgba(64, 158, 255, 0.1), rgba(64, 158, 255, 0.02));
+        border: 1px solid rgba(64, 158, 255, 0.2);
 
-        .stage-progress-label {
-          color: var(--el-color-primary);
+        .stage-progress-dot {
+          background: var(--el-color-primary);
+          box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.15);
         }
+        .stage-progress-label { color: var(--el-color-primary); }
+        .stage-progress-value { color: var(--text-color); }
       }
-
       &.next {
-        border-left: 3px solid var(--el-color-warning);
+        background: linear-gradient(135deg, rgba(230, 162, 60, 0.08), rgba(230, 162, 60, 0.02));
+        border: 1px dashed rgba(230, 162, 60, 0.3);
 
-        .stage-progress-label {
-          color: var(--el-color-warning);
+        .stage-progress-dot {
+          background: var(--el-color-warning);
+          box-shadow: 0 0 0 4px rgba(230, 162, 60, 0.15);
         }
-
-        .stage-progress-date {
-          color: var(--el-color-warning);
-        }
+        .stage-progress-label { color: var(--el-color-warning); }
+        .stage-progress-date { color: var(--el-color-warning); }
       }
+    }
+
+    .stage-progress-dot {
+      flex-shrink: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 6px;
+      background: var(--el-text-color-secondary);
+    }
+
+    .stage-progress-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
     }
 
     .stage-progress-label {
       font-size: 11px;
       font-weight: 600;
       color: var(--text-color-secondary);
+      letter-spacing: 0.5px;
     }
 
     .stage-progress-value {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: var(--text-color);
-      line-height: 1.4;
+      line-height: 1.3;
     }
 
     .stage-progress-date {
       font-size: 12px;
       font-weight: 400;
-      color: var(--el-color-primary);
-      margin-left: 4px;
+      color: var(--text-color-secondary);
+      margin-top: 1px;
     }
   }
 
+  /* 自定义时间轴 */
   .detail-timeline {
-    padding-top: 4px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 8px 4px 20px;
+    position: relative;
+    margin-bottom: 8px;
+
+    .timeline-node {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      min-width: 0;
+
+      .timeline-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--el-border-color);
+        border: 2px solid var(--el-bg-color);
+        position: relative;
+        z-index: 2;
+        flex-shrink: 0;
+        transition: all 0.2s;
+      }
+
+      .timeline-line {
+        position: absolute;
+        top: 5px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: var(--el-border-color-lighter);
+        z-index: 1;
+      }
+
+      .timeline-label {
+        margin-top: 8px;
+        text-align: center;
+        min-width: 0;
+        padding: 0 2px;
+
+        .timeline-name {
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--text-color-secondary);
+          line-height: 1.3;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .timeline-date {
+          font-size: 11px;
+          color: var(--text-color-tertiary, var(--text-color-secondary));
+          margin-top: 2px;
+          line-height: 1.3;
+        }
+      }
+
+      &.done {
+        .timeline-dot {
+          background: var(--el-color-success);
+        }
+        .timeline-line {
+          background: var(--el-color-success);
+        }
+        .timeline-name {
+          color: var(--text-color-secondary);
+        }
+      }
+
+      &.active {
+        .timeline-dot {
+          background: var(--el-color-primary);
+          transform: scale(1.15);
+          box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.15);
+        }
+        .timeline-name {
+          color: var(--el-color-primary);
+          font-weight: 600;
+        }
+      }
+    }
   }
 
   .slider-row {
@@ -1467,6 +1953,127 @@ onUnmounted(() => {
         &.copyable { cursor: pointer; &:hover { color: var(--el-color-primary); } }
       }
     }
+  }
+
+  /* 成本弹窗 */
+  :deep(.cost-dialog) {
+    .el-dialog__body {
+      max-height: calc(90vh - 120px);
+      overflow-y: auto;
+      padding-right: 12px;
+    }
+  }
+
+  .tier-section {
+    margin-bottom: 16px;
+
+    .tier-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-color);
+      margin-bottom: 8px;
+      padding-left: 8px;
+      border-left: 3px solid var(--el-color-warning);
+    }
+
+    .tier-recommended {
+      font-weight: 600;
+      color: var(--el-color-warning);
+    }
+
+    .tier-note {
+      font-size: 12px;
+      color: var(--text-color-secondary);
+      margin-top: -8px;
+      margin-bottom: 8px;
+      font-style: italic;
+    }
+  }
+
+  .cost-dialog-content {
+    .ft-formula {
+      div + div {
+        margin-top: 4px;
+      }
+    }
+  }
+
+  /* 信号详情弹窗 */
+  :deep(.signal-dialog) {
+    .el-dialog__body {
+      max-height: calc(90vh - 120px);
+      overflow-y: auto;
+      padding-right: 12px;
+    }
+  }
+
+  .detail-section {
+    margin-bottom: 16px;
+
+    .detail-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-color);
+      margin-bottom: 10px;
+      padding-left: 8px;
+      border-left: 3px solid var(--el-color-primary);
+    }
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .metric-item {
+    background: var(--el-fill-color-light);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-color-secondary);
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-color);
+
+      &.hl { color: var(--el-color-primary); }
+      &.positive { color: var(--el-color-success); }
+    }
+  }
+
+  .risk-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .risk-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--el-color-success);
+    padding: 8px 12px;
+    background: var(--el-color-success-light-9);
+    border-radius: 4px;
+
+    &.risk-warning {
+      color: var(--el-color-warning);
+      background: var(--el-color-warning-light-9);
+    }
+  }
+
+  .exchange-text {
+    &.ex-sh { color: var(--el-color-danger); }
+    &.ex-sz { color: var(--el-color-primary); }
+    &.ex-bj { color: var(--el-color-warning); }
   }
 
   /* 响应式 */
@@ -1540,12 +2147,25 @@ onUnmounted(() => {
 .dialog-header-stock {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+
+  .dialog-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
 
   .dialog-stock-title {
     font-size: 16px;
     font-weight: 600;
     color: var(--el-text-color-primary);
+  }
+
+  .dialog-sector-tag {
+    flex-shrink: 0;
+    max-width: 140px;
   }
 
   .ext-link {
@@ -1596,7 +2216,7 @@ onUnmounted(() => {
     padding: 1px 0;
 
     b {
-      color: var(--el-text-color-primary);
+      color: var(--el-color-primary);
       font-weight: 600;
     }
   }
@@ -1608,6 +2228,14 @@ onUnmounted(() => {
     color: var(--el-text-color-secondary);
     font-size: 11px;
     font-style: italic;
+  }
+
+  .ft-step {
+    font-weight: 600;
+    color: var(--el-color-primary);
+    margin-top: 8px;
+    margin-bottom: 2px;
+    font-size: 13px;
   }
 
   .ft-divider {

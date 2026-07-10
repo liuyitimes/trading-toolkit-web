@@ -9,5 +9,11 @@ export const lofApi = {
   },
   summary() {
     return api.get('/api/v1/lof/summary')
+  },
+  shareHistory(code, params = {}) {
+    return api.get(`/api/v1/lof/${code}/share-history`, { params })
+  },
+  arbitragePredict(code, params = {}) {
+    return api.get(`/api/v1/lof/${code}/arbitrage-predict`, { params })
   }
 }

@@ -55,7 +55,7 @@
 | `GET /api/v1/convertible/signals` | ✅ convertible.js | 返回 5 类信号数据 |
 | `GET /api/v1/convertible/temperature` | ✅ convertible.js | |
 | `GET /api/v1/convertible/detail/:code` | ✅ convertible.js | |
-| `GET /api/v1/convertible/pending` | ❌ | **需补充** |
+| `GET /api/v1/convertible/pending` | ✅ convertible.js | 含配售数据归一化 |
 | `GET /api/v1/lof/list` | ✅ lof.js | |
 | `GET /api/v1/lof/opportunities` | ✅ lof.js | |
 | `GET /api/v1/lof/summary` | ❌ | **需补充** |
@@ -225,3 +225,51 @@ src/
 | Stage 3 — 用户系统 + 管理 | ~5 个文件 | 1-2 天 |
 | Stage 4 — 运维 + 体验 | ~4 个文件 | 1-2 天 |
 | **合计** | **~20 个文件** | **7-11 天** |
+
+## 变更记录
+
+### 2026-07-09 — 可转债配售表「成本」列改造
+
+**需求**：将「每股/配10手」列改为「成本」列，展示获配每手成本。
+
+**改动文件**：
+1. `src/stores/convertible.js` — `normalizePendingItem` 中新增：
+   - `_sharesPerLotRaw`：理论每股数（sharesFor10 / 10）
+   - `_actualSharesFor1Lot`：向上取整到100股整数倍的实际需购买股数
+   - `_costPerLotRaw`：获配每手成本
+   - return 对象新增：`costPerLot`、`_costPerLotRaw`、`actualSharesFor1Lot`、`_actualSharesFor1Lot`、`sharesPerLotRaw`、`_sharesPerLotRaw`
+
+2. `src/views/Convertible.vue` — 表格列改造：
+   - 列标题：「每股/配10手」→「成本」
+   - 主显示区：新增「获配每手 xxx元」+「需买入 xxx股（x手）」
+   - tooltip 新增「获配每手成本」计算说明区块
+   - 保留原有每股、一手党等信息
+
+3. `src/views/Convertible.vue` — 成本列点击弹窗改造：
+   - 成本列从 el-tooltip 改为点击弹出 el-dialog
+   - 弹窗包含：公式说明 + 当前债券计算过程（含正股价）+ 沪深规则 + 一手党
+   - 强调A股最小单位为1手（100股整数）
+   - ✅ 2026-07-09 重新设计：弹窗改为上方 el-table（1-5手配售参数）+ 下方 el-collapse（可折叠公式说明），宽度调整为560px
+
+   - ✅ 2026-07-09 新增一手党多档位成功率参考：成本弹窗中新增 50%/60%/70%/80%/100% 档位表格（仅沪市），60% 标记为推荐
+
+4. `docs/specs/convertible-placement-cost-spec.md` — 新建成本列完整规格文档
+
+### 2026-07-09 — LOF 数据源切换：新浪 → 东方财富
+
+**需求**：LOF 页面数据大幅缺失，后端新浪 API 不提供净值/溢价率。切换到东方财富 push2 API。
+
+**改动文件**：
+1. `trading-toolkit-service/cloudrun/services/lof_fund.py` — 完整重写：
+   - 数据源从新浪 JSONP 切换到东方财富 push2 API（`b:MK0404` LOF + `b:MK0403` ETF）
+   - 字段映射：f161→基金净值、f168→溢价率、f5→成交量、f6→成交额
+   - 新增连续溢价快照机制：JSON 文件存储每日溢价状态，保留 30 天
+   - 新增申购状态获取：东财基金详情 API，模块级缓存 TTL 1h
+   - `get_lof_opportunities()` 改用真实溢价率排序
+   - `get_lof_market_summary()` 补充溢价率统计字段
+   - ✅ 2026-07-09 完成，Python 语法检查通过，前端编译通过
+
+### 技术债
+
+- **成本计算前端分散**：获配每手成本（`costPerLot`、`actualSharesFor1Lot`）的计算目前在前端完成（web 端 `src/stores/convertible.js` L259-266，小程序端 `miniprogram/pages/convertible/index.js` `formatPendingItem`），建议后续迁移到后端 `convertible_bond.py` 的 `_fetch_em_pending_bonds()` 中统一计算，避免多端维护不一致。
+- **小程序端缺失成本字段**：小程序端 `formatPendingItem` 目前未计算 `costPerLot`、`actualSharesFor1Lot`、`sharesPerLotRaw`（与 web 端不一致），待后端统一后可直接透传。

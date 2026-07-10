@@ -21,6 +21,14 @@
             inactive-text="关闭"
           />
         </el-form-item>
+        <el-form-item label="显示策略沙盘">
+          <el-switch
+            :model-value="appStore.showSandbox"
+            @change="appStore.toggleShowSandbox()"
+            active-text="开启"
+            inactive-text="关闭"
+          />
+        </el-form-item>
       </el-form>
     </el-card>
 

@@ -21,28 +21,20 @@
       </div>
       <div class="overview-grid">
         <div class="overview-item">
-          <div class="overview-value">{{ summary?.count ?? '--' }}</div>
-          <div class="overview-label">基金数量</div>
+          <div class="overview-value hl">{{ summary?.top_premium_board ?? '--' }}</div>
+          <div class="overview-label">溢价最多板块</div>
         </div>
         <div class="overview-item">
-          <div class="overview-value">{{ formatPremiumNum(summary?.premium_avg) }}</div>
-          <div class="overview-label">平均溢价</div>
-        </div>
-        <div class="overview-item">
-          <div class="overview-value hl">{{ formatPremiumNum(summary?.top_premium) }}</div>
-          <div class="overview-label">最高溢价</div>
+          <div class="overview-value">{{ formatPremiumNum(summary?.top_board_premium_avg) }}</div>
+          <div class="overview-label">板块平均溢价</div>
         </div>
         <div class="overview-item">
           <div class="overview-value">{{ summary?.positive_count ?? '--' }}</div>
-          <div class="overview-label">溢价数</div>
+          <div class="overview-label">溢价基金数</div>
         </div>
         <div class="overview-item">
-          <div class="overview-value">{{ summary?.paused_count ?? '--' }}</div>
-          <div class="overview-label">暂停数</div>
-        </div>
-        <div class="overview-item">
-          <div class="overview-value">{{ summary?.arbitrage_count ?? '--' }}</div>
-          <div class="overview-label">可套利</div>
+          <div class="overview-value">{{ summary?.discount_count ?? '--' }}</div>
+          <div class="overview-label">折价基金数</div>
         </div>
       </div>
     </div>
@@ -57,7 +49,7 @@
         @click="activeTab = tab.key"
       >
         {{ tab.label }}
-        <span class="tab-count" :class="{ hot: tab.key === 'premium' || tab.key === 'arbitrage' }">{{ tabStats[tab.key] }}</span>
+        <span class="tab-count" :class="{ hot: tab.key === 'top10' || tab.key === 'arbitrage' }">{{ tabStats[tab.key] }}</span>
       </button>
     </div>
 
@@ -70,7 +62,7 @@
     />
 
     <!-- 策略沙盘：参数敏感度分析 -->
-    <el-card class="sandbox-card" shadow="never">
+    <el-card v-if="appStore.showSandbox" class="sandbox-card" shadow="never">
       <template #header>
         <div class="sandbox-header" @click="sandboxOpen = !sandboxOpen">
           <span class="sandbox-title">策略沙盘 · 敏感度分析</span>
@@ -206,9 +198,22 @@
           <span :class="amountClass(row)">{{ row.amountText }}</span>
         </template>
       </el-table-column>
+      <el-table-column width="120" align="right">
+        <template #header>
+          预期收益(万)<FormulaInfo
+            formula="预期收益 = 申购金额 × 净溢价 / 100"
+            example="1万 × 4.8% = 480元"
+            note="按1万元申购估算，实际收益受净值波动影响"
+          />
+        </template>
+        <template #default="{ row }">
+          <span class="expected-return">{{ row.expectedProfit }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="申购状态" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="statusTagType(row.limitStatus)" size="small" effect="light">{{ row.limitStatus }}</el-tag>
+          <div v-if="row.limitAmount" class="price-sub">限{{ row.limitAmount }}元</div>
         </template>
       </el-table-column>
       <el-table-column label="标记" width="160">
@@ -273,8 +278,16 @@
             >{{ row.netPremiumText }}</span>
           </div>
           <div class="mc-metric">
+            <span class="mc-label">预期收益</span>
+            <span class="expected-return">{{ row.expectedProfit }}</span>
+          </div>
+          <div class="mc-metric">
             <span class="mc-label">连续溢价</span>
             <span :class="{ hl: row.sustainedPremium }">{{ row.consecutivePremium }}天</span>
+          </div>
+          <div class="mc-metric">
+            <span class="mc-label">成交额</span>
+            <span :class="amountClass(row)">{{ row.amountText }}</span>
           </div>
         </div>
         <div class="mc-tags" v-if="row.canArbitrage || row.sustainedPremium || row.lowLiquidity">
@@ -330,9 +343,16 @@
           <span :class="amountClass(row)">{{ row.amountText }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="净溢价" width="110" align="right">
+      <el-table-column label="预期收益(万)" width="120" align="right">
+        <template #header>
+          预期收益(万)<FormulaInfo
+            formula="预期收益 = 申购金额 × 净溢价 / 100"
+            example="1万 × 4.8% = 480元"
+            note="按1万元申购估算，实际收益受净值波动影响"
+          />
+        </template>
         <template #default="{ row }">
-          <span class="expected-return">{{ row.netPremiumText }}</span>
+          <span class="expected-return">{{ row.expectedProfit }}</span>
         </template>
       </el-table-column>
       <el-table-column label="风险提示" width="220">
@@ -382,8 +402,8 @@
             <span :class="amountClass(row)">{{ row.amountText }}</span>
           </div>
           <div class="mc-metric">
-            <span class="mc-label">净溢价</span>
-            <span class="expected-return">{{ row.netPremiumText }}</span>
+            <span class="mc-label">预期收益</span>
+            <span class="expected-return">{{ row.expectedProfit }}</span>
           </div>
         </div>
         <div class="mc-tags" v-if="row.lowLiquidity || row.sustainedPremium || row.limitAmount">
@@ -398,27 +418,39 @@
     <!-- 详情弹窗 -->
     <el-dialog
       v-model="detailVisible"
-      :title="detailData ? `${detailData.name} (${detailData.code})` : '详情'"
       :fullscreen="isMobile"
-      width="600px"
-      @close="detailData = null"
+      width="640px"
+      class="lof-detail-dialog"
     >
+      <template #header>
+        <div class="dialog-header-fund">
+          <span class="dialog-fund-title" v-if="detailData">
+            {{ detailData.name }} ({{ detailData.code }})
+          </span>
+          <el-tag
+            v-if="detailData"
+            :type="statusTagType(detailData.limitStatus)"
+            size="small"
+            effect="light"
+          >{{ detailData.limitStatus }}</el-tag>
+        </div>
+      </template>
       <template v-if="detailData">
-        <!-- 基金概要 -->
+        <!-- 基础信息 -->
         <div class="detail-section">
-          <div class="detail-section-title">基金概要</div>
+          <div class="detail-section-title">基础信息</div>
           <div class="detail-grid">
             <div class="detail-item">
               <span class="detail-label">交易所</span>
               <span class="detail-value">{{ detailData.exchange || '--' }}</span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">申购状态</span>
-              <span class="detail-value">{{ detailData.limitStatus || '--' }}</span>
+              <span class="detail-label">涨跌幅</span>
+              <span class="detail-value" :class="detailData.isChangeUp ? 'up' : 'down'">{{ detailData.changePctText }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">申购限额</span>
-              <span class="detail-value">{{ detailData.limitAmount != null ? detailData.limitAmount + '元' : '--' }}</span>
+              <span class="detail-value">{{ detailData.limitAmount != null ? detailData.limitAmount + '元' : '不限' }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">赎回规则</span>
@@ -427,32 +459,64 @@
           </div>
         </div>
 
-        <!-- 价格与净值 -->
+        <!-- 价格与溢价 -->
         <div class="detail-section">
-          <div class="detail-section-title">价格与净值</div>
+          <div class="detail-section-title">价格与溢价</div>
           <div class="detail-grid">
             <div class="detail-item hl-box">
               <span class="detail-label">当前价</span>
-              <span class="detail-value">{{ detailData.priceText }}</span>
+              <span class="detail-value hl">{{ detailData.priceText }}</span>
             </div>
             <div class="detail-item hl-box">
               <span class="detail-label">基金净值</span>
-              <span class="detail-value">{{ detailData.valuationText }}</span>
+              <span class="detail-value hl">{{ detailData.valuationText }}</span>
             </div>
+
+            <!-- 溢价率：悬浮公式 -->
             <div class="detail-item hl-box">
-              <span class="detail-label">价格偏离</span>
-              <span class="detail-value">{{ detailData.spread }}</span>
+              <span class="detail-label">溢价率</span>
+              <el-tooltip placement="top" :show-after="300">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">溢价率 = (场内价格 - 基金净值) / 基金净值 × 100%</div>
+                    <div class="ft-section" v-if="detailData.valuation > 0">
+                      <div class="ft-subtitle">计算过程</div>
+                      <div class="ft-detail">场内价格 = <b>{{ detailData.price.toFixed(3) }}</b></div>
+                      <div class="ft-detail">基金净值 = <b>{{ detailData.valuation.toFixed(4) }}</b></div>
+                      <div class="ft-detail">
+                        溢价率 = ({{ detailData.price.toFixed(3) }} - {{ detailData.valuation.toFixed(4) }}) / {{ detailData.valuation.toFixed(4) }} × 100%
+                        = <b>{{ detailData.premium.toFixed(2) }}%</b>
+                      </div>
+                    </div>
+                    <div class="ft-note">溢价率 &gt; 0 表示场内贵，可申购套利</div>
+                  </div>
+                </template>
+                <span class="detail-value hover-value" :class="{ negative: detailData.premium < 0, high: detailData.isHighPremium }">{{ detailData.premiumText }}</span>
+              </el-tooltip>
             </div>
-            <div class="detail-item hl-box">
-              <span class="detail-label">毛溢价率</span>
-              <span class="detail-value">{{ detailData.premiumText }}</span>
-            </div>
+
+            <!-- 净溢价：悬浮公式 -->
             <div class="detail-item hl-box">
               <span class="detail-label">净溢价(扣费后)</span>
-              <span
-                class="detail-value"
-                :class="{ negative: detailData.netPremiumClass === 'negative', high: detailData.netPremiumClass === 'high' }"
-              >{{ detailData.netPremiumText }}</span>
+              <el-tooltip placement="top" :show-after="300">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">净溢价 = 溢价率 - 申购费率 - 卖出佣金率</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">计算过程</div>
+                      <div class="ft-detail">溢价率 = <b>{{ detailData.premium.toFixed(2) }}%</b></div>
+                      <div class="ft-detail">申购费率 = <b>0.15%</b>（一折券商）</div>
+                      <div class="ft-detail">卖出佣金率 = <b>0.05%</b></div>
+                      <div class="ft-detail">
+                        净溢价 = {{ detailData.premium.toFixed(2) }} - 0.15 - 0.05
+                        = <b>{{ detailNetPremium.toFixed(2) }}%</b>
+                      </div>
+                    </div>
+                    <div class="ft-note">净溢价 &gt; 0 才有套利空间</div>
+                  </div>
+                </template>
+                <span class="detail-value hover-value" :class="{ negative: detailData.netPremiumClass === 'negative', high: detailData.netPremiumClass === 'high' }">{{ detailData.netPremiumText }}</span>
+              </el-tooltip>
             </div>
           </div>
         </div>
@@ -463,7 +527,7 @@
           <div class="detail-grid">
             <div class="detail-item">
               <span class="detail-label">成交额</span>
-              <span class="detail-value">{{ detailData.amountText }}</span>
+              <span class="detail-value" :class="amountClass(detailData)">{{ detailData.amountText }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">成交量</span>
@@ -476,6 +540,60 @@
           </div>
         </div>
 
+        <!-- 收益计算 -->
+        <div class="detail-section">
+          <div class="detail-section-title">收益计算</div>
+          <div class="detail-grid">
+            <!-- 预期收益：悬浮公式 -->
+            <div class="detail-item hl-box">
+              <span class="detail-label">预期收益({{ detailOneBaseLabel }})</span>
+              <el-tooltip placement="top" :show-after="300">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">预期收益 = 申购金额 × 净溢价 / 100</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">计算过程</div>
+                      <div class="ft-detail">申购金额 = <b>{{ detailOneBase.toLocaleString() }} 元</b></div>
+                      <div class="ft-detail">净溢价 = <b>{{ detailNetPremium.toFixed(2) }}%</b></div>
+                      <div class="ft-detail">
+                        预期收益 = {{ detailOneBase.toLocaleString() }} × {{ detailNetPremium.toFixed(2) }} / 100
+                        = <b>{{ detailOneProfit.toFixed(2) }} 元</b>
+                      </div>
+                    </div>
+                    <div class="ft-note" v-if="detailData.limitAmount">当前限购 {{ detailData.limitAmount }} 元，按限额计算</div>
+                    <div class="ft-note" v-else>按 1 万元申购估算，实际收益受净值波动影响</div>
+                  </div>
+                </template>
+                <span class="detail-value hover-value hl">{{ detailOneProfit.toFixed(2) }} 元</span>
+              </el-tooltip>
+            </div>
+
+            <!-- 一拖六收益：悬浮公式（仅限购场景） -->
+            <div class="detail-item hl-box" v-if="detailData.limitStatus === '限100'">
+              <span class="detail-label">一拖六收益</span>
+              <el-tooltip placement="top" :show-after="300">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">一拖六收益 = 6账户 × 100元 × 净溢价 / 100</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">计算过程</div>
+                      <div class="ft-detail">账户数 = <b>6</b></div>
+                      <div class="ft-detail">单账户限额 = <b>100 元</b></div>
+                      <div class="ft-detail">净溢价 = <b>{{ detailNetPremium.toFixed(2) }}%</b></div>
+                      <div class="ft-detail">
+                        收益 = 6 × 100 × {{ detailNetPremium.toFixed(2) }} / 100
+                        = <b>{{ detailSixProfit.toFixed(2) }} 元</b>
+                      </div>
+                    </div>
+                    <div class="ft-note">一拖六账户可放大限购场景下的收益</div>
+                  </div>
+                </template>
+                <span class="detail-value hover-value hl">{{ detailSixProfit.toFixed(2) }} 元</span>
+              </el-tooltip>
+            </div>
+          </div>
+        </div>
+
         <!-- 操作建议 -->
         <div class="detail-section">
           <div class="detail-section-title">操作建议</div>
@@ -484,52 +602,47 @@
           </div>
         </div>
 
-        <!-- 预计收益计算 -->
-        <el-card class="detail-card" shadow="never">
-          <template #header>
-            <div class="card-title">预计收益计算</div>
-          </template>
-          <div class="calc-list">
-            <div class="calc-row">
-              <span class="calc-label">基础溢价率</span>
-              <span class="calc-value">{{ detailData.premium.toFixed(2) }}%</span>
+        <!-- 套利资金预测（仅溢价基金显示） -->
+        <div v-if="detailData?.premium > 0" class="detail-section">
+          <div class="detail-section-title">套利资金预测</div>
+          <div v-if="store.arbitrageLoading" class="predict-loading">
+            <el-skeleton :rows="3" animated />
+          </div>
+          <div v-else-if="store.arbitrageError" class="predict-error">
+            <span class="error-text">数据源不可用</span>
+          </div>
+          <div v-else-if="store.arbitragePredict" class="predict-content">
+            <ArbitrageChart
+              :history="store.arbitragePredict.history"
+              :predicted-fund="store.arbitragePredict.predicted_fund"
+            />
+            <div class="predict-cards">
+              <div class="predict-card">
+                <span class="pc-label">7日累计资金</span>
+                <span class="pc-value">{{ formatTotalAmount(store.arbitragePredict.cumulative_fund) }}</span>
+              </div>
+              <div class="predict-card">
+                <span class="pc-label">估算套利人数</span>
+                <span class="pc-value">{{ store.arbitragePredict.cumulative_people != null ? store.arbitragePredict.cumulative_people.toLocaleString() + '人' : 'N/A' }}</span>
+              </div>
+              <div class="predict-card">
+                <span class="pc-label">明日预测</span>
+                <span class="pc-value" :class="{ hl: store.arbitragePredict.predicted_fund != null }">{{ store.arbitragePredict.predicted_fund != null ? formatTotalAmount(store.arbitragePredict.predicted_fund) : '数据不足' }}</span>
+              </div>
+              <div class="predict-card risk-card">
+                <span class="pc-label">出逃风险</span>
+                <el-tag
+                  :type="riskTagType(store.arbitragePredict.risk_level)"
+                  size="small"
+                  effect="dark"
+                >{{ store.arbitragePredict.risk_label }}</el-tag>
+              </div>
             </div>
-            <div class="calc-row">
-              <span class="calc-label">申购费率</span>
-              <span class="calc-value">0.15%</span>
-            </div>
-            <div class="calc-row">
-              <span class="calc-label">净溢价</span>
-              <span class="calc-value net-profit">{{ detailNetPremium.toFixed(2) }}%</span>
-            </div>
-            <div class="calc-row calc-row-text">
-              <span class="calc-label">一拖一账户预期收益</span>
-              <span class="calc-value-text" v-html="detailOneText"></span>
-            </div>
-            <div v-if="detailData.limitStatus === '限100'" class="calc-row calc-row-text">
-              <span class="calc-label">一拖六账户预期收益</span>
-              <span class="calc-value-text">
-                6 账户 × 100 元 × {{ detailNetPremium.toFixed(2) }} / 100 = <span class="profit-num">{{ detailSixProfit.toFixed(2) }} 元</span>
-              </span>
-            </div>
-            <div v-if="detailData.limitStatus === '限100'" class="calc-tip">
-              一拖六账户可放大限购场景下的收益
+            <div v-if="store.arbitragePredict.note" class="predict-note">
+              {{ store.arbitragePredict.note }}
             </div>
           </div>
-        </el-card>
-
-        <!-- 限额说明 -->
-        <el-card class="detail-card" shadow="never">
-          <template #header>
-            <div class="card-title">限额说明</div>
-          </template>
-          <div class="limit-box">
-            <el-tag v-if="detailData.limitStatus === '暂停'" type="danger" size="default" effect="dark">已暂停申购</el-tag>
-            <el-tag v-else-if="detailData.limitStatus === '限100'" type="primary" size="default" effect="dark">限购 100 元</el-tag>
-            <el-tag v-else type="success" size="default" effect="dark">不限购</el-tag>
-            <span class="limit-desc">{{ limitDescText }}</span>
-          </div>
-        </el-card>
+        </div>
       </template>
     </el-dialog>
 
@@ -549,11 +662,14 @@ import TimeStamp from '@/components/TimeStamp.vue'
 import FormulaInfo from '@/components/FormulaInfo.vue'
 import SensitivitySlider from '@/components/SensitivitySlider.vue'
 import FormulaRecall from '@/components/FormulaRecall.vue'
+import ArbitrageChart from '@/components/ArbitrageChart.vue'
+import { useAppStore } from '@/stores/app'
 
+const appStore = useAppStore()
 const store = useLofStore()
 const userStore = useUserStore()
 
-const activeTab = ref('all')
+const activeTab = ref('top10')
 const searchKeyword = ref('')
 const detailVisible = ref(false)
 const detailData = ref(null)
@@ -581,7 +697,7 @@ const recallItems = [
 ]
 
 const tabs = [
-  { key: 'all', label: '全部' },
+  { key: 'top10', label: '溢价Top10' },
   { key: 'premium', label: '溢价≥5%' },
   { key: 'discount', label: '折价' },
   { key: 'paused', label: '暂停' },
@@ -589,7 +705,7 @@ const tabs = [
 ]
 
 const guideTextMap = {
-  all: '全部 LOF 基金列表，按溢价率降序排列。关注高溢价且成交活跃的标的。',
+  top10: '溢价可申购 Top10：未暂停且溢价>0 的基金，按溢价率降序取前 10。核心关注预期收益与流动性。',
   premium: '溢价≥5% 的基金，具备申购套利潜力。注意流动性风险与净值波动。',
   discount: '折价基金，可考虑持有套利（需≥7天，赎回费0.5%）。注意净值波动。',
   paused: '申购暂停的基金，无法套利。关注恢复申购后的溢价变化。',
@@ -609,6 +725,10 @@ const arbitrageList = computed(() => {
 // 按 Tab 过滤
 const filteredByTab = computed(() => {
   const list = store.fundList
+  if (activeTab.value === 'top10') return list
+    .filter(i => !i.isPaused && i.premium > 0)
+    .sort((a, b) => b.premium - a.premium)
+    .slice(0, 10)
   if (activeTab.value === 'premium') return list.filter(i => i.premiumValue >= 5)
   if (activeTab.value === 'discount') return list.filter(i => i.premiumValue < 0)
   if (activeTab.value === 'paused') return list.filter(i => i.isPaused)
@@ -631,8 +751,9 @@ const pagedList = computed(() => {
 // Tab 计数
 const tabStats = computed(() => {
   const list = store.fundList
+  const top10List = list.filter(i => !i.isPaused && i.premium > 0).sort((a, b) => b.premium - a.premium).slice(0, 10)
   return {
-    all: list.length,
+    top10: top10List.length,
     premium: list.filter(i => i.premiumValue >= 5).length,
     discount: list.filter(i => i.premiumValue < 0).length,
     paused: list.filter(i => i.isPaused).length,
@@ -642,10 +763,17 @@ const tabStats = computed(() => {
 
 const summary = computed(() => store.summary)
 
-// 详情弹窗：净溢价（扣申购费 0.15%）
+// 详情弹窗：净溢价（扣申购费 0.15% + 卖出佣金 0.05%）
 const detailNetPremium = computed(() => {
   if (!detailData.value) return 0
-  return detailData.value.premium - 0.15
+  return detailData.value.premium - 0.15 - SELL_COMMISSION_RATE
+})
+
+// 详情弹窗：申购基数标签（限购显示限额，否则显示1万）
+const detailOneBaseLabel = computed(() => {
+  if (!detailData.value) return '1万'
+  const limit = detailData.value.limitAmount
+  return limit && limit > 0 ? limit + '元' : '1万'
 })
 
 // 详情弹窗：一拖一账户申购基数（限购时为限额，否则 10000）
@@ -703,9 +831,26 @@ function formatPremiumNum(val) {
   return Number(val).toFixed(2) + '%'
 }
 
+function formatTotalAmount(val) {
+  if (val == null || isNaN(val) || val <= 0) return '--'
+  if (val >= 10000) return (val / 10000).toFixed(2) + '亿'
+  if (val >= 100) return val.toFixed(2) + '万'
+  return val.toFixed(0) + '元'
+}
+
 function openDetail(row) {
   detailData.value = row
   detailVisible.value = true
+  if (row.premium > 0) {
+    store.loadArbitragePredict(row.code, {
+      amount: row.amountRaw,
+      premium: row.premium,
+      limit_status: row.limitStatus,
+      limit_amount: row.limitAmount || 0
+    })
+  } else {
+    store.clearArbitragePredict()
+  }
 }
 
 function toggleFav(row) {
@@ -718,6 +863,14 @@ function statusTagType(status) {
   if (status === '暂停') return 'danger'
   if (status === '限100') return 'warning'
   return 'success'
+}
+
+function riskTagType(level) {
+  if (level === 'low') return 'success'
+  if (level === 'medium') return 'warning'
+  if (level === 'high') return 'danger'
+  if (level === 'extreme') return 'danger'
+  return 'info'
 }
 
 function exchangeClass(ex) {
@@ -791,7 +944,7 @@ onUnmounted(() => {
 
     .overview-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 12px;
     }
 
@@ -1017,6 +1170,16 @@ onUnmounted(() => {
     &.high { color: var(--el-color-danger); }
   }
 
+  .hover-value {
+    cursor: help;
+    border-bottom: 1px dashed var(--text-color-secondary);
+    padding-bottom: 1px;
+    transition: border-color 0.2s;
+    &:hover {
+      border-bottom-color: var(--el-color-primary);
+    }
+  }
+
   .warning { color: var(--el-color-warning); font-weight: 600; }
   .negative { color: var(--el-color-danger); font-weight: 600; }
 
@@ -1025,7 +1188,9 @@ onUnmounted(() => {
   }
 
   :deep(.row-highlight) {
-    background: rgba(245, 108, 108, 0.06);
+    td {
+      background: rgba(245, 108, 108, 0.06) !important;
+    }
   }
 
   /* 详情弹窗 */
@@ -1071,6 +1236,8 @@ onUnmounted(() => {
         &.hl { color: var(--el-color-primary); }
         &.negative { color: var(--el-color-success); }
         &.high { color: var(--el-color-danger); }
+        &.up { color: var(--el-color-danger); }
+        &.down { color: var(--el-color-success); }
       }
     }
   }
@@ -1087,6 +1254,70 @@ onUnmounted(() => {
     p {
       margin: 0 0 6px 0;
       &:last-child { margin-bottom: 0; }
+    }
+  }
+
+  /* 套利资金预测 */
+  .predict-loading {
+    padding: 16px;
+  }
+
+  .predict-error {
+    text-align: center;
+    padding: 16px;
+    color: var(--text-color-secondary);
+
+    .error-text {
+      font-size: 13px;
+    }
+  }
+
+  .predict-content {
+    .predict-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .predict-card {
+      background: var(--el-fill-color-light);
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+
+      &.risk-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .pc-label {
+        display: block;
+        font-size: 11px;
+        color: var(--text-color-secondary);
+        margin-bottom: 4px;
+      }
+
+      .pc-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-color);
+
+        &.hl {
+          color: var(--el-color-primary);
+        }
+      }
+    }
+
+    .predict-note {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--el-color-warning);
+      background: rgba(245, 166, 35, 0.1);
+      padding: 6px 10px;
+      border-radius: 4px;
     }
   }
 
@@ -1259,8 +1490,72 @@ onUnmounted(() => {
 
   @media (min-width: 769px) and (max-width: 1199px) {
     .market-overview .overview-grid {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
     }
+  }
+}
+</style>
+
+<style lang="scss">
+.lof-detail-dialog {
+  .dialog-header-fund {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .dialog-fund-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--el-text-color-primary);
+    }
+  }
+}
+
+.formula-tip {
+  font-size: 12px;
+  line-height: 1.7;
+  min-width: 260px;
+  max-width: 360px;
+
+  .ft-formula {
+    font-size: 13px;
+    font-weight: 600;
+    color: #409eff;
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    background: rgba(64, 158, 255, 0.1);
+    border-radius: 4px;
+    border-left: 3px solid #409eff;
+  }
+
+  .ft-section {
+    margin-bottom: 4px;
+  }
+
+  .ft-detail {
+    color: var(--el-text-color-secondary);
+    padding: 1px 0;
+
+    b {
+      color: var(--el-text-color-primary);
+      font-weight: 600;
+    }
+  }
+
+  .ft-note {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--el-border-color);
+    color: var(--el-text-color-secondary);
+    font-size: 11px;
+    font-style: italic;
+  }
+
+  .ft-subtitle {
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin-bottom: 4px;
+    font-size: 12px;
   }
 }
 </style>

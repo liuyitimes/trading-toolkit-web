@@ -27,19 +27,37 @@ const STAGE_NAME_ALIASES = {
   '同意注册': '同意注册',
 }
 
+// 额外日期模式（非阶段，但需从 progress_full 中解析）
+const EXTRA_DATE_PATTERNS = ['股权登记日', '股权登记', '登记日']
+
 function parseProgressDates(progressFull) {
   const map = {}
   if (!progressFull) return map
-  const lines = String(progressFull).split(/[\n,;]/)
+  // 去除 HTML 标签，兼容富文本格式
+  const text = String(progressFull).replace(/<[^>]*>/g, ' ')
+  const lines = text.split(/[\n,;]/)
   for (const line of lines) {
-    const m = line.trim().match(/(\d{4}-\d{2}-\d{2})\s*(.*)/)
+    // 兼容 YYYY-MM-DD 和 YYYY/MM/DD 两种日期格式
+    const m = line.trim().match(/(\d{4}[-/]\d{2}[-/]\d{2})\s*(.*)/)
     if (!m) continue
-    const date = m[1]
+    const date = m[1].replace(/\//g, '-')
     const stageText = m[2].trim()
+    // 匹配标准阶段
+    let matched = false
     for (const [alias, canonical] of Object.entries(STAGE_NAME_ALIASES)) {
       if (stageText.includes(alias)) {
         map[canonical] = date
+        matched = true
         break
+      }
+    }
+    // 匹配额外日期模式（股权登记日等）
+    if (!matched) {
+      for (const pattern of EXTRA_DATE_PATTERNS) {
+        if (stageText.includes(pattern)) {
+          map['股权登记日'] = date
+          break
+        }
       }
     }
   }
@@ -104,9 +122,9 @@ function normalizeBondItem(item) {
   let forceRedemptionGap = '--'
   let forceRedemptionClass = ''
   let _forcePriceGap = 9999
+  let forceTriggerPrice = conversionPriceNum > 0 ? conversionPriceNum * 1.3 : 0
   if (conversionPriceNum > 0 && stockPriceNum > 0) {
-    const forcePrice = conversionPriceNum * 1.3
-    const gap = (stockPriceNum - forcePrice) / forcePrice * 100
+    const gap = (stockPriceNum - forceTriggerPrice) / forceTriggerPrice * 100
     _forcePriceGap = gap
     forceRedemptionGap = (gap > 0 ? '+' : '') + gap.toFixed(1) + '%'
     forceRedemptionClass = gap >= 0 ? 'warning' : ''
@@ -115,9 +133,9 @@ function normalizeBondItem(item) {
   let downReviseGap = '--'
   let downReviseClass = ''
   let _revisePriceGap = 9999
+  let reviseTriggerPrice = conversionPriceNum > 0 ? conversionPriceNum * 0.85 : 0
   if (conversionPriceNum > 0 && stockPriceNum > 0) {
-    const revisePrice = conversionPriceNum * 0.85
-    const gap = (stockPriceNum - revisePrice) / revisePrice * 100
+    const gap = (stockPriceNum - reviseTriggerPrice) / reviseTriggerPrice * 100
     _revisePriceGap = gap
     downReviseGap = gap.toFixed(1) + '%'
     downReviseClass = gap < 0 ? 'warning' : ''
@@ -134,6 +152,31 @@ function normalizeBondItem(item) {
   const lotStockCount = item.lot_stock_count || null
   const safetyPadValue = item.safety_pad || null
 
+  const volumeNum = typeof item.volume === 'number' ? item.volume : 0
+  const amountNum = typeof item.amount === 'number' ? item.amount : 0
+  const remainingSizeNum = typeof item.remaining_size === 'number' ? item.remaining_size : 0
+
+  let volumeText = '--'
+  if (volumeNum > 0) {
+    if (volumeNum >= 10000) volumeText = (volumeNum / 10000).toFixed(2) + '万手'
+    else volumeText = volumeNum.toFixed(0) + '手'
+  }
+
+  let amountText = '--'
+  if (amountNum > 0) {
+    if (amountNum >= 100000000) amountText = (amountNum / 100000000).toFixed(2) + '亿'
+    else if (amountNum >= 10000) amountText = (amountNum / 10000).toFixed(2) + '万'
+    else amountText = amountNum.toFixed(0)
+  }
+
+  const remainingSizeText = remainingSizeNum > 0 ? remainingSizeNum.toFixed(2) + '亿' : '--'
+
+  const perShareValue = item.per_share_allocation || 0
+  let cashRatio = 0
+  if (perShareValue > 0 && stockPriceNum > 0) {
+    cashRatio = Math.round(perShareValue / stockPriceNum * 10000) / 100
+  }
+
   return {
     bondName: item.bond_name || '--',
     bondCode,
@@ -141,32 +184,54 @@ function normalizeBondItem(item) {
     stockCode,
     exchange,
     price: priceNum ? priceNum.toFixed(2) : '--',
+    _priceRaw: priceNum,
     priceNum,
     conversionValue: conversionValueNum ? conversionValueNum.toFixed(2) : '--',
+    _conversionValueRaw: conversionValueNum,
     conversionValueNum,
     premium: item.premium_rate != null ? premiumRateNum.toFixed(2) + '%' : '--',
     premiumClass: premiumRateNum < 0 ? 'negative' : premiumRateNum > 30 ? 'high' : '',
     premiumNum: premiumRateNum,
     doubleLow: doubleLowNum > 0 ? doubleLowNum.toFixed(1) : '--',
+    _doubleLowRaw: doubleLowNum,
     doubleLowNum,
     conversionPrice: conversionPriceNum ? conversionPriceNum.toFixed(2) : '--',
+    _conversionPriceRaw: conversionPriceNum,
     conversionPriceNum,
     stockPrice: stockPriceNum ? stockPriceNum.toFixed(2) : '--',
+    _stockPriceRaw: stockPriceNum,
     stockPriceNum,
     pureBondValue: pureBondValueNum ? pureBondValueNum.toFixed(2) : '--',
+    _pureBondValueRaw: pureBondValueNum,
     ytm: ytmNum !== null ? (ytmNum > 0 ? '+' : '') + ytmNum.toFixed(2) + '%' : '--',
+    _ytmRaw: ytmNum,
     rating,
     forceRedemptionGap,
     forceRedemptionClass,
     _forcePriceGap,
+    forceTriggerPrice: forceTriggerPrice > 0 ? forceTriggerPrice.toFixed(2) : '--',
     downReviseGap,
     downReviseClass,
     _revisePriceGap,
+    reviseTriggerPrice: reviseTriggerPrice > 0 ? reviseTriggerPrice.toFixed(2) : '--',
     discountSpace,
     discountClass,
     hundredRight: hundredRightValue != null ? hundredRightValue.toFixed(2) : '--',
+    _hundredRightRaw: hundredRightValue,
     lotStock: lotStockCount != null ? lotStockCount + '股' : '--',
     safetyPad: safetyPadValue != null ? safetyPadValue.toFixed(1) + '%' : '--',
+    _safetyPadRaw: safetyPadValue,
+    volume: volumeText,
+    _volumeRaw: volumeNum,
+    amount: amountText,
+    _amountRaw: amountNum,
+    remainingSize: remainingSizeText,
+    _remainingSizeRaw: remainingSizeNum,
+    maturityDate: item.maturity_date || '--',
+    cashRatio: cashRatio > 0 ? cashRatio.toFixed(2) + '元' : '--',
+    _cashRatioRaw: cashRatio,
+    perShare: perShareValue > 0 ? perShareValue.toFixed(4) + '元' : '--',
+    _perShareRaw: perShareValue,
     isFavorite: false,
     rawPremium: premiumRateNum
   }
@@ -188,26 +253,42 @@ function normalizePendingItem(item) {
   const stockChange = item.stock_change || 0
   const conversionPrice = item.conversion_price || 0
   const pb = item.pb || 0
-  const perShare = item.per_share_allocation || 0
+  const rawPerShare = item.per_share_allocation || 0
   const sharesFor10 = item.shares_for_10_lots || 0
-  const regDate = item.registration_date || ''
+  // 每股配售：后端 ration 为 0 时，用 apply10 反推（1000元 / 配10张股数）
+  const perShare = rawPerShare > 0 ? rawPerShare : (sharesFor10 > 0 ? 1000 / sharesFor10 : 0)
+  // 股权登记日：优先后端字段，兜底从 progress_full 解析或备选字段名
+  const _stageDateMap = parseProgressDates(item.progress_full || '')
+  const regDate = item.registration_date || item.reg_date || _stageDateMap['股权登记日'] || ''
   const onlineIssueSize = item.online_issue_size || 0
   const winRate = item.win_rate || 0
 
-  // 百元含权：优先后端 stock_cash_ratio，兜底自算
-  const cashRatio = item.stock_cash_ratio || (perShare && stockPrice ? Math.round(perShare / stockPrice * 10000) / 100 : 0)
+  // 百元含权：优先用每股配售/正股价自算，无数据时兜底 stock_cash_ratio
+  const cashRatio = perShare > 0 && stockPrice > 0
+    ? Math.round(perShare / stockPrice * 10000) / 100
+    : (item.stock_cash_ratio || 0)
 
   const riskLevel = item.risk_level || 'mid'
   const recordPrice = item.record_price || 0
   const ma20Price = item.ma20_price || 0
 
-  // 安全垫
+  // 获配每手（10张债券）所需股数（理论值，不取整）
+  // 1手债券=10张，配10张需股数即为获配每手理论股数
+  const _sharesPerLotRaw = sharesFor10;
+
+  // A股最小交易单位：1手 = 100股，向上取整到100的整数倍
+  const _actualSharesFor1Lot = _sharesPerLotRaw > 0 ? Math.ceil(_sharesPerLotRaw / 100) * 100 : 0;
+
+  // 获配每手所需成本（按实际需购买的整数手股数计算）
+  const _costPerLotRaw = _actualSharesFor1Lot * stockPrice;
+
+  // 安全垫（用实际股数计算，贴近真实成交成本）
   const _safetyPadValue = item.safety_pad > 0
     ? item.safety_pad
-    : computeSafetyPad(perShare, stockPrice, sharesFor10, 0.2).value
+    : computeSafetyPad(perShare, stockPrice, _actualSharesFor1Lot, 0.2).value
   const expectedProfit = item.expected_profit > 0
     ? item.expected_profit
-    : computeSafetyPad(perShare, stockPrice, sharesFor10, 0.2).profit
+    : computeSafetyPad(perShare, stockPrice, _actualSharesFor1Lot, 0.2).profit
 
   // 正股趋势（相对20日均价偏离）
   const stockTrend = ma20Price > 0 ? Math.round((stockPrice - ma20Price) / ma20Price * 10000) / 100 : 0
@@ -230,24 +311,27 @@ function normalizePendingItem(item) {
 
   // 一手党标记（沪市+配10张市值<10000元）
   const oneHandParty = exchange === '沪' && sharesFor10 > 0 && stockPrice > 0 && (sharesFor10 * stockPrice) < 10000
-  const _costFor10LotsRaw = sharesFor10 > 0 && stockPrice > 0 ? sharesFor10 * stockPrice : 0
-  const _oneHandMinShares = exchange === '沪' && sharesFor10 > 0 && stockPrice > 0 ? Math.ceil(sharesFor10 * 0.6) : 0
+  const _costFor10LotsRaw = _costPerLotRaw
+
+  // 沪市一手党：理论最低50%（精确算法四舍五入），实操建议60%以提高成功率
+  // 向上取整到100股整数倍（A股最小交易单位）
+  const _oneHandMinShares = exchange === '沪' && sharesFor10 > 0 ? Math.ceil(sharesFor10 * 0.6 / 100) * 100 : 0
 
   const riskLabel = riskLevel === 'high' ? '高风险' : riskLevel === 'low' ? '低风险' : '中风险'
 
   // 综合排序分（直接使用后端 strategy_score，0-100）
   const _compositeRankRaw = item.strategy_score ?? 0
 
-  // 流通盘 & 策略评级（后端新增字段）
-  const floatShares = item.float_shares != null ? item.float_shares.toFixed(2) + '亿' : '--'
-  const _floatSharesRaw = item.float_shares ?? 0
+  // 首日可交易量 & 策略评级（后端新增字段）
+  const tradableAmount = item.tradable_amount != null ? item.tradable_amount.toFixed(2) + '亿' : '--'
+  const _tradableAmountRaw = item.tradable_amount ?? 0
   const strategyScore = item.strategy_score ?? 0
   const strategyRating = item.strategy_rating === 'recommend' ? '推荐'
     : item.strategy_rating === 'watch' ? '可关注' : '谨慎'
   const strategyRatingClass = item.strategy_rating || 'caution'
 
-  // 发行时间轴 — 解析 progress_full 提取各阶段日期
-  const stageDateMap = parseProgressDates(item.progress_full || '')
+  // 发行时间轴 — 复用已解析的 stageDateMap，补充申购/上市日期
+  const stageDateMap = _stageDateMap
   if (item.apply_date) stageDateMap['申购中'] = item.apply_date
   if (item.list_date) stageDateMap['待上市'] = item.list_date
 
@@ -289,6 +373,12 @@ function normalizePendingItem(item) {
     _sharesFor10Raw: sharesFor10,
     costFor10Lots: _costFor10LotsRaw > 0 ? Math.round(_costFor10LotsRaw) + '元' : '--',
     _costFor10LotsRaw,
+    costPerLot: _costPerLotRaw > 0 ? Math.round(_costPerLotRaw) + '元' : '-',
+    _costPerLotRaw,
+    actualSharesFor1Lot: _actualSharesFor1Lot > 0 ? _actualSharesFor1Lot + '股（' + (_actualSharesFor1Lot / 100) + '手）' : '-',
+    _actualSharesFor1Lot,
+    sharesPerLotRaw: _sharesPerLotRaw > 0 ? _sharesPerLotRaw.toFixed(1) + '股' : '-',
+    _sharesPerLotRaw,
     _oneHandMinShares,
     oneHandMinCost: _oneHandMinShares > 0 ? Math.round(_oneHandMinShares * stockPrice) + '元' : '',
     _oneHandMinCostRaw: _oneHandMinShares > 0 ? Math.round(_oneHandMinShares * stockPrice) : 0,
@@ -307,8 +397,8 @@ function normalizePendingItem(item) {
     oneHandParty,
     safetyPad: _safetyPadValue > 0 ? _safetyPadValue.toFixed(2) + '%' : '--',
     _safetyPadRaw: _safetyPadValue,
-    floatShares,
-    _floatSharesRaw,
+    tradableAmount,
+    _tradableAmountRaw,
     strategyScore,
     strategyRating,
     strategyRatingClass,
@@ -349,6 +439,7 @@ function normalizePendingItem(item) {
       _stockTrendRaw: stockTrend,
       recordPrice: recordPrice ? recordPrice.toFixed(2) + '元' : '暂无',
       ma20Price: ma20Price ? ma20Price.toFixed(2) + '元' : '暂无',
+      oneHandMinCost: _oneHandMinShares > 0 ? Math.round(_oneHandMinShares * stockPrice) + '元' : '暂无',
       stageList,
       sectorTag,
       isHotSector
@@ -396,30 +487,52 @@ export const useConvertibleStore = defineStore('convertible', () => {
     }
   }
 
-  function applySignals(rawSignals, pending) {
+  function applySignals(rawSignals, pending, bondListData = []) {
     const normalized = emptySignals()
-    const fields = ['placement', 'double_low', 'force_redeem', 'discount', 'down_revised']
+    // 将完整转债列表构建为映射表，用于补充信号数据中缺失的字段
+    const bondMap = new Map()
+    for (const item of bondListData) {
+      const code = item.bond_code || item.bondCode
+      if (code) bondMap.set(code, item)
+    }
+
+    // 信号 Tab 仅处理已上市转债的 4 类信号；配售 Tab 使用独立的 pendingList
+    const fields = ['double_low', 'force_redeem', 'discount', 'down_revised']
     fields.forEach(field => {
       if (rawSignals && Array.isArray(rawSignals[field])) {
-        normalized[field] = sortByBest(rawSignals[field].map(normalizeBondItem), field)
+        normalized[field] = sortByBest(rawSignals[field].map(signalItem => {
+          const code = signalItem.bond_code || signalItem.bondCode
+          const fullItem = bondMap.get(code)
+          if (fullItem) {
+            return normalizeBondItem({ ...signalItem, ...fullItem })
+          }
+          return normalizeBondItem(signalItem)
+        }), field)
       }
     })
-    if (!normalized.placement || normalized.placement.length === 0) {
-      normalized.placement = (rawSignals?.double_low || []).slice(0, 10).map(normalizeBondItem)
-    }
     signals.value = normalized
+
     const today = new Date().toISOString().slice(0, 10)
     pendingList.value = (pending || [])
       .map(normalizePendingItem)
       .filter(Boolean)
-      .filter(item => {
-        // 过滤已过期标的：申购日已过且仍为申购中，或上市日已过且仍为待上市
-        if (item._status === '申购中' && item._applyDate && item._applyDate < today) return false
-        if (item._status === '待上市' && item._listDate && item._listDate < today) return false
-        // 过滤已过股权登记日的标的（登记日过了就不能参与配售了）
-        if (item.regDate && item.regDate !== '--' && item.regDate < today) return false
-        return true
-      })
+      .filter(item => isPendingPlacementVisible(item, today))
+  }
+
+  /**
+   * 配售列表可见性过滤
+   *
+   * 语义：只保留"还能参与配售"的标的，即股权登记日尚未过期的标的。
+   *   - regDate >= today → 还能登记 → 保留
+   *   - regDate <  today → 登记窗口已关闭 → 过滤
+   *   - regDate 缺失/为占位符 '--' → 当作"无登记日"，按当前数据放行
+   *
+   * 字符串日期 YYYY-MM-DD 字典序等价于日期序，可直接 < 比较
+   */
+  function isPendingPlacementVisible(item, today) {
+    const regDate = item.regDate && item.regDate !== '--' ? item.regDate : ''
+    if (regDate && regDate < today) return false
+    return true
   }
 
   function applyMarketTemp(rawSignals, overview) {
@@ -455,11 +568,13 @@ export const useConvertibleStore = defineStore('convertible', () => {
       let rawSignals = null
       let pending = null
       let overview = null
+      let bondListData = null
       try { rawSignals = await convertibleApi.signals() } catch (e) { console.error('加载信号失败:', e) }
       try { pending = await convertibleApi.pending() } catch (e) { console.error('加载配售数据失败:', e) }
       try { overview = await marketApi.overview() } catch (e) { console.error('加载市场概览失败:', e) }
+      try { bondListData = await convertibleApi.list({ page: 1, pageSize: 500 }) } catch (e) { console.error('加载转债列表失败:', e) }
 
-      applySignals(rawSignals, pending)
+      applySignals(rawSignals, pending, bondListData?.items || [])
       applyMarketTemp(rawSignals, overview)
 
       // 若 overview 未返回温度，再单独请求温度接口兜底

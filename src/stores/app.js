@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 export const useAppStore = defineStore('app', () => {
   const isDarkMode = ref(false)
+  const showSandbox = ref(false)
   const loading = ref(false)
   const cloudRunUrl = ref('')
   const lastUpdated = ref(null)
@@ -22,6 +23,16 @@ export const useAppStore = defineStore('app', () => {
   function initCloudRunUrl() {
     const saved = localStorage.getItem('cloudRunUrl')
     cloudRunUrl.value = saved || ''
+  }
+
+  function initShowSandbox() {
+    const saved = localStorage.getItem('showSandbox')
+    showSandbox.value = saved === 'true'
+  }
+
+  function toggleShowSandbox() {
+    showSandbox.value = !showSandbox.value
+    localStorage.setItem('showSandbox', showSandbox.value)
   }
 
   function toggleDarkMode() {
@@ -72,8 +83,8 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    isDarkMode, loading, cloudRunUrl, lastUpdated,
-    initTheme, initCloudRunUrl, toggleDarkMode, setLoading, setLastUpdated,
+    isDarkMode, showSandbox, loading, cloudRunUrl, lastUpdated,
+    initTheme, initCloudRunUrl, initShowSandbox, toggleDarkMode, toggleShowSandbox, setLoading, setLastUpdated,
     setCloudRunUrl, clearCloudRunUrl, getEffectiveBaseUrl
   }
 })

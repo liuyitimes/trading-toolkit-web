@@ -4,7 +4,7 @@
 
 按 `PLAN.md` Stage 1.2，重写 **Lof.vue（LOF 基金套利）**，对齐小程序功能但重新设计桌面版 UI，并从设计之初兼容移动端。范围仅限 LOF 列表页，不涉及 HKIPO（用户要求跳过）与详情页。
 
-参考蓝本：`trading-toolkit/miniprogram/pages/lof/`（index.js / index.wxml，作为**数据模型与业务逻辑**的权威来源，不照搬视觉）。
+参考蓝本：`trading-toolkit-mp/miniprogram/pages/lof/`（index.js / index.wxml，作为**数据模型与业务逻辑**的权威来源，不照搬视觉）。
 
 开发完成后启动 dev 服务器弹出预览给用户查看。
 

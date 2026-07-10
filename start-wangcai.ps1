@@ -3,8 +3,8 @@
 
 $ErrorActionPreference = "Continue"
 
-$FRONTEND_DIR = "D:\Develop\GitHub\trading-toolkit-web"
-$BACKEND_DIR = "D:\Develop\GitHub\trading-toolkit\cloudrun"
+$FRONTEND_DIR = "D:\Develop\GitHub\trading-toolkit\trading-toolkit-web"
+$BACKEND_DIR = "D:\Develop\GitHub\trading-toolkit\trading-toolkit-service\cloudrun"
 $FRONTEND_PORT = 5173
 $BACKEND_PORT = 8080
 $PYTHON_EXE = "C:\Users\Administrator\AppData\Local\Programs\Python\Python314\python.exe"

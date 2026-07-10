@@ -23,9 +23,9 @@
   - [x] SubTask 4.1: 在 README 追加「自动化 CI/CD」小节
   - [x] SubTask 4.2: 写明 Cloudflare Pages 配置步骤、`CF_API_TOKEN` 和 `CF_ACCOUNT_ID` 获取方式、访问地址、可选 `VITE_BASE_PATH` 环境变量说明
 
-## 后端仓库（trading-toolkit）
+## 后端仓库（trading-toolkit-service）
 
-- [x] Task 5: 新增后端 CI 工作流 `d:\Develop\GitHub\trading-toolkit\.github\workflows\backend-ci.yml`
+- [x] Task 5: 新增后端 CI 工作流 `d:\Develop\GitHub\trading-toolkit-service\.github\workflows\backend-ci.yml`
   - [x] SubTask 5.1: 触发条件为 `push`（任意分支）与 `pull_request`（针对 main）
   - [x] SubTask 5.2: 使用 `actions/checkout@v4`、`actions/setup-python@v5`（python 3.11）
   - [x] SubTask 5.3: 配置 pip 清华镜像并缓存 pip 下载目录（`~/.cache/pip`）

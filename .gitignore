@@ -25,3 +25,20 @@ dist-ssr
 
 # Brainstorming visual companion
 .superpowers/
+
+# Database
+*.db
+
+# IDE
+.trae/
+.qoder/
+
+# Local scripts
+start-wangcai.bat
+start-wangcai.ps1
+
+# Test artifacts
+tests/screenshots/
+
+# Docs superpowers
+docs/superpowers/

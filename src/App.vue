@@ -11,5 +11,6 @@ const appStore = useAppStore()
 onMounted(() => {
   appStore.initTheme()
   appStore.initCloudRunUrl()
+  appStore.initShowSandbox()
 })
 </script>

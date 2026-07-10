@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 60000 // 后端数据源（akshare/集思录）响应较慢，给足 60 秒
+  timeout: 60000 // 后端数据源（新浪/东财）响应较慢，给足 60 秒
 })
 
 api.interceptors.request.use(config => {
