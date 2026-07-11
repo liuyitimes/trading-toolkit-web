@@ -113,6 +113,8 @@ function normalizeBondItem(item) {
   const stockPriceNum = typeof item.stock_price === 'number' ? item.stock_price : 0
   const pureBondValueNum = typeof item.pure_bond_value === 'number' ? item.pure_bond_value : 0
   const ytmNum = typeof item.ytm === 'number' ? item.ytm : null
+  const bondFloorDiscountRateNum = typeof item.bond_floor_discount_rate === 'number' ? item.bond_floor_discount_rate : null
+  const bondCashflows = Array.isArray(item.bond_cashflows) ? item.bond_cashflows : []
   const rating = item.rating || '--'
 
   const bondCode = item.bond_code || item.bondCode || '--'
@@ -122,7 +124,9 @@ function normalizeBondItem(item) {
   let forceRedemptionGap = '--'
   let forceRedemptionClass = ''
   let _forcePriceGap = 9999
-  let forceTriggerPrice = conversionPriceNum > 0 ? conversionPriceNum * 1.3 : 0
+  let forceTriggerPrice = typeof item.force_trigger_price === 'number' && item.force_trigger_price > 0
+    ? item.force_trigger_price
+    : (conversionPriceNum > 0 ? conversionPriceNum * 1.3 : 0)
   if (conversionPriceNum > 0 && stockPriceNum > 0) {
     const gap = (stockPriceNum - forceTriggerPrice) / forceTriggerPrice * 100
     _forcePriceGap = gap
@@ -133,7 +137,9 @@ function normalizeBondItem(item) {
   let downReviseGap = '--'
   let downReviseClass = ''
   let _revisePriceGap = 9999
-  let reviseTriggerPrice = conversionPriceNum > 0 ? conversionPriceNum * 0.85 : 0
+  let reviseTriggerPrice = typeof item.revise_trigger_price === 'number' && item.revise_trigger_price > 0
+    ? item.revise_trigger_price
+    : (conversionPriceNum > 0 ? conversionPriceNum * 0.85 : 0)
   if (conversionPriceNum > 0 && stockPriceNum > 0) {
     const gap = (stockPriceNum - reviseTriggerPrice) / reviseTriggerPrice * 100
     _revisePriceGap = gap
@@ -205,6 +211,9 @@ function normalizeBondItem(item) {
     _pureBondValueRaw: pureBondValueNum,
     ytm: ytmNum !== null ? (ytmNum > 0 ? '+' : '') + ytmNum.toFixed(2) + '%' : '--',
     _ytmRaw: ytmNum,
+    bondFloorDiscountRate: bondFloorDiscountRateNum !== null ? bondFloorDiscountRateNum.toFixed(2) + '%' : '--',
+    _bondFloorDiscountRateRaw: bondFloorDiscountRateNum,
+    bondCashflows,
     rating,
     forceRedemptionGap,
     forceRedemptionClass,

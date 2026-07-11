@@ -175,7 +175,7 @@
         </el-table-column>
         <el-table-column label="评级" width="90" align="center">
           <template #default="{ row }">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
               <template #content>
                 <div class="formula-tip">
                   <div class="ft-formula">策略评级 = 综合评分分档</div>
@@ -197,7 +197,7 @@
                   <div class="ft-detail"><b style="color:#67c23a">谨慎</b>：评分 &lt; 60</div>
                 </div>
               </template>
-              <el-tag :class="`rating-tag rating-${row.strategyRatingClass}`" size="small">
+              <el-tag :class="`rating-tag rating-${row.strategyRatingClass}`" size="small" @click.stop>
                 {{ row.strategyRating }}
               </el-tag>
             </el-tooltip>
@@ -205,7 +205,7 @@
         </el-table-column>
         <el-table-column label="安全垫" width="100" align="right">
           <template #default="{ row }">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
               <template #content>
                 <div class="formula-tip">
                   <div class="ft-formula">安全垫 = 预估收益 ÷ 配售成本 × 100%</div>
@@ -224,7 +224,7 @@
                   <div class="ft-note">安全垫越高，正股下跌容错空间越大</div>
                 </div>
               </template>
-              <span class="hover-value" :class="safetyPadClass(row._safetyPadRaw)">{{ row.safetyPad }}</span>
+              <span class="hover-value" :class="safetyPadClass(row._safetyPadRaw)" @click.stop>{{ row.safetyPad }}</span>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -242,7 +242,7 @@
         </el-table-column>
         <el-table-column label="百元含权" width="100" align="right">
           <template #default="{ row }">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
               <template #content>
                 <div class="formula-tip">
                   <div class="ft-formula">百元含权 = 每股配售 ÷ 正股价 × 100</div>
@@ -258,13 +258,13 @@
                   <div class="ft-note">即每买100元正股可配售的转债金额</div>
                 </div>
               </template>
-              <span class="hl hover-value">{{ row.cashRatio }}</span>
+              <span class="hl hover-value" @click.stop>{{ row.cashRatio }}</span>
             </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column label="首日可交易量" width="130" align="right">
           <template #default="{ row }">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
               <template #content>
                 <div class="formula-tip">
                   <div class="ft-formula">首日可交易量 = 发行规模 − 原股东配售部分</div>
@@ -287,7 +287,7 @@
                   <div class="ft-note">含大股东锁定6个月部分，首日可交易量越小，上市后弹性越大</div>
                 </div>
               </template>
-              <span class="hover-value">{{ row.tradableAmount }}</span>
+              <span class="hover-value" @click.stop>{{ row.tradableAmount }}</span>
             </el-tooltip>
           </template>
         </el-table-column>
@@ -378,7 +378,7 @@
         <template v-if="activeTab === 'double_low'">
           <el-table-column label="双低值" width="90" align="right">
             <template #default="{ row }">
-              <el-tooltip placement="top" :show-after="300">
+              <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
                 <template #content>
                   <div class="formula-tip">
                     <div class="ft-formula">双低值 = 转债价格 + 溢价率</div>
@@ -393,7 +393,7 @@
                     <div class="ft-note">双低值越低，转债的价格与估值组合越有吸引力。</div>
                   </div>
                 </template>
-                <span class="hover-value hl">{{ row.doubleLow }}</span>
+                <span class="hover-value hl" @click.stop>{{ row.doubleLow }}</span>
               </el-tooltip>
             </template>
           </el-table-column>
@@ -404,7 +404,7 @@
           </el-table-column>
           <el-table-column label="溢价率" width="110" align="right">
             <template #default="{ row }">
-              <el-tooltip placement="top" :show-after="300">
+              <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
                 <template #content>
                   <div class="formula-tip">
                     <div class="ft-formula">溢价率 = (转债价格 - 转股价值) / 转股价值 × 100%</div>
@@ -419,7 +419,7 @@
                     <div class="ft-note">负溢价表示转债价格低于转股价值，可作为转股套利的观察信号。</div>
                   </div>
                 </template>
-                <span :class="['hover-value', 'premium-value', row.premiumClass]">{{ row.premium }}</span>
+                <span :class="['hover-value', 'premium-value', row.premiumClass]" @click.stop>{{ row.premium }}</span>
               </el-tooltip>
             </template>
           </el-table-column>
@@ -428,19 +428,62 @@
               <span>{{ row.remainingSize }}</span>
             </template>
           </el-table-column>
+          <el-table-column label="纯债价值" width="100" align="right">
+            <template #default="{ row }">
+              <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">纯债价值 = Σ 未来现金流 / (1 + 评级折现率)^t</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">当前口径</div>
+                      <div class="ft-detail">评级折现率：<b>{{ row.bondFloorDiscountRate }}</b></div>
+                      <div class="ft-detail">估算纯债价值：<b>{{ row.pureBondValue }}</b></div>
+                    </div>
+                    <div v-if="row.bondCashflows?.length" class="ft-section">
+                      <div class="ft-subtitle">剩余现金流</div>
+                      <div v-for="cf in row.bondCashflows" :key="cf.date" class="ft-detail">
+                        {{ cf.date }}<b>{{ Number(cf.amount).toFixed(2) }}</b>
+                      </div>
+                    </div>
+                    <div class="ft-note">折现率按信用评级档位估算；用于双低策略的防守参考，不等同于交易所官方估值。</div>
+                  </div>
+                </template>
+                <span class="hover-value" @click.stop>{{ row.pureBondValue }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column label="到期收益率" width="110" align="right">
+            <template #default="{ row }">
+              <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
+                <template #content>
+                  <div class="formula-tip">
+                    <div class="ft-formula">到期收益率 = 使 当前价格 = Σ 未来现金流 / (1 + r)^t 的 r</div>
+                    <div class="ft-section">
+                      <div class="ft-subtitle">当前数据</div>
+                      <div class="ft-detail">转债价格：<b>{{ row.price }}</b></div>
+                      <div class="ft-detail">到期收益率：<b>{{ row.ytm }}</b></div>
+                    </div>
+                    <div v-if="row.bondCashflows?.length" class="ft-section">
+                      <div class="ft-subtitle">现金流输入</div>
+                      <div v-for="cf in row.bondCashflows" :key="cf.date" class="ft-detail">
+                        {{ cf.date }}<b>{{ Number(cf.amount).toFixed(2) }}</b>
+                      </div>
+                    </div>
+                    <div class="ft-note">按持有到期且未转股的现金流反解；价格高于债底时，YTM 可能为负。</div>
+                  </div>
+                </template>
+                <span class="hover-value" :class="{ positive: row._ytmRaw != null && row._ytmRaw > 0, negative: row._ytmRaw != null && row._ytmRaw < 0 }" @click.stop>{{ row.ytm }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column label="转股价值" width="100" align="right">
+            <template #default="{ row }">
+              <span>{{ row.conversionValue }}</span>
+            </template>
+          </el-table-column>
           <el-table-column label="成交额" width="110" align="right">
             <template #default="{ row }">
               <span>{{ row.amount }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="到期收益率" width="100" align="right">
-            <template #default="{ row }">
-              <span :class="{ positive: row._ytmRaw != null && row._ytmRaw > 0, negative: row._ytmRaw != null && row._ytmRaw < 0 }">{{ row.ytm }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="纯债价值" width="90" align="right">
-            <template #default="{ row }">
-              <span>{{ row.pureBondValue }}</span>
             </template>
           </el-table-column>
           <el-table-column label="成交量" width="100" align="right">
@@ -457,7 +500,7 @@
           </el-table-column>
           <el-table-column label="溢价率" width="110" align="right">
             <template #default="{ row }">
-              <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
                 <template #content>
                   <div class="formula-tip">
                     <div class="ft-formula">溢价率 = (转债价格 - 转股价值) / 转股价值 × 100%</div>
@@ -472,7 +515,7 @@
                     <div class="ft-note">负溢价表示转债价格低于转股价值，可作为转股套利的观察信号。</div>
                   </div>
                 </template>
-                <span :class="['hover-value', 'premium-value', row.premiumClass]">{{ row.premium }}</span>
+              <span :class="['hover-value', 'premium-value', row.premiumClass]" @click.stop>{{ row.premium }}</span>
               </el-tooltip>
             </template>
           </el-table-column>
@@ -484,7 +527,7 @@
             align="right"
           >
             <template #default="{ row }">
-              <el-tooltip v-if="col.formula" placement="top" :show-after="300">
+              <el-tooltip v-if="col.formula" placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
                 <template #content>
                   <div class="formula-tip">
                     <div class="ft-formula">{{ col.formula }}</div>
@@ -496,7 +539,7 @@
                     <div v-if="col.note" class="ft-note">{{ col.note }}</div>
                   </div>
                 </template>
-                <span class="hover-value" :class="col.cls(row)">{{ col.val(row) }}</span>
+                <span class="hover-value" :class="col.cls(row)" @click.stop>{{ col.val(row) }}</span>
               </el-tooltip>
               <span v-else :class="col.cls(row)">{{ col.val(row) }}</span>
             </template>
@@ -814,7 +857,7 @@
               class="detail-item hl-box"
             >
               <span class="detail-label">{{ col.label }}</span>
-              <el-tooltip placement="top" :show-after="300">
+              <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
                 <template #content>
                   <div class="formula-tip">
                     <div class="ft-formula">{{ col.formula || col.label }}</div>
@@ -826,7 +869,7 @@
                     <div v-if="col.note" class="ft-note">{{ col.note }}</div>
                   </div>
                 </template>
-                <span class="detail-value hover-value" :class="col.cls(signalDetail)">{{ col.val(signalDetail) }}</span>
+                <span class="detail-value hover-value" :class="col.cls(signalDetail)" @click.stop>{{ col.val(signalDetail) }}</span>
               </el-tooltip>
             </div>
             <div class="detail-item hl-box">
@@ -848,6 +891,7 @@
             <div class="detail-item"><span class="detail-label">转股价</span><span class="detail-value">{{ signalDetail.conversionPrice }}</span></div>
             <div class="detail-item"><span class="detail-label">纯债价值</span><span class="detail-value">{{ signalDetail.pureBondValue }}</span></div>
             <div class="detail-item"><span class="detail-label">到期收益率</span><span class="detail-value" :class="{ positive: signalDetail._ytmRaw != null && signalDetail._ytmRaw > 0, negative: signalDetail._ytmRaw != null && signalDetail._ytmRaw < 0 }">{{ signalDetail.ytm }}</span></div>
+            <div class="detail-item"><span class="detail-label">债底折现率</span><span class="detail-value">{{ signalDetail.bondFloorDiscountRate }}</span></div>
             <div class="detail-item"><span class="detail-label">剩余规模</span><span class="detail-value">{{ signalDetail.remainingSize }}</span></div>
           </div>
         </div>
@@ -1129,8 +1173,9 @@ function getSignalColumnsForTab(tab) {
     { key: 'doubleLow', label: '双低值', width: 90, val: r => r.doubleLow, cls: () => 'hl',
       formula: '双低值 = 转债价格 + 溢价率', example: '价格 105，溢价 5% → 双低 = 110', note: '双低值越低投资价值越高，低于 150 可入场' },
     { key: 'pureBondValue', label: '纯债价值', width: 90, val: r => r.pureBondValue, cls: () => '',
-      formula: '纯债价值 = 未来现金流折现', example: '持有到期本息折现值', note: '纯债价值是转债的价格底座' },
-    { key: 'ytm', label: '到期收益率', width: 100, val: r => r.ytm, cls: r => { if (!r.ytm || r.ytm === '--') return ''; return r.ytm.startsWith('+') ? 'positive' : 'negative' } }
+      formula: '纯债价值 = Σ 未来现金流 / (1 + 评级折现率)^t', example: '票息与到期赎回价折现求和', note: '按信用评级档位折现估算，是双低策略的防守参考' },
+    { key: 'ytm', label: '到期收益率', width: 100, val: r => r.ytm, cls: r => { if (!r.ytm || r.ytm === '--') return ''; return r.ytm.startsWith('+') ? 'positive' : 'negative' },
+      formula: '当前价格 = Σ 未来现金流 / (1 + r)^t，反解 r', example: '以当前转债价格买入并持有到期', note: '高价转债的到期收益率可能为负' }
   ]
   if (tab === 'force_redeem') return [
     { key: 'forceRedemptionGap', label: '距强赎', width: 90, val: r => r.forceRedemptionGap, cls: r => r.forceRedemptionClass,
@@ -1178,8 +1223,11 @@ const signalSortFields = computed(() => {
     { field: 'doubleLow', label: '双低值' },
     { field: 'premium', label: '溢价率' },
     { field: 'price', label: '价格' },
+    { field: 'pureBondValue', label: '纯债价值' },
     { field: 'ytm', label: '到期收益' },
-    { field: 'remainingSize', label: '规模' }
+    { field: 'conversionValue', label: '转股价值' },
+    { field: 'remainingSize', label: '规模' },
+    { field: 'amount', label: '成交额' }
   ]
   if (activeTab.value === 'force_redeem') return [
     { field: 'forceGap', label: '距强赎' },
@@ -1233,8 +1281,10 @@ function signalSortValue(item, field) {
   if (field === 'premium') return item.premiumNum ?? 9999
   if (field === 'price') return item.priceNum ?? 0
   if (field === 'ytm') return item._ytmRaw ?? -9999
+  if (field === 'pureBondValue') return item._pureBondValueRaw ?? 0
   if (field === 'remainingSize') return item._remainingSizeRaw ?? 0
   if (field === 'conversionValue') return item.conversionValueNum ?? 0
+  if (field === 'amount') return item._amountRaw ?? 0
   return 0
 }
 
@@ -2435,50 +2485,70 @@ onUnmounted(() => {
 
 .formula-tip {
   font-size: 12px;
-  line-height: 1.7;
-  min-width: 260px;
-  max-width: 360px;
+  line-height: 1.65;
+  min-width: 300px;
+  max-width: 420px;
+  color: var(--el-text-color-primary);
 
   .ft-formula {
-    font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
     font-weight: 600;
-    color: #409eff;
-    margin-bottom: 8px;
-    padding: 4px 8px;
-    background: rgba(64, 158, 255, 0.1);
-    border-radius: 4px;
-    border-left: 3px solid #409eff;
+    color: var(--el-text-color-primary);
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: color-mix(in srgb, var(--el-fill-color-light) 86%, #fff 14%);
+    border: 1px solid var(--el-border-color-lighter);
+    border-left: 3px solid var(--el-text-color-secondary);
+    border-radius: 3px;
+    letter-spacing: 0;
   }
 
   .ft-section {
-    margin-bottom: 4px;
+    margin-bottom: 8px;
   }
 
   .ft-detail {
-    color: var(--el-text-color-secondary);
-    padding: 1px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    color: var(--el-text-color-regular);
+    padding: 2px 0;
 
     b {
-      color: var(--el-color-primary);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      color: var(--el-text-color-primary);
       font-weight: 600;
+      background: var(--el-fill-color-lighter);
+      border: 1px solid var(--el-border-color-lighter);
+      border-radius: 3px;
+      padding: 0 4px;
+      white-space: nowrap;
     }
   }
 
   .ft-note {
-    margin-top: 6px;
-    padding-top: 6px;
-    border-top: 1px dashed var(--el-border-color);
+    margin-top: 8px;
+    padding: 7px 9px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 3px;
+    background: var(--el-fill-color-blank);
     color: var(--el-text-color-secondary);
     font-size: 11px;
-    font-style: italic;
+    font-style: normal;
   }
 
   .ft-step {
     font-weight: 600;
-    color: var(--el-color-primary);
-    margin-top: 8px;
-    margin-bottom: 2px;
-    font-size: 13px;
+    color: var(--el-text-color-primary);
+    margin-top: 10px;
+    margin-bottom: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    background: color-mix(in srgb, var(--el-color-primary-light-9) 42%, transparent);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 3px;
   }
 
   .ft-divider {
@@ -2490,9 +2560,15 @@ onUnmounted(() => {
 
   .ft-subtitle {
     font-weight: 600;
-    color: var(--el-text-color-primary);
-    margin-bottom: 4px;
-    font-size: 12px;
+    color: var(--el-text-color-regular);
+    margin-bottom: 5px;
+    font-size: 11px;
+    letter-spacing: 0.04em;
   }
+}
+
+.formula-popper.el-popper {
+  border: 1px solid var(--el-border-color);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
 }
 </style>
