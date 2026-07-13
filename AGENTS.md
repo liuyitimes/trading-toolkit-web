@@ -1,8 +1,12 @@
 ## Agent skills
 
+### Specification workflow
+
+The repository-level `openspec/` directory is the source of truth for current supported behavior. Before changing Web behavior, read the relevant baseline specification and follow the root `AGENTS.md` OpenSpec workflow.
+
 ### Issue tracker
 
-Issues and specs live as local Markdown files in `.scratch/`. See `docs/agents/issue-tracker.md`.
+Issues and specs live as local Markdown files in `.scratch/`. See `docs/agents/issue-tracker.md`. Use `.scratch/` for issue decomposition and triage; do not treat it as a replacement for an OpenSpec baseline or change artifact.
 
 ### Triage labels
 

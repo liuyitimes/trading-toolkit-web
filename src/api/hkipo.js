@@ -1,6 +1,9 @@
 import api from './index'
 
 export const hkipoApi = {
+  sync() {
+    return api.post('/api/v1/hkipo/sync')
+  },
   list() {
     return api.get('/api/v1/hkipo/list')
   },

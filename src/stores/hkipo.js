@@ -20,7 +20,8 @@ function normalizeIpoItem(raw) {
   const ipoPrice = safeNum(raw.ipo_price)
   const applyLimit = safeNum(raw.apply_limit)
   // 一手成本 = 发行价 × 申购上限（万股→股）
-  const oneHandCost = ipoPrice > 0 && applyLimit > 0 ? ipoPrice * applyLimit * 10000 : 0
+  const oneHandCost =
+    ipoPrice > 0 && applyLimit > 0 ? ipoPrice * applyLimit * 10000 : 0
   return {
     code: raw.code || '',
     name: raw.name || '--',
@@ -43,7 +44,12 @@ function normalizeIpoItem(raw) {
     continuousDays: raw.continuous_days != null ? raw.continuous_days : '',
     status: raw.status || 'pending',
     oneHandCost,
-    oneHandCostText: oneHandCost > 0 ? (oneHandCost >= 10000 ? (oneHandCost / 10000).toFixed(2) + ' 万' : oneHandCost.toFixed(0) + ' 元') : '--',
+    oneHandCostText:
+      oneHandCost > 0
+        ? oneHandCost >= 10000
+          ? (oneHandCost / 10000).toFixed(2) + ' 万'
+          : oneHandCost.toFixed(0) + ' 元'
+        : '--',
     isFavorite: false
   }
 }
@@ -67,7 +73,7 @@ export const useHkipoStore = defineStore('hkipo', () => {
     loading.value = true
     try {
       const data = await hkipoApi.list()
-      const arr = Array.isArray(data) ? data : (data.items || [])
+      const arr = Array.isArray(data) ? data : data.items || []
       ipoList.value = arr.map(normalizeIpoItem).filter(Boolean)
       lastUpdated.value = new Date().toISOString()
       useAppStore().setLastUpdated()
@@ -81,7 +87,7 @@ export const useHkipoStore = defineStore('hkipo', () => {
   async function loadUpcoming() {
     try {
       const data = await hkipoApi.upcoming()
-      const arr = Array.isArray(data) ? data : (data.items || [])
+      const arr = Array.isArray(data) ? data : data.items || []
       upcomingList.value = arr.map(normalizeIpoItem).filter(Boolean)
     } catch (e) {
       console.error('加载申购中数据失败:', e)
@@ -111,18 +117,25 @@ export const useHkipoStore = defineStore('hkipo', () => {
     loading.value = true
     error.value = null
     try {
-      const [listResult, upcomingResult, summaryResult] = await Promise.allSettled([
-        hkipoApi.list(),
-        hkipoApi.upcoming(),
-        hkipoApi.summary()
-      ])
+      // A page visit is the only normal trigger for checking HKEX for new files.
+      await hkipoApi.sync().catch(() => null)
+      const [listResult, upcomingResult, summaryResult] =
+        await Promise.allSettled([
+          hkipoApi.list(),
+          hkipoApi.upcoming(),
+          hkipoApi.summary()
+        ])
 
       if (listResult.status === 'fulfilled') {
-        const arr = Array.isArray(listResult.value) ? listResult.value : (listResult.value.items || [])
+        const arr = Array.isArray(listResult.value)
+          ? listResult.value
+          : listResult.value.items || []
         ipoList.value = arr.map(normalizeIpoItem).filter(Boolean)
       }
       if (upcomingResult.status === 'fulfilled') {
-        const arr = Array.isArray(upcomingResult.value) ? upcomingResult.value : (upcomingResult.value.items || [])
+        const arr = Array.isArray(upcomingResult.value)
+          ? upcomingResult.value
+          : upcomingResult.value.items || []
         upcomingList.value = arr.map(normalizeIpoItem).filter(Boolean)
       }
       if (summaryResult.status === 'fulfilled') {
@@ -133,14 +146,14 @@ export const useHkipoStore = defineStore('hkipo', () => {
       if (!summary.value) {
         const all = [...ipoList.value, ...upcomingList.value]
         const seen = new Set()
-        const unique = all.filter(i => {
+        const unique = all.filter((i) => {
           if (seen.has(i.code)) return false
           seen.add(i.code)
           return true
         })
         summary.value = {
-          upcoming_count: unique.filter(i => i.status === 'upcoming').length,
-          recent_count: unique.filter(i => i.status === 'listed').length,
+          upcoming_count: unique.filter((i) => i.status === 'upcoming').length,
+          recent_count: unique.filter((i) => i.status === 'listed').length,
           total: unique.length
         }
       }
@@ -156,16 +169,33 @@ export const useHkipoStore = defineStore('hkipo', () => {
 
   function refreshFavorites() {
     const userStore = useUserStore()
-    const favSet = new Set(userStore.favorites.filter(f => f.type === 'hkipo').map(f => f.code))
-    const mark = list => list.map(item => ({ ...item, isFavorite: favSet.has(item.code) }))
+    const favSet = new Set(
+      userStore.favorites.filter((f) => f.type === 'hkipo').map((f) => f.code)
+    )
+    const mark = (list) =>
+      list.map((item) => ({ ...item, isFavorite: favSet.has(item.code) }))
     ipoList.value = mark(ipoList.value)
     upcomingList.value = mark(upcomingList.value)
   }
 
   return {
-    ipoList, upcomingList, summary, currentDetail, loading, error,
-    upcomingCount, recentCount, totalCount,
-    tier, threshold, lastUpdated,
-    loadIpoList, loadUpcoming, loadSummary, loadDetail, loadAll, refreshFavorites
+    ipoList,
+    upcomingList,
+    summary,
+    currentDetail,
+    loading,
+    error,
+    upcomingCount,
+    recentCount,
+    totalCount,
+    tier,
+    threshold,
+    lastUpdated,
+    loadIpoList,
+    loadUpcoming,
+    loadSummary,
+    loadDetail,
+    loadAll,
+    refreshFavorites
   }
 })
