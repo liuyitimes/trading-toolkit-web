@@ -38,4 +38,3 @@ The Web application SHALL identify expected profit, safety pad, score, rating, a
 - **WHEN** the user views the safety-pad tooltip or the pending-placement detail dialog
 - **THEN** the view shows the active premium rate and the resulting expected profit
 - **AND THEN** it retains the observation and verification boundary for placement data.
-
