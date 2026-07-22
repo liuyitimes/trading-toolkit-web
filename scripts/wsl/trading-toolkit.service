@@ -1,0 +1,15 @@
+[Unit]
+Description=Trading Toolkit local WSL deployment
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__WEB_DIR__
+Environment=WEB_DIR=__WEB_DIR__
+Environment=SERVICE_DIR=__SERVICE_DIR__
+ExecStart=__WEB_DIR__/scripts/wsl/run-services
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

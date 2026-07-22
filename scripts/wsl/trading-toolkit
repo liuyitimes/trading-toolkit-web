@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+WEB_DIR="${WEB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+SERVICE_DIR="${SERVICE_DIR:-$(dirname "$WEB_DIR")/trading-toolkit-service}"
+UNIT_NAME="trading-toolkit.service"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/trading-toolkit"
+SERVICE_DB="cloudrun/trading_toolkit.db"
+
+fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+
+require_clean_service_code() {
+  local changes
+  changes=$(git -C "$SERVICE_DIR" status --porcelain --untracked-files=no | awk '{print $2}' | grep -v "^$SERVICE_DB$" || true)
+  [ -z "$changes" ] || fail "service checkout has local code changes: $changes"
+}
+
+check_prerequisites() {
+  [ -d "$WEB_DIR/.git" ] || fail "Web checkout not found: $WEB_DIR"
+  [ -d "$SERVICE_DIR/.git" ] || fail "service checkout not found: $SERVICE_DIR"
+  command -v npm >/dev/null || fail "npm is required"
+  command -v python3 >/dev/null || fail "python3 is required"
+  command -v curl >/dev/null || fail "curl is required"
+  python3 -c 'import flask' || fail "Flask is not installed"
+  require_clean_service_code
+}
+
+health_check() {
+  curl --fail --silent --show-error --max-time 10 http://127.0.0.1:5173/ >/dev/null
+  curl --silent --show-error --max-time 10 http://127.0.0.1:8080/ >/dev/null
+}
+
+install() {
+  check_prerequisites
+  mkdir -p "$HOME/.config/systemd/user" "$STATE_DIR"
+  sed -e "s|__WEB_DIR__|$WEB_DIR|g" -e "s|__SERVICE_DIR__|$SERVICE_DIR|g" \
+    "$WEB_DIR/scripts/wsl/trading-toolkit.service" > "$HOME/.config/systemd/user/$UNIT_NAME"
+  systemctl --user daemon-reload
+  systemctl --user enable "$UNIT_NAME"
+  printf 'Installed %s\n' "$UNIT_NAME"
+}
+
+deploy() {
+  check_prerequisites
+  cd "$WEB_DIR"
+  npm ci
+  npm run build
+  install
+  systemctl --user restart "$UNIT_NAME"
+  for _ in $(seq 1 15); do health_check && break || sleep 1; done
+  health_check || fail "services did not become healthy"
+  printf 'web_sha=%s\nservice_sha=%s\n' "$(git rev-parse HEAD)" "$(git -C "$SERVICE_DIR" rev-parse HEAD)" > "$STATE_DIR/deployed.env"
+  printf 'Deployment succeeded: http://127.0.0.1:5173\n'
+}
+
+case "${1:-}" in
+  install) install ;;
+  deploy) deploy ;;
+  start|stop|restart|status) systemctl --user "$1" "$UNIT_NAME" ;;
+  logs) journalctl --user -u "$UNIT_NAME" -n "${2:-100}" --no-pager ;;
+  health) health_check && printf 'healthy\n' ;;
+  *) echo "Usage: $0 {install|deploy|start|stop|restart|status|logs|health}"; exit 2 ;;
+esac
