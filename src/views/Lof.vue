@@ -21,20 +21,24 @@
       </div>
       <div class="overview-grid">
         <div class="overview-item">
-          <div class="overview-value hl">{{ summary?.top_premium_board ?? '--' }}</div>
-          <div class="overview-label">溢价最多板块</div>
+          <div class="overview-value hl">{{ summary?.hot_direction?.name || '暂缺' }}</div>
+          <div class="overview-label">溢价热点方向</div>
+          <div class="overview-detail">{{ hotDirectionDetail }}</div>
         </div>
         <div class="overview-item">
-          <div class="overview-value">{{ formatPremiumNum(summary?.top_board_premium_avg) }}</div>
-          <div class="overview-label">板块平均溢价</div>
+          <div class="overview-value">{{ formatSubscriptionAmount(dailySubscription?.capital_yuan) }}</div>
+          <div class="overview-label">昨日净申购资金（按净值估）</div>
+          <div class="overview-detail">{{ dailySubscriptionDetail }}</div>
         </div>
         <div class="overview-item">
-          <div class="overview-value">{{ summary?.positive_count ?? '--' }}</div>
-          <div class="overview-label">溢价基金数</div>
+          <div class="overview-value">{{ dailySubscription?.account_count_lower_bound ?? '暂缺' }}</div>
+          <div class="overview-label">昨日净申购账户数下限</div>
+          <div class="overview-detail">按单账户限额折算</div>
         </div>
         <div class="overview-item">
-          <div class="overview-value">{{ summary?.discount_count ?? '--' }}</div>
-          <div class="overview-label">折价基金数</div>
+          <div class="overview-value">{{ dailySubscription?.investor_limit_lower_bound ?? '暂缺' }}</div>
+          <div class="overview-label">昨日净申购投资者限额下限</div>
+          <div class="overview-detail">不等同于去重人数</div>
         </div>
       </div>
     </div>
@@ -158,14 +162,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column width="110" align="right" sortable :sort-by="'premium'">
-        <template #header>
-          溢价率<FormulaInfo
-            formula="(场内价格 - 基金净值) / 基金净值 × 100%"
-            example="价格 1.05，净值 1.00 → 溢价率 = 5%"
-            note="溢价率 > 0 表示场内贵，可申购套利"
-          />
-        </template>
+      <el-table-column label="溢价率" width="110" align="right" sortable :sort-by="'premium'">
         <template #default="{ row }">
           <span
             class="premium-value"
@@ -173,14 +170,7 @@
           >{{ row.premiumText }}</span>
         </template>
       </el-table-column>
-      <el-table-column width="110" align="right">
-        <template #header>
-          净溢价<FormulaInfo
-            formula="净溢价 = 溢价率 - 申购费率 - 卖出佣金率"
-            example="5% - 0.15% - 0.05% = 4.80%"
-            note="净溢价 > 0 才有套利空间"
-          />
-        </template>
+      <el-table-column label="净溢价" width="110" align="right">
         <template #default="{ row }">
           <span
             class="premium-value"
@@ -193,19 +183,12 @@
           <span :class="{ hl: row.sustainedPremium }">{{ row.consecutivePremium }}天</span>
         </template>
       </el-table-column>
-      <el-table-column label="成交额" width="110" align="right">
+      <el-table-column label="成交额" width="110" align="right" sortable :sort-by="'amountRaw'">
         <template #default="{ row }">
           <span :class="amountClass(row)">{{ row.amountText }}</span>
         </template>
       </el-table-column>
-      <el-table-column width="120" align="right">
-        <template #header>
-          预期收益(万)<FormulaInfo
-            formula="预期收益 = 申购金额 × 净溢价 / 100"
-            example="1万 × 4.8% = 480元"
-            note="按1万元申购估算，实际收益受净值波动影响"
-          />
-        </template>
+      <el-table-column label="预期收益(万)" width="120" align="right">
         <template #default="{ row }">
           <span class="expected-return">{{ row.expectedProfit }}</span>
         </template>
@@ -338,19 +321,12 @@
           >{{ row.netPremiumText }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="成交额" width="110" align="right">
+      <el-table-column label="成交额" width="110" align="right" sortable :sort-by="'amountRaw'">
         <template #default="{ row }">
           <span :class="amountClass(row)">{{ row.amountText }}</span>
         </template>
       </el-table-column>
       <el-table-column label="预期收益(万)" width="120" align="right">
-        <template #header>
-          预期收益(万)<FormulaInfo
-            formula="预期收益 = 申购金额 × 净溢价 / 100"
-            example="1万 × 4.8% = 480元"
-            note="按1万元申购估算，实际收益受净值波动影响"
-          />
-        </template>
         <template #default="{ row }">
           <span class="expected-return">{{ row.expectedProfit }}</span>
         </template>
@@ -653,13 +629,13 @@
 
 <script setup>
 import { ref, computed, onMounted, onActivated, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search, Star, StarFilled, ArrowDown } from '@element-plus/icons-vue'
 import { useLofStore } from '@/stores/lof'
 import { useUserStore } from '@/stores/user'
 import TierBadge from '@/components/TierBadge.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
-import FormulaInfo from '@/components/FormulaInfo.vue'
 import ExchangeBadge from '@/components/ExchangeBadge.vue'
 import SensitivitySlider from '@/components/SensitivitySlider.vue'
 import FormulaRecall from '@/components/FormulaRecall.vue'
@@ -669,6 +645,7 @@ import { useAppStore } from '@/stores/app'
 const appStore = useAppStore()
 const store = useLofStore()
 const userStore = useUserStore()
+const router = useRouter()
 
 const activeTab = ref('top10')
 const searchKeyword = ref('')
@@ -763,6 +740,21 @@ const tabStats = computed(() => {
 })
 
 const summary = computed(() => store.summary)
+const dailySubscription = computed(() => summary.value?.daily_subscription ?? null)
+const hotDirectionDetail = computed(() => {
+  const direction = summary.value?.hot_direction
+  if (!direction?.name) {
+    return direction?.unclassified_count ? `暂无经核验分类 · 未分类${direction.unclassified_count}只` : '暂无经核验分类'
+  }
+  return `${direction.method} ${Number(direction.weighted_premium).toFixed(2)}% · ${direction.sample_count}只`
+})
+const dailySubscriptionDetail = computed(() => {
+  const subscription = dailySubscription.value
+  if (!subscription || subscription.status !== 'available') {
+    return subscription?.reason || '暂无经核验的日度数据'
+  }
+  return `数据日期 ${subscription.share_date}`
+})
 
 // 详情弹窗：净溢价（扣申购费 0.15% + 卖出佣金 0.05%）
 const detailNetPremium = computed(() => {
@@ -827,11 +819,6 @@ const limitDescText = computed(() => {
   return '无申购限额，可按需申购'
 })
 
-function formatPremiumNum(val) {
-  if (val == null || val === '--' || isNaN(val)) return '--'
-  return Number(val).toFixed(2) + '%'
-}
-
 function formatTotalAmount(val) {
   if (val == null || isNaN(val) || val <= 0) return '--'
   if (val >= 10000) return (val / 10000).toFixed(2) + '亿'
@@ -839,19 +826,15 @@ function formatTotalAmount(val) {
   return val.toFixed(0) + '元'
 }
 
+function formatSubscriptionAmount(val) {
+  if (val == null || isNaN(val) || val <= 0) return '暂缺'
+  if (val >= 1e8) return (val / 1e8).toFixed(2) + '亿'
+  if (val >= 1e4) return (val / 1e4).toFixed(2) + '万'
+  return Math.round(val) + '元'
+}
+
 function openDetail(row) {
-  detailData.value = row
-  detailVisible.value = true
-  if (row.premium > 0) {
-    store.loadArbitragePredict(row.code, {
-      amount: row.amountRaw,
-      premium: row.premium,
-      limit_status: row.limitStatus,
-      limit_amount: row.limitAmount || 0
-    })
-  } else {
-    store.clearArbitragePredict()
-  }
+  router.push(`/lof/${row.code}`)
 }
 
 function toggleFav(row) {
@@ -956,6 +939,13 @@ onUnmounted(() => {
         font-size: 12px;
         color: var(--text-color-secondary);
         margin-top: 4px;
+      }
+
+      .overview-detail {
+        min-height: 17px;
+        margin-top: 2px;
+        font-size: 11px;
+        color: var(--text-color-secondary);
       }
     }
   }

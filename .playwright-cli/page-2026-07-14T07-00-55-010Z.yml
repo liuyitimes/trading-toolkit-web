@@ -1,0 +1,89 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5] [cursor=pointer]: 旺财百宝箱
+    - menubar [ref=e12]:
+      - menuitem [ref=e13] [cursor=pointer]
+      - menuitem [ref=e17] [cursor=pointer]
+      - menuitem [ref=e21] [cursor=pointer]
+      - menuitem [ref=e27] [cursor=pointer]
+      - menuitem [ref=e32] [cursor=pointer]
+      - menuitem [ref=e36] [cursor=pointer]
+      - menuitem [ref=e40] [cursor=pointer]
+      - menuitem [ref=e45] [cursor=pointer]
+      - menuitem [ref=e49] [cursor=pointer]
+  - generic [ref=e53]:
+    - navigation "Breadcrumb" [ref=e59]:
+      - generic [ref=e60]:
+        - link "首页" [ref=e61]
+        - text: /
+      - link "LOF 基金" [ref=e63]
+    - main [ref=e68]:
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - heading "LOF 基金套利" [level=2] [ref=e71]
+          - generic [ref=e72]: 入门 · ≤1万
+          - textbox "搜索基金名称/代码" [ref=e80]
+        - generic [ref=e82]:
+          - generic [ref=e83]: 市场概览
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - generic [ref=e87]: 暂缺
+              - generic [ref=e88]: 溢价热点方向
+              - generic [ref=e89]: 暂无经核验分类
+            - generic [ref=e90]:
+              - generic [ref=e91]: 暂缺
+              - generic [ref=e92]: 昨日净申购资金（按净值估）
+              - generic [ref=e93]: 暂无经核验的日度数据
+            - generic [ref=e94]:
+              - generic [ref=e95]: 暂缺
+              - generic [ref=e96]: 昨日净申购账户数下限
+              - generic [ref=e97]: 按单账户限额折算
+            - generic [ref=e98]:
+              - generic [ref=e99]: 暂缺
+              - generic [ref=e100]: 昨日净申购投资者限额下限
+              - generic [ref=e101]: 不等同于去重人数
+        - generic [ref=e106]:
+          - button "溢价Top10 0" [ref=e107] [cursor=pointer]:
+            - text: 溢价Top10
+            - generic [ref=e108]: "0"
+          - button "溢价≥5% 0" [ref=e109] [cursor=pointer]:
+            - text: 溢价≥5%
+            - generic [ref=e110]: "0"
+          - button "折价 0" [ref=e111] [cursor=pointer]:
+            - text: 折价
+            - generic [ref=e112]: "0"
+          - button "暂停 0" [ref=e113] [cursor=pointer]:
+            - text: 暂停
+            - generic [ref=e114]: "0"
+          - button "套利机会 0" [ref=e115] [cursor=pointer]:
+            - text: 套利机会
+            - generic [ref=e116]: "0"
+        - alert [ref=e117]:
+          - generic [ref=e121]: 溢价可申购 Top10：未暂停且溢价>0 的基金，按溢价率降序取前 10。核心关注预期收益与流动性。
+        - generic [ref=e124]:
+          - table [ref=e126]:
+            - rowgroup [ref=e138]:
+              - row [ref=e139]:
+                - columnheader "基金" [ref=e140]
+                - columnheader "现价/净值" [ref=e142]
+                - columnheader [ref=e144] [cursor=pointer]:
+                  - generic [ref=e145]:
+                    - text: 溢价率
+                    - button "Sort by 溢价率" [ref=e146]
+                - columnheader "净溢价" [ref=e149]
+                - columnheader "连续溢价" [ref=e151]
+                - columnheader [ref=e153] [cursor=pointer]:
+                  - generic [ref=e154]:
+                    - text: 成交额
+                    - button "Sort by 成交额" [ref=e155]
+                - columnheader "预期收益(万)" [ref=e158]
+                - columnheader "申购状态" [ref=e160]
+                - columnheader "标记" [ref=e162]
+                - columnheader "自选" [ref=e164]
+          - generic [ref=e169]:
+            - table:
+              - rowgroup
+            - generic [ref=e170]: No Data
+        - generic [ref=e177] [cursor=pointer]:
+          - generic [ref=e181]: 公式回忆
+          - generic [ref=e182]: 填空练习，强化记忆

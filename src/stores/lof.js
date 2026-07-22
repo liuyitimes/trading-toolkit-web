@@ -205,24 +205,6 @@ export const useLofStore = defineStore('lof', () => {
     const netPremiums = list.filter(i => i.netPremium != null).map(i => i.netPremium)
     const totalAmount = list.reduce((sum, i) => sum + (i.amountRaw || 0), 0)
 
-    // 按板块（交易所）分组统计平均溢价
-    const boards = {}
-    list.forEach(i => {
-      const ex = i.exchange || '其他'
-      if (!boards[ex]) boards[ex] = { count: 0, premiumSum: 0 }
-      boards[ex].count++
-      boards[ex].premiumSum += i.premium
-    })
-    let topBoard = null
-    let topBoardAvg = -Infinity
-    for (const [board, stats] of Object.entries(boards)) {
-      const avg = stats.premiumSum / stats.count
-      if (avg > topBoardAvg) {
-        topBoardAvg = avg
-        topBoard = board
-      }
-    }
-
     return {
       count: list.length,
       premium_avg: premiums.reduce((a, b) => a + b, 0) / premiums.length,
@@ -236,8 +218,14 @@ export const useLofStore = defineStore('lof', () => {
       arbitrage_count: list.filter(i => i.canArbitrage).length,
       avg_net_premium: netPremiums.length > 0 ? netPremiums.reduce((a, b) => a + b, 0) / netPremiums.length : null,
       total_amount: totalAmount,
-      top_premium_board: topBoard ? topBoard + '市' : '--',
-      top_board_premium_avg: topBoard ? topBoardAvg : null
+      hot_direction: null,
+      daily_subscription: {
+        status: 'unavailable',
+        reason: '暂无经核验的日度数据',
+        capital_yuan: null,
+        account_count_lower_bound: null,
+        investor_limit_lower_bound: null
+      }
     }
   }
 
@@ -273,8 +261,8 @@ export const useLofStore = defineStore('lof', () => {
             arbitrage_count: fallback?.arbitrage_count ?? 0,
             avg_net_premium: fallback?.avg_net_premium ?? null,
             total_amount: fallback?.total_amount ?? 0,
-            top_premium_board: fallback?.top_premium_board ?? '--',
-            top_board_premium_avg: fallback?.top_board_premium_avg ?? null
+            hot_direction: s.hot_direction ?? fallback?.hot_direction ?? null,
+            daily_subscription: s.daily_subscription ?? fallback?.daily_subscription
           }
         } else {
           summary.value = computeSummaryFromList(normalized)

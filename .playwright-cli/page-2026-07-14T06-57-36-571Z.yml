@@ -1,0 +1,13 @@
+- generic [ref=f1e3]:
+  - generic [ref=f1e4]: "[plugin:vite:import-analysis] Failed to resolve import \"@/views/LofDetail.vue\" from \"src/router/index.js\". Does the file exist?"
+  - generic [ref=f1e5]: D:/Develop/GitHub/trading-toolkit/trading-toolkit-web/src/router/index.js:37:32
+  - generic [ref=f1e6]: "35 | path: 'lof/:code', 36 | name: 'LofDetail', 37 | component: () => import('@/views/LofDetail.vue'), | ^ 38 | meta: { title: 'LOF 套利详情' } 39 | },"
+  - generic [ref=f1e7]: at TransformPluginContext._formatLog (file:///D:/Develop/GitHub/trading-toolkit/trading-toolkit-web/node_modules/vite/dist/node/chunks/node.js:29931:39) at TransformPluginContext.error (file:///D:/Develop/GitHub/trading-toolkit/trading-toolkit-web/node_modules/vite/dist/node/chunks/node.js:29928:14) at normalizeUrl (file:///D:/Develop/GitHub/trading-toolkit/trading-toolkit-web/node_modules/vite/dist/node/chunks/node.js:26992:18) at async file:///D:/Develop/GitHub/trading-toolkit/trading-toolkit-web/node_modules/vite/dist/node/chunks/node.js:27055:30 at async Promise.all (index 6) at async TransformPluginContext.transform (file:///D:/Develop/GitHub/trading-toolkit/trading-toolkit-web/node_modules/vite/dist/node/chunks/node.js:27023:4) at async EnvironmentPluginContainer.transform (file:///D:/Develop/GitHub/trading-toolkit/trading-toolkit-web/node_modules/vite/dist/node/chunks/node.js:29716:14) at async loadAndTransform (file:///D:/Develop/GitHub/trading-toolkit/trading-toolkit-web/node_modules/vite/dist/node/chunks/node.js:19731:26)
+  - generic [ref=f1e8]:
+    - text: Click outside, press Esc key, or fix the code to dismiss.You can also disable this overlay by setting
+    - code [ref=f1e9]: server.hmr.overlay
+    - text: to
+    - code [ref=f1e10]: "false"
+    - text: in
+    - code [ref=f1e11]: vite.config.js
+    - text: .

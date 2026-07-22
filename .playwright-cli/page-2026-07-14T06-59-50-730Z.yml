@@ -1,0 +1,5 @@
+- generic [active] [ref=f1e1]:
+  - text: The server is configured with a public base URL of /trading-toolkit-web/ - did you mean to visit
+  - link "/trading-toolkit-web/lof" [ref=f1e2] [cursor=pointer]:
+    - /url: /trading-toolkit-web/lof
+  - text: instead?

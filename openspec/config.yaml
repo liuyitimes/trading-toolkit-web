@@ -1,0 +1,21 @@
+schema: spec-driven
+context: |
+  Trading Toolkit Web is a Vue 3 financial research and decision-support application.
+  This repository owns Web presentation, client-side calculation, browser persistence,
+  and API-consumption behavior. Its OpenSpec baseline is versioned with this repository.
+  Backend contracts and server-side calculations are owned by the independently versioned
+  trading-toolkit-service repository.
+rules:
+  proposal:
+    - State affected Web modules, user-facing behavior, browser persistence, and API-consumption impact.
+    - For a cross-repository change, identify the matching service change by name and describe only this repository's responsibilities.
+    - Include a rollback plan for public UI or business-rule changes.
+  specs:
+    - Use RFC 2119 language and Given/When/Then scenarios.
+    - Preserve the distinction between observation data, user assumptions, and executable investment actions.
+    - Do not represent stale, unavailable, mock, or inferred data as real-time verified data.
+  design:
+    - Reuse the shared HTTP client and normalized API envelope.
+    - Do not introduce an unverified fallback data source.
+  tasks:
+    - Include focused automated verification and desktop/mobile UI verification when applicable.

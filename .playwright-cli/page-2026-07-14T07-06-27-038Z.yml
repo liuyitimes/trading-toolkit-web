@@ -1,0 +1,127 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5] [cursor=pointer]: 旺财百宝箱
+    - menubar [ref=e12]:
+      - menuitem [ref=e13] [cursor=pointer]
+      - menuitem [ref=e17] [cursor=pointer]
+      - menuitem [ref=e21] [cursor=pointer]
+      - menuitem [ref=e27] [cursor=pointer]
+      - menuitem [ref=e32] [cursor=pointer]
+      - menuitem [ref=e36] [cursor=pointer]
+      - menuitem [ref=e40] [cursor=pointer]
+      - menuitem [ref=e45] [cursor=pointer]
+      - menuitem [ref=e49] [cursor=pointer]
+  - generic [ref=e53]:
+    - generic [ref=e54]:
+      - navigation "Breadcrumb" [ref=e59]:
+        - generic [ref=e60]:
+          - link "首页" [ref=e61]
+          - text: /
+        - link "LOF 套利详情" [ref=e586]
+      - generic [ref=e64]: 更新于 刚刚
+    - main [ref=e69]:
+      - generic [ref=e587]:
+        - generic [ref=e588]:
+          - button "返回 LOF 列表" [ref=e589] [cursor=pointer]
+          - generic [ref=e594]:
+            - generic [ref=e595]:
+              - generic "深市" [ref=e596]: 深
+              - heading "国泰民益LOF" [level=2] [ref=e597]
+              - generic [ref=e598]: "160220"
+            - generic [ref=e599]: 刚刚
+          - button "加入自选" [ref=e600] [cursor=pointer]
+        - generic [ref=e605]:
+          - generic [ref=e606]:
+            - generic [ref=e607]:
+              - generic [ref=e608]: 套利观察
+              - generic [ref=e609]:
+                - generic [ref=e610]: 观察中
+                - generic [ref=e612]: 执行路径证据未完整核验
+            - generic [ref=e613]:
+              - generic [ref=e614]: 当前溢价
+              - strong [ref=e615]: +8.16%
+            - generic [ref=e616]:
+              - generic [ref=e617]: 成本假设后
+              - strong [ref=e618]: +7.96%
+          - generic [ref=e619]:
+            - generic [ref=e620]: 场内价格 5.268
+            - generic [ref=e621]: 最新单位净值 4.8707
+            - generic [ref=e622]: NAV 日期 2026-07-14
+            - generic [ref=e623]: 申购费 0.15%
+            - generic [ref=e624]: 卖出佣金 0.05%
+        - generic [ref=e625]:
+          - generic [ref=e626]:
+            - generic [ref=e627]:
+              - generic [ref=e628]: Premium Persistence
+              - heading "溢价持续性" [level=3] [ref=e629]
+            - generic [ref=e630]: 1 个已记录交易日
+          - generic [ref=e631]:
+            - generic [ref=e632]:
+              - generic [ref=e633]: 连续正溢价
+              - strong [ref=e634]: 1 日
+            - generic [ref=e635]:
+              - generic [ref=e636]: 5 日溢价区间
+              - strong [ref=e637]: 历史不足
+            - generic [ref=e638]:
+              - generic [ref=e639]: 20 日溢价区间
+              - strong [ref=e640]: 历史不足
+          - paragraph [ref=e641]: 历史观察不足，尚不能判断溢价持续性。
+        - generic [ref=e642]:
+          - generic [ref=e643]:
+            - generic [ref=e645]:
+              - generic [ref=e646]: Exit Capacity
+              - heading "成交与退出容量" [level=3] [ref=e647]
+            - generic [ref=e648]:
+              - generic [ref=e649]:
+                - generic [ref=e650]: 当日成交额
+                - strong [ref=e651]: 544.00 万
+              - generic [ref=e652]:
+                - generic [ref=e653]: 当日成交量
+                - strong [ref=e654]: 1.08 万
+              - generic [ref=e655]:
+                - generic [ref=e656]: 5 日均成交额
+                - strong [ref=e657]: 历史不足
+              - generic [ref=e658]:
+                - generic [ref=e659]: 20 日均成交额
+                - strong [ref=e660]: 历史不足
+          - generic [ref=e661]:
+            - generic [ref=e663]:
+              - generic [ref=e664]: Execution Evidence
+              - heading "申购与交割" [level=3] [ref=e665]
+            - generic [ref=e666]:
+              - generic [ref=e667]:
+                - term [ref=e668]: 申购状态
+                - definition [ref=e669]: 未核验或关闭
+              - generic [ref=e670]:
+                - term [ref=e671]: 单账户限额
+                - definition [ref=e672]: 暂缺
+              - generic [ref=e673]:
+                - term [ref=e674]: 可转托管
+                - definition [ref=e675]: 未核验
+              - generic [ref=e676]:
+                - term [ref=e677]: 预计可卖日期
+                - definition [ref=e678]: 暂缺
+        - generic [ref=e679]:
+          - generic [ref=e680]:
+            - generic [ref=e682]:
+              - generic [ref=e683]: Portfolio Exposure
+              - heading "基金组合持仓" [level=3] [ref=e684]
+            - paragraph [ref=e685]: No verified fund portfolio disclosure is available.
+          - generic [ref=e686]:
+            - generic [ref=e688]:
+              - generic [ref=e689]: Settlement Risk
+              - heading "波动风险" [level=3] [ref=e690]
+            - generic [ref=e691]:
+              - generic [ref=e692]:
+                - generic [ref=e693]: 5 日价格波动
+                - strong [ref=e694]: 历史不足
+              - generic [ref=e695]:
+                - generic [ref=e696]: 5 日净值波动
+                - strong [ref=e697]: 历史不足
+              - generic [ref=e698]:
+                - generic [ref=e699]: 5 日溢价波动
+                - strong [ref=e700]: 历史不足
+              - generic [ref=e701]:
+                - generic [ref=e702]: 20 日溢价区间
+                - strong [ref=e703]: 历史不足
+            - paragraph [ref=e704]: 风险指标基于已记录行情，反映结算窗口中的价格、净值与溢价变动，不构成收益或成交保证。

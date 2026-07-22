@@ -32,6 +32,12 @@ const routes = [
         meta: { title: 'LOF 基金' }
       },
       {
+        path: 'lof/:code',
+        name: 'LofDetail',
+        component: () => import('@/views/LofDetail.vue'),
+        meta: { title: 'LOF 套利详情' }
+      },
+      {
         path: 'closed-end',
         name: 'ClosedEnd',
         component: () => import('@/views/ClosedEnd.vue'),

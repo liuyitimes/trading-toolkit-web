@@ -1,0 +1,167 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5] [cursor=pointer]: 旺财百宝箱
+    - menubar [ref=e12]:
+      - menuitem [ref=e13] [cursor=pointer]
+      - menuitem [ref=e17] [cursor=pointer]
+      - menuitem [ref=e21] [cursor=pointer]
+      - menuitem [ref=e27] [cursor=pointer]
+      - menuitem [ref=e32] [cursor=pointer]
+      - menuitem [ref=e36] [cursor=pointer]
+      - menuitem [ref=e40] [cursor=pointer]
+      - menuitem [ref=e45] [cursor=pointer]
+      - menuitem [ref=e49] [cursor=pointer]
+  - generic [ref=e53]:
+    - generic [ref=e54]:
+      - navigation "Breadcrumb" [ref=e59]:
+        - generic [ref=e60]:
+          - link "首页" [ref=e61]
+          - text: /
+        - link "LOF 基金" [ref=e63]
+      - generic [ref=e64]: 更新于 刚刚
+    - main [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - heading "LOF 基金套利" [level=2] [ref=e72]
+          - generic [ref=e73]: 入门 · ≤1万
+          - textbox "搜索基金名称/代码" [ref=e81]
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]: 市场概览
+            - generic [ref=e86]: 刚刚
+          - generic [ref=e87]:
+            - generic [ref=e88]:
+              - generic [ref=e89]: sz市
+              - generic [ref=e90]: 溢价最多板块
+            - generic [ref=e91]:
+              - generic [ref=e92]: 0.63%
+              - generic [ref=e93]: 板块平均溢价
+            - generic [ref=e94]:
+              - generic [ref=e95]: "173"
+              - generic [ref=e96]: 溢价基金数
+            - generic [ref=e97]:
+              - generic [ref=e98]: "100"
+              - generic [ref=e99]: 折价基金数
+        - generic [ref=e100]:
+          - button "溢价Top10 10" [ref=e101] [cursor=pointer]:
+            - text: 溢价Top10
+            - generic [ref=e102]: "10"
+          - button "溢价≥5% 1" [ref=e103] [cursor=pointer]:
+            - text: 溢价≥5%
+            - generic [ref=e104]: "1"
+          - button "折价 100" [ref=e105] [cursor=pointer]:
+            - text: 折价
+            - generic [ref=e106]: "100"
+          - button "暂停 0" [ref=e107] [cursor=pointer]:
+            - text: 暂停
+            - generic [ref=e108]: "0"
+          - button "套利机会 7" [ref=e109] [cursor=pointer]:
+            - text: 套利机会
+            - generic [ref=e110]: "7"
+        - alert [ref=e111]:
+          - generic [ref=e115]: 筛选可套利机会（溢价≥3%且成交额≥100万），按溢价率降序排列。注意流动性风险与限购影响。
+        - generic [ref=e669]:
+          - table [ref=e671]:
+            - rowgroup [ref=e679]:
+              - row [ref=e680]:
+                - columnheader "基金" [ref=e681]
+                - columnheader [ref=e683] [cursor=pointer]:
+                  - generic [ref=e684]:
+                    - text: 溢价率
+                    - button "Sort by 溢价率" [ref=e685]
+                - columnheader "净溢价" [ref=e688]
+                - columnheader [ref=e690] [cursor=pointer]:
+                  - generic [ref=e691]:
+                    - text: 成交额
+                    - button "Sort by 成交额" [active] [ref=e692]
+                - columnheader "预期收益(万)" [ref=e695]
+                - columnheader "风险提示" [ref=e697]
+          - table [ref=e703]:
+            - rowgroup [ref=e711]:
+              - row [ref=e859]:
+                - cell "沪市 科创红土LOF 501201" [ref=e860]:
+                  - generic [ref=e715]:
+                    - generic [ref=e716]:
+                      - generic "沪市" [ref=e861]: 沪
+                      - generic [ref=e718]: 科创红土LOF
+                    - generic [ref=e719]: "501201"
+                - cell "3.25%" [ref=e862]
+                - cell "+3.10%" [ref=e863]
+                - cell "776.00万" [ref=e864]
+                - cell "310元" [ref=e865]
+                - cell "--" [ref=e729]
+              - row [ref=e866]:
+                - cell "深市 红土创新精选LOF 168401" [ref=e867]:
+                  - generic [ref=e736]:
+                    - generic [ref=e737]:
+                      - generic "深市" [ref=e868]: 深
+                      - generic [ref=e739]: 红土创新精选LOF
+                    - generic [ref=e740]: "168401"
+                - cell "3.36%" [ref=e869]
+                - cell "+3.21%" [ref=e870]
+                - cell "691.00万" [ref=e871]
+                - cell "321元" [ref=e872]
+                - cell "--" [ref=e750]
+              - row [ref=e873]:
+                - cell "深市 国泰民益LOF 160220" [ref=e874]:
+                  - generic [ref=e757]:
+                    - generic [ref=e758]:
+                      - generic "深市" [ref=e875]: 深
+                      - generic [ref=e760]: 国泰民益LOF
+                    - generic [ref=e761]: "160220"
+                - cell "6.54%" [ref=e876]
+                - cell "+6.38%" [ref=e877]
+                - cell "486.00万" [ref=e878]
+                - cell "639元" [ref=e879]
+                - cell "--" [ref=e771]
+              - row [ref=e880]:
+                - cell "沪市 财通科创LOF 501085" [ref=e881]:
+                  - generic [ref=e778]:
+                    - generic [ref=e779]:
+                      - generic "沪市" [ref=e780]: 沪
+                      - generic [ref=e781]: 财通科创LOF
+                    - generic [ref=e782]: "501085"
+                - cell "3.83%" [ref=e882]
+                - cell "+3.68%" [ref=e883]
+                - cell "272.00万" [ref=e884]
+                - cell "368元" [ref=e885]
+                - cell "--" [ref=e792]
+              - row [ref=e886]:
+                - cell "深市 煤炭龙头LOF 161032" [ref=e887]:
+                  - generic [ref=e799]:
+                    - generic [ref=e800]:
+                      - generic "深市" [ref=e801]: 深
+                      - generic [ref=e802]: 煤炭龙头LOF
+                    - generic [ref=e803]: "161032"
+                - cell "3.03%" [ref=e888]
+                - cell "+2.88%" [ref=e889]
+                - cell "182.00万" [ref=e890]
+                - cell "288元" [ref=e891]
+                - cell "--" [ref=e813]
+              - row [ref=e892]:
+                - cell "沪市 财通福盛混合LOF 501032" [ref=e893]:
+                  - generic [ref=e820]:
+                    - generic [ref=e821]:
+                      - generic "沪市" [ref=e822]: 沪
+                      - generic [ref=e823]: 财通福盛混合LOF
+                    - generic [ref=e824]: "501032"
+                - cell "3.56%" [ref=e894]
+                - cell "+3.41%" [ref=e895]
+                - cell "142.00万" [ref=e896]
+                - cell "341元" [ref=e897]
+                - cell "--" [ref=e834]
+              - row [ref=e898]:
+                - cell "沪市 鹏华创新动力LOF 501076" [ref=e899]:
+                  - generic [ref=e841]:
+                    - generic [ref=e842]:
+                      - generic "沪市" [ref=e900]: 沪
+                      - generic [ref=e844]: 鹏华创新动力LOF
+                    - generic [ref=e845]: "501076"
+                - cell "3.71%" [ref=e901]
+                - cell "+3.56%" [ref=e902]
+                - cell "105.00万" [ref=e903]
+                - cell "356元" [ref=e904]
+                - cell "--" [ref=e855]
+        - generic [ref=e562] [cursor=pointer]:
+          - generic [ref=e566]: 公式回忆
+          - generic [ref=e567]: 填空练习，强化记忆

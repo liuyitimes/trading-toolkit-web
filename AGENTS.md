@@ -2,7 +2,7 @@
 
 ### Specification workflow
 
-The repository-level `openspec/` directory is the source of truth for current supported behavior. Before changing Web behavior, read the relevant baseline specification and follow the root `AGENTS.md` OpenSpec workflow.
+The repository-level `openspec/` directory is the source of truth for current supported Web behavior. Before changing Web behavior, read the relevant baseline specification and follow the OpenSpec workflow in this repository's `openspec/README.md`.
 
 ### Issue tracker
 

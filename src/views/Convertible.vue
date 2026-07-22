@@ -59,6 +59,28 @@
       <span>{{ guideText }}</span>
     </el-alert>
 
+    <section class="strategy-conditions" :aria-labelledby="`strategy-conditions-${activeTab}`">
+      <button
+        :id="`strategy-conditions-${activeTab}`"
+        type="button"
+        class="strategy-conditions-trigger"
+        :aria-expanded="strategyConditionsOpen"
+        @click="strategyConditionsOpen = !strategyConditionsOpen"
+      >
+        <span class="strategy-conditions-title">{{ strategyConditions.title }}条件</span>
+        <span class="strategy-conditions-summary">{{ strategyConditions.summary }}</span>
+        <el-icon class="strategy-conditions-toggle" :class="{ expanded: strategyConditionsOpen }"><ArrowDown /></el-icon>
+      </button>
+      <transition name="expand">
+        <div v-show="strategyConditionsOpen" class="strategy-conditions-body">
+          <section v-for="section in strategyConditions.sections" :key="section.title" class="strategy-condition-section">
+            <h3>{{ section.title }}</h3>
+            <p v-for="line in section.lines" :key="line">{{ line }}</p>
+          </section>
+        </div>
+      </transition>
+    </section>
+
     <!-- 策略沙盘：参数敏感度分析 -->
     <el-card v-if="appStore.showSandbox" class="sandbox-card" shadow="never">
       <template #header>
@@ -132,6 +154,36 @@
             <span class="sub-count" :class="{ hot: s.key === 'subscribing' }">{{ placementTabStats[s.stat] }}</span>
           </button>
         </div>
+        <div class="placement-assumption" data-testid="placement-assumption">
+          <span class="placement-assumption-label">预期上市溢价率</span>
+          <el-select
+            :model-value="store.placementPremiumRate"
+            class="placement-assumption-select"
+            aria-label="预期上市溢价率"
+            size="small"
+            @update:model-value="store.setPlacementPremiumRate"
+          >
+            <el-option
+              v-for="rate in store.placementPremiumOptions"
+              :key="rate"
+              :label="`${rate}%`"
+              :value="rate"
+            />
+          </el-select>
+          <el-tooltip content="恢复默认 30%" placement="top">
+            <el-button
+              aria-label="恢复默认 30%"
+              circle
+              size="small"
+              text
+              type="primary"
+              @click="store.resetPlacementPremiumRate"
+            >
+              <el-icon><RefreshLeft /></el-icon>
+            </el-button>
+          </el-tooltip>
+          <el-tag class="placement-assumption-tag" size="small" effect="plain">按 {{ store.placementPremiumRate }}% 假设</el-tag>
+        </div>
         <div class="sort-row">
           <button
             v-for="f in sortFields"
@@ -178,7 +230,7 @@
             <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
               <template #content>
                 <div class="formula-tip">
-                  <div class="ft-formula">策略评级 = 综合评分分档</div>
+                  <div class="ft-formula">策略评分 = 发行规模 + 首日可交易量 + 安全垫</div>
                   <div class="ft-section">
                     <div class="ft-subtitle">当前评分</div>
                     <div class="ft-detail">综合评分：<b>{{ row.strategyScore }}/100</b></div>
@@ -186,10 +238,9 @@
                   </div>
                   <div class="ft-divider"></div>
                   <div class="ft-subtitle">评分维度</div>
-                  <div class="ft-detail">· 安全垫（收益风险比）</div>
-                  <div class="ft-detail">· 百元含权（配售性价比）</div>
-                  <div class="ft-detail">· 首日可交易量（上市弹性）</div>
-                  <div class="ft-detail">· 正股趋势（短期动能）</div>
+                  <div class="ft-detail">· 发行规模（30%）</div>
+                  <div class="ft-detail">· 首日可交易量（40%）</div>
+                  <div class="ft-detail">· 安全垫（30%，按 {{ row.placementPremiumRate }}% 假设）</div>
                   <div class="ft-divider"></div>
                   <div class="ft-subtitle">分档标准</div>
                   <div class="ft-detail"><b style="color:#f56c6c">推荐</b>：评分 ≥ 80</div>
@@ -211,13 +262,13 @@
                   <div class="ft-formula">安全垫 = 预估收益 ÷ 配售成本 × 100%</div>
                   <div class="ft-section">
                     <div class="ft-subtitle">计算过程</div>
-                    <div class="ft-detail">预估收益 = 1000 × 20% = <b>200元</b></div>
+                    <div class="ft-detail">预估收益 = 1000 × {{ row.placementPremiumRate }}% = <b>{{ row.expectedProfit }}</b></div>
                     <div class="ft-detail" v-if="row._actualSharesFor1Lot > 0 && row._stockPriceRaw > 0">
                       配售成本 = {{ row._actualSharesFor1Lot }}股 × {{ row._stockPriceRaw.toFixed(2) }}元
                       = <b>{{ Math.round(row._costFor10LotsRaw) }}元</b>
                     </div>
                     <div class="ft-detail" v-if="row._safetyPadRaw > 0 && row._costFor10LotsRaw > 0">
-                      安全垫 = 200 ÷ {{ Math.round(row._costFor10LotsRaw) }} × 100%
+                      安全垫 = {{ Math.round(row._expectedProfitRaw) }} ÷ {{ Math.round(row._costFor10LotsRaw) }} × 100%
                       = <b>{{ row._safetyPadRaw.toFixed(2) }}%</b>
                     </div>
                   </div>
@@ -309,6 +360,7 @@
             <span class="code-change" :class="row.stockChangeUp ? 'up' : 'down'">{{ row.stockChange }}</span>
             <span class="progress-tag" :class="row.progressClass">{{ row.progress }}</span>
           </div>
+          <div class="placement-assumption-note">按 {{ row.placementPremiumRate }}% 假设</div>
           <div class="mc-metrics">
             <div><span class="mc-label">含权</span><span class="hl">{{ row.cashRatio }}</span></div>
             <div><span class="mc-label">安全垫</span><span :class="safetyPadClass(row._safetyPadRaw)">{{ row.safetyPad }}</span></div>
@@ -728,9 +780,9 @@
         <div class="detail-section">
           <div class="detail-section-title">核心指标</div>
           <div class="detail-grid">
-            <div class="detail-item hl-box"><span class="detail-label">安全垫</span><span class="detail-value hl">{{ pendingDetail.safetyPad }}</span></div>
+            <div class="detail-item hl-box"><span class="detail-label">安全垫（按 {{ store.placementPremiumRate }}%）</span><span class="detail-value hl">{{ pendingDetail.safetyPad }}</span></div>
             <div class="detail-item hl-box"><span class="detail-label">百元含权</span><span class="detail-value hl">{{ pendingDetail.cashRatio }}</span></div>
-            <div class="detail-item hl-box"><span class="detail-label">预估收益(10张)</span><span class="detail-value hl">{{ pendingDetail.expectedProfit }}</span></div>
+            <div class="detail-item hl-box"><span class="detail-label">预估收益(10张，按 {{ store.placementPremiumRate }}%)</span><span class="detail-value hl">{{ pendingDetail.expectedProfit }}</span></div>
             <div class="detail-item"><span class="detail-label">每股配售</span><span class="detail-value">{{ pendingDetail.perShare }}</span></div>
             <div class="detail-item"><span class="detail-label">配10张需</span><span class="detail-value">{{ pendingDetail.sharesFor10 }}</span></div>
             <div class="detail-item"><span class="detail-label">一手党最低</span><span class="detail-value">{{ pendingDetail.oneHandMinCost || '--' }}</span></div>
@@ -925,7 +977,7 @@
             </div>
             <div class="risk-hint" :class="signalDetail.forceRedemptionClass ? 'risk-warning' : ''">
               <el-icon><Warning v-if="signalDetail._forcePriceGap >= 0" /><Check v-else /></el-icon>
-              {{ signalDetail._forcePriceGap >= 0 ? '已接近/触发强赎区域，注意风险' : '处于安全区域' }}
+              {{ signalDetail._forcePriceGap >= 0 ? '正股位于强赎参考线之上，须核验发行人条款与公告' : '正股低于强赎参考线，仍须以发行人条款为准' }}
             </div>
           </div>
           <el-empty v-else description="暂无数据" :image-size="60" />
@@ -942,7 +994,7 @@
             </div>
             <div class="risk-hint" :class="signalDetail.downReviseClass ? 'risk-warning' : ''">
               <el-icon><InfoFilled v-if="signalDetail._revisePriceGap < 0" /><Check v-else /></el-icon>
-              {{ signalDetail._revisePriceGap < 0 ? '正股已跌破下修线，可能触发下修' : '未触发下修' }}
+              {{ signalDetail._revisePriceGap < 0 ? '正股低于 85% 转股价策略基准，须核验下修条款与决议' : '正股高于策略基准；该基准不等同于发行人下修条款' }}
             </div>
           </div>
           <el-empty v-else description="暂无数据" :image-size="60" />
@@ -973,7 +1025,7 @@
 import { ref, computed, onMounted, onActivated, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, Star, StarFilled, ArrowDown, TopRight, Calendar, Warning, Check, InfoFilled } from '@element-plus/icons-vue'
+import { Search, Star, StarFilled, ArrowDown, TopRight, Calendar, Warning, Check, InfoFilled, RefreshLeft } from '@element-plus/icons-vue'
 import { useConvertibleStore } from '@/stores/convertible'
 import { useUserStore } from '@/stores/user'
 import TierBadge from '@/components/TierBadge.vue'
@@ -1028,21 +1080,115 @@ const cbRecallItems = [
 ]
 
 const guideMap = {
-  placement: '抢权配售：提前买正股获配债权，百元含权越高越划算，安全垫越高越安全',
-  double_low: '双低值越小投资价值越高，低于150可入场，低于170可关注',
-  force_redeem: '溢价率低于10%且价格105-140，接近强赎触发线，关注转股套利机会',
-  discount: '溢价率为负说明转债比转股便宜，可研究转股套利空间',
-  down_revised: '高溢价+低价格+短剩余年限，公司下修转股价概率大'
+  placement: '配售数据用于观察和规划；须以发行公告核验优配资格、登记日、配售条款和缴款安排后方可执行。',
+  double_low: '有效样本按双低值从低到高展示；双低值是价格与溢价率的组合指标，不是买入阈值。',
+  force_redeem: '筛选低溢价且价格在 105 至 140 的转债；距强赎线仅衡量价格位置，不代表已满足发行人条款。',
+  discount: '负溢价表示转债价格低于转股价值；是否可套利还取决于转股、卖出和交易成本等实际条件。',
+  down_revised: '高溢价且低价格的转债进入观察范围；85% 转股价为策略基准，不是发行人已触发下修的证明。'
+}
+
+const strategyConditionMap = {
+  placement: {
+    title: '配售',
+    summary: '确认资格与公告后才可执行',
+    sections: [
+      { title: '观察条件', lines: [
+        '列表来自待发或配售可转债的发行与行情字段；登记日缺失时仅表示上游尚未给出确定截止日，不表示仍具优配资格。',
+        '每股配售额、百元含权和 10 张所需股数均为规划指标：百元含权 = 每股配售额 / 正股价格 × 100%，10 张理论所需股数 = 1000 / 每股配售额。'
+      ] },
+      { title: '评分与排序', lines: [
+        '页面可按安全垫、百元含权和首日可交易量排序。未核验记录的安全垫和综合评分会标记为观察，不应被视为收益预测。',
+        '若展示首日溢价或预期收益，其 20% 首日溢价仅是比较假设，不是已验证回报。'
+      ] },
+      { title: '执行前必须核验', lines: [
+        '执行前须以发行公告核验原股东优配资格、股权登记日、每股配售额、配售/缴款代码、缴款时间、公告日期与原文链接。',
+        '未具备上述证据的记录仅为观察或计划辅助，不构成可执行机会。'
+      ] }
+    ]
+  },
+  double_low: {
+    title: '双低',
+    summary: '有效样本中双低值最低的 20 只',
+    sections: [
+      { title: '入选条件', lines: [
+        '服务先排除溢价率为 0 或转股价值低于 10 的异常/缺失转股数据，再从剩余样本中选取双低值最低的 20 只。',
+        '双低值 = 转债价格 + 溢价率。价格与百分比直接相加是本策略的既定排序口径，不是估值单位。'
+      ] },
+      { title: '排序与辅助指标', lines: [
+        '页面默认按双低值升序排列；数值越低只代表该组合指标更靠前，并不代表收益更高或风险更低。',
+        '纯债价值按评级折现率折现未来现金流，到期收益率按持有至到期且不转股的现金流反解；两者均为防守参考，可能与市场成交价不同。',
+        '“双低优选”标签使用前端双低值低于 130 的展示阈值，不是服务端入选条件，也不是交易指令。'
+      ] },
+      { title: '使用边界', lines: [
+        '需另行评估信用、流动性、赎回/回售条款、剩余期限和正股波动。双低筛选本身不验证这些风险，也不构成买入建议。'
+      ] }
+    ]
+  },
+  force_redeem: {
+    title: '强赎',
+    summary: '低溢价、105 至 140 元的价格观察',
+    sections: [
+      { title: '入选条件', lines: [
+        '服务先应用有效转股数据过滤，再筛选溢价率低于 10%、转债价格不低于 105 且不高于 140 的记录，最多返回 10 只。',
+        '该服务端列表按数据当前顺序截取，并非按距强赎线排名；页面默认按距强赎线从高到低排列。'
+      ] },
+      { title: '强赎线口径', lines: [
+        '强赎触发价优先使用数据源提供的触发价；缺失时以转股价 × 130% 作为回退参考。距强赎线 = (正股价 - 强赎触发价) / 强赎触发价 × 100%。',
+        '正值只表示正股价位于该参考线之上。具体债券常见的连续交易日、收盘价比例和期间等条件必须以募集说明书及发行人公告为准。'
+      ] },
+      { title: '使用边界', lines: [
+        '本页不统计连续交易日是否满足，也不核验发行人是否已发出强赎提示或赎回公告；不得把价格位置视为已触发或即将执行强赎。'
+      ] }
+    ]
+  },
+  discount: {
+    title: '折价',
+    summary: '负溢价的转股价值观察',
+    sections: [
+      { title: '入选条件', lines: [
+        '服务先应用有效转股数据过滤，再筛选溢价率小于 0 的记录，最多返回 10 只。',
+        '转股价值 = 100 / 转股价 × 正股价；溢价率 = (转债价格 - 转股价值) / 转股价值 × 100%。溢价率为负表示转债价格低于按该时点正股价计算的转股价值。'
+      ] },
+      { title: '排序', lines: [
+        '页面默认按绝对负溢价从大到小排列，折价空间 = |溢价率|。服务端最多返回 10 条的原始截取并不等同于全市场折价排名。'
+      ] },
+      { title: '执行边界', lines: [
+        '负溢价不是无风险利润。执行前须确认转股期与转股规则、可用券/卖出安排、交易和资金成本、价格变动与流动性；屏幕中的价格也可能在转换过程中变化。'
+      ] }
+    ]
+  },
+  down_revised: {
+    title: '下修',
+    summary: '高溢价、低价格的下修观察',
+    sections: [
+      { title: '入选条件', lines: [
+        '服务先应用有效转股数据过滤，再筛选溢价率高于 50%、转债价格低于 115 的记录，最多返回 10 只。',
+        '该条件只识别高溢价和相对低价格的观察样本；服务端不以剩余年限或正股是否跌破某一条款作为入选条件。'
+      ] },
+      { title: '下修基准与排序', lines: [
+        '页面以转股价 × 85% 计算策略下修基准，距下修 = (正股价 - 策略下修基准) / 策略下修基准 × 100%，默认由低到高排列。',
+        '85% 是本策略的统一观察基准；它不是数据源中的发行人下修条款，也不能用条件回售触发价替代。'
+      ] },
+      { title: '使用边界', lines: [
+        '正股跌破策略基准不代表下修已触发、董事会必然提议或股东会必然通过。须核验募集说明书中的下修条件，以及发行人的决议和公告。'
+      ] }
+    ]
+  }
 }
 
 const activeTab = ref('placement')
+const strategyConditionsOpen = ref(false)
 const placementSubTab = ref('all')
 const placementSortBy = ref('composite')
 const placementSortAsc = ref(false)
 const searchKeyword = ref('')
 const showAll = ref(false)
 const pendingDialogVisible = ref(false)
-const pendingDetail = ref(null)
+const pendingDetailKey = ref('')
+const pendingDetail = computed(() => {
+  if (!pendingDetailKey.value) return null
+  return store.pendingList.find(row => row.placementKey === pendingDetailKey.value)?.detail || null
+})
 const costDialogVisible = ref(false)
 const costDialogRow = ref(null)
 const signalDialogVisible = ref(false)
@@ -1091,7 +1237,6 @@ const oneHandTierData = computed(() => {
     }
   })
 })
-const premiumRate = ref(20)
 const isMobile = ref(false)
 
 const placementSubs = [
@@ -1109,6 +1254,7 @@ const sortFields = [
 
 const marketTemp = computed(() => store.marketTemp)
 const guideText = computed(() => guideMap[activeTab.value])
+const strategyConditions = computed(() => strategyConditionMap[activeTab.value])
 
 function tabCount(key) {
   // 直接从 store 的 signals / pendingList 取数量，不依赖 marketTemp
@@ -1171,7 +1317,7 @@ const filteredPlacement = computed(() => {
 function getSignalColumnsForTab(tab) {
   if (tab === 'double_low') return [
     { key: 'doubleLow', label: '双低值', width: 90, val: r => r.doubleLow, cls: () => 'hl',
-      formula: '双低值 = 转债价格 + 溢价率', example: '价格 105，溢价 5% → 双低 = 110', note: '双低值越低投资价值越高，低于 150 可入场' },
+      formula: '双低值 = 转债价格 + 溢价率', example: '价格 105，溢价 5% → 双低 = 110', note: '服务从有效样本中取双低值最低的 20 只；前端低于 130 的标签仅为展示阈值，不是买入条件' },
     { key: 'pureBondValue', label: '纯债价值', width: 90, val: r => r.pureBondValue, cls: () => '',
       formula: '纯债价值 = Σ 未来现金流 / (1 + 评级折现率)^t', example: '票息与到期赎回价折现求和', note: '按信用评级档位折现估算，是双低策略的防守参考' },
     { key: 'ytm', label: '到期收益率', width: 100, val: r => r.ytm, cls: r => { if (!r.ytm || r.ytm === '--') return ''; return r.ytm.startsWith('+') ? 'positive' : 'negative' },
@@ -1179,10 +1325,10 @@ function getSignalColumnsForTab(tab) {
   ]
   if (tab === 'force_redeem') return [
     { key: 'forceRedemptionGap', label: '距强赎', width: 90, val: r => r.forceRedemptionGap, cls: r => r.forceRedemptionClass,
-      formula: '距强赎 = (正股价 - 强赎触发价) / 强赎触发价 × 100%', example: '正股 13，触发价 13 → 距强赎 = 0%', note: '正值表示已进入强赎倒计时' },
+      formula: '距强赎 = (正股价 - 强赎触发价) / 强赎触发价 × 100%', example: '正股 13，触发价 13 → 距强赎 = 0%', note: '正值只表示正股位于参考线之上，不代表已满足发行人强赎条件' },
     { key: 'conversionPrice', label: '转股价', width: 80, val: r => r.conversionPrice, cls: () => '' },
     { key: 'forceTriggerPrice', label: '强赎触发价', width: 100, val: r => r.forceTriggerPrice, cls: () => 'hl',
-      formula: '强赎触发价 = 转股价 × 130%', example: '转股价 10 → 强赎触发价 = 13', note: '正股连续 15/30 日收盘价高于此价触发强赎' }
+      formula: '强赎触发价 = 数据源触发价；缺失时使用转股价 × 130%', example: '转股价 10 → 回退参考价 = 13', note: '连续交易日等具体强赎条款须以募集说明书和发行人公告核验' }
   ]
   if (tab === 'discount') return [
     { key: 'conversionValue', label: '转股价值', width: 90, val: r => r.conversionValue, cls: () => '',
@@ -1192,7 +1338,7 @@ function getSignalColumnsForTab(tab) {
   ]
   if (tab === 'down_revised') return [
     { key: 'downReviseGap', label: '距下修', width: 90, val: r => r.downReviseGap, cls: r => r.downReviseClass,
-      formula: '距下修 = (正股价 - 下修触发价) / 下修触发价 × 100%', example: '正股 8，触发价 10 → 距下修 = -20%', note: '负值表示正股低于下修触发价' },
+      formula: '距下修 = (正股价 - 策略下修基准) / 策略下修基准 × 100%', example: '正股 8，策略基准 10 → 距下修 = -20%', note: '负值表示正股低于 85% 转股价策略基准，不代表发行人已触发下修' },
     { key: 'ytm', label: '到期收益率', width: 100, val: r => r.ytm, cls: r => { if (!r.ytm || r.ytm === '--') return ''; return r.ytm.startsWith('+') ? 'positive' : 'negative' } },
     { key: 'rating', label: '评级', width: 70, val: r => r.rating, cls: () => '' }
   ]
@@ -1368,18 +1514,6 @@ function daysDiff(dateStr) {
   return Number.isFinite(diff) ? diff : null
 }
 
-const liveSafetyPad = computed(() => {
-  const sp = pendingDetail.value?._safetyPadRaw || 0
-  if (sp <= 0) return '--'
-  const newPad = sp * (premiumRate.value / 100 / 0.2)
-  return newPad.toFixed(2) + '%'
-})
-
-const liveExpectedProfit = computed(() => {
-  const profit = 1000 * (premiumRate.value / 100)
-  return Math.round(profit) + '元'
-})
-
 function switchTab(key) {
   activeTab.value = key
   searchKeyword.value = ''
@@ -1417,9 +1551,8 @@ function toggleSignalSort(field) {
 }
 
 function openPendingDetail(row) {
-  if (!row?.detail) return
-  pendingDetail.value = { ...row.detail }
-  premiumRate.value = 20
+  if (!row?.detail || !row.placementKey) return
+  pendingDetailKey.value = row.placementKey
   pendingDialogVisible.value = true
 }
 
@@ -1470,13 +1603,13 @@ function signalTagText(row, tab = activeTab.value) {
     return '双低观察'
   }
   if (tab === 'force_redeem') {
-    return row._forcePriceGap >= 0 ? '强赎临界' : '强赎观察'
+    return row._forcePriceGap >= 0 ? '强赎线之上' : '强赎观察'
   }
   if (tab === 'discount') {
     return row.premiumNum < 0 ? '折价套利' : '折价观察'
   }
   if (tab === 'down_revised') {
-    return row._revisePriceGap < 0 ? '已破下修线' : '下修观察'
+    return row._revisePriceGap < 0 ? '低于策略基准' : '下修观察'
   }
   return tabs.find(t => t.key === tab)?.label || '策略'
 }
@@ -1484,7 +1617,7 @@ function signalTagText(row, tab = activeTab.value) {
 function signalTagType(row, tab = activeTab.value) {
   if (!row) return 'info'
   if (tab === 'double_low') return (row.doubleLowNum || 9999) < 130 ? 'danger' : 'warning'
-  if (tab === 'force_redeem') return row._forcePriceGap >= 0 ? 'success' : 'warning'
+  if (tab === 'force_redeem') return row._forcePriceGap >= 0 ? 'warning' : 'info'
   if (tab === 'discount') return row.premiumNum < 0 ? 'danger' : 'warning'
   if (tab === 'down_revised') return row._revisePriceGap < 0 ? 'danger' : 'warning'
   return 'info'
@@ -1629,6 +1762,81 @@ onUnmounted(() => {
     margin-bottom: 12px;
   }
 
+  .strategy-conditions {
+    margin-bottom: 12px;
+    border: 1px solid var(--el-border-color-light);
+    background: var(--el-fill-color-lighter);
+  }
+
+  .strategy-conditions-trigger {
+    width: 100%;
+    min-height: 40px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border: 0;
+    color: var(--el-text-color-primary);
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--el-fill-color-light);
+    }
+  }
+
+  .strategy-conditions-title {
+    font-weight: 600;
+  }
+
+  .strategy-conditions-summary {
+    min-width: 0;
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .strategy-conditions-toggle {
+    transition: transform 0.2s ease;
+
+    &.expanded {
+      transform: rotate(180deg);
+    }
+  }
+
+  .strategy-conditions-body {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    padding: 0 12px 12px;
+    overflow: hidden;
+  }
+
+  .strategy-condition-section {
+    min-width: 0;
+    border-top: 1px solid var(--el-border-color-lighter);
+    padding-top: 10px;
+
+    h3 {
+      margin: 0 0 6px;
+      color: var(--el-text-color-primary);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 6px;
+      color: var(--el-text-color-regular);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+  }
+
   .sandbox-card {
     margin-bottom: 12px;
 
@@ -1731,6 +1939,29 @@ onUnmounted(() => {
         display: flex;
         gap: 6px;
         flex-wrap: wrap;
+      }
+
+      .placement-assumption {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        min-height: 28px;
+      }
+
+      .placement-assumption-label {
+        color: var(--text-color-secondary);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .placement-assumption-select {
+        width: 88px;
+      }
+
+      .placement-assumption-tag {
+        border-color: var(--el-color-primary-light-5);
+        color: var(--el-color-primary);
       }
 
       .sub-btn {
@@ -1884,6 +2115,12 @@ onUnmounted(() => {
     font-size: 12px;
     color: var(--text-color-secondary);
     &.onehand { color: var(--el-color-warning); }
+  }
+
+  .placement-assumption-note {
+    margin-top: 6px;
+    color: var(--el-color-primary);
+    font-size: 12px;
   }
 
   .cost-cell {
@@ -2379,6 +2616,10 @@ onUnmounted(() => {
 
     .market-overview .overview-grid {
       grid-template-columns: repeat(2, 1fr);
+    }
+
+    .tab-content .sub-toolbar .placement-assumption {
+      align-items: flex-start;
     }
 
     .desktop-table { display: none; }

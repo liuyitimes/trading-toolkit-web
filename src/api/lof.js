@@ -10,6 +10,9 @@ export const lofApi = {
   summary() {
     return api.get('/api/v1/lof/summary')
   },
+  detail(code) {
+    return api.get(`/api/v1/lof/${code}/detail`)
+  },
   shareHistory(code, params = {}) {
     return api.get(`/api/v1/lof/${code}/share-history`, { params })
   },
