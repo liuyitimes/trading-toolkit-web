@@ -44,7 +44,7 @@ deploy() {
   check_prerequisites
   cd "$WEB_DIR"
   npm ci
-  npm run build
+  VITE_BASE_PATH=/ npm run build
   install
   systemctl --user restart "$UNIT_NAME"
   for _ in $(seq 1 15); do health_check && break || sleep 1; done
