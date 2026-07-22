@@ -1,12 +1,6 @@
 # Tasks
 
-- [x] Verify the existing Eastmoney share-change report availability.
-- [x] Identify that the current fallback is mock data and unsuitable for overview metrics.
-- [x] Define data semantics and unavailable-state requirements.
-- [x] Separate account-equivalent and investor-equivalent estimates; prohibit false cross-fund deduplication.
-- [x] Research primary-source disclosure requirements and record the daily-data availability limitation.
-- [ ] Select a verified daily LOF net-share-change source or approve a maintained source feed.
-- [x] Define and validate the LOF market-direction taxonomy.
-- [x] Implement service aggregation with source and date metadata.
-- [x] Replace the Web overview cards and render unavailable states.
-- [x] Add backend tests, Web build, and browser verification.
+- [x] Define display semantics and unavailable-state requirements for the summary response.
+- [x] Render the three decision signals and source dates from the LOF summary response.
+- [x] Render `暂缺` without treating absent source data as a zero or mock observation.
+- [x] Run the Web build and browser verification.

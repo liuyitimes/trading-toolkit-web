@@ -1,8 +1,8 @@
 # Design
 
-## Data path
+## API consumption
 
-The summary endpoint will need a verified daily share-change feed. For each eligible record:
+The Web overview consumes verified summary fields from the companion Service change. The Service owns source selection and aggregation; the client uses its documented calculation semantics only to label the resulting estimates and limitations.
 
 ```text
 net_subscription_capital = max(net_share_change, 0) * NAV
@@ -23,6 +23,6 @@ The Web overview will replace generic counts with three cards:
 
 Fields use `暂缺` together with a short availability state when the daily source is missing. They never use the existing `lof_arbitrage` mock-history fallback.
 
-## Pending product decision
+## External dependency
 
-Before implementation, select a verified source for daily LOF net-share changes and confirm whether an explicitly maintained daily source file is acceptable when no public API is available. The account estimate also requires agreement that it represents a cap-based lower-bound estimate rather than a count of unique people.
+The companion Service change must select a verified source for daily LOF net-share changes and expose the resulting availability metadata. The Web client renders the estimate only when that contract reports verified data.

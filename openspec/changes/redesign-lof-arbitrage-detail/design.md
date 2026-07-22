@@ -52,9 +52,9 @@ The desktop view will use full-width bands, not nested cards:
 
 The detail view will reserve compact labels and status tags for evidence states. It will not use a large promotional return card or promote an estimate over its source quality.
 
-### Persist observed data server-side
+### Consume source-tagged observations
 
-The service will write timestamped observations after a valid LOF quote is fetched. A detail request reads this store for premium persistence and liquidity history; it does not manufacture missing periods. Portfolio holdings are stored separately with the manager or official-disclosure date and source identifier.
+The detail view consumes timestamped observations and portfolio holdings returned by the Service detail endpoint. It displays source, disclosure date, and unavailable state without manufacturing missing periods or persisting a client-side fallback.
 
 Client-side history accumulation is rejected because it loses continuity on refresh, cannot support provenance, and is unavailable to a first-time viewer. An unverified public-source fallback is rejected by the repository data-reliability rules.
 

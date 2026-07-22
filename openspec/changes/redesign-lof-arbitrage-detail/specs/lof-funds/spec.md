@@ -21,14 +21,14 @@ The Web application SHALL provide a deep-linkable LOF detail view that orders in
 
 ### Requirement: LOF detail evidence and unavailable states
 
-The LOF detail service SHALL return source, observation date, retrieval time, and freshness state for premium history, liquidity history, disclosed fund holdings, and risk inputs. It MUST distinguish fund portfolio holdings from a user's brokerage position; the service SHALL NOT claim either category when it only has total fund shares or modeled capital-flow data.
+The Web application SHALL render source, observation date, retrieval time, and freshness state returned by the LOF detail service for premium history, liquidity history, disclosed fund holdings, and risk inputs. It MUST distinguish fund portfolio holdings from a user's brokerage position and SHALL NOT substitute a local fallback when the service reports an unavailable input.
 
 #### Scenario: Disclosed fund holdings are available
 
 - **GIVEN** a dated official or manager-published portfolio disclosure is available
 - **WHEN** the detail service returns holdings exposure
-- **THEN** it includes the disclosure date, source, concentration metrics, and top holdings
-- **AND THEN** the Web application labels the data as fund portfolio holdings rather than user holdings.
+- **THEN** the detail view displays the disclosure date, source, concentration metrics, and top holdings
+- **AND THEN** it labels the data as fund portfolio holdings rather than user holdings.
 
 #### Scenario: A required historical or holdings input is unavailable
 
@@ -39,7 +39,7 @@ The LOF detail service SHALL return source, observation date, retrieval time, an
 
 ### Requirement: LOF premium persistence, liquidity, and volatility risk disclosure
 
-The system SHALL present premium persistence and settlement-window risk as dated analysis, not as a trade instruction. Persistence SHALL be calculated from persisted observed premium snapshots; liquidity SHALL include current and historical turnover or volume when available; volatility SHALL expose the measured window and inputs used for price, NAV, and premium variation.
+The Web application SHALL present premium persistence and settlement-window risk returned by the detail service as dated analysis, not as a trade instruction. It SHALL expose the measured window and inputs returned for price, NAV, premium variation, and liquidity rather than recalculating a client-only risk conclusion.
 
 #### Scenario: Sufficient observed history is available
 

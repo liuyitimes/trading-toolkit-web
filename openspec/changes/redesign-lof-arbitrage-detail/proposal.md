@@ -9,6 +9,10 @@ The current LOF detail is a 640px dialog that mixes quote fields, a fixed-fee re
 - Add a documented detail-data contract for historical premium/liquidity/volatility observations and disclosed fund holdings, including source and as-of dates.
 - Preserve the existing list and market-overview behavior. The in-progress `lof-market-overview-signals` change remains independent and is not a prerequisite for this detail view.
 
+## Repository scope
+
+This Web change owns LOF navigation, the deep-linkable detail route, detail layout, charts, status presentation, and responsive verification. The matching `redesign-lof-arbitrage-detail` change in `trading-toolkit-service` owns the detail API, persisted observations, holdings-disclosure data, provenance, and unavailable-state representation.
+
 ## Capabilities
 
 ### New Capabilities
@@ -21,8 +25,8 @@ The current LOF detail is a 640px dialog that mixes quote fields, a fixed-fee re
 
 ## Impact
 
-- Affected supported modules: `trading-toolkit-web` (LOF list navigation, new detail view, charts) and `trading-toolkit-service` (detail API and persisted observation/holdings data).
-- Public API: a versioned LOF detail endpoint and its evidence metadata will be added; existing list, summary, share-history, and prediction endpoints remain compatible.
-- Data sources/cache: persisted premium and liquidity observations plus dated disclosed holdings are required; data retention and refresh policy must be documented.
+- Affected supported module: `trading-toolkit-web` (LOF list navigation, new detail view, and charts).
+- API consumption: the companion Service change provides a versioned LOF detail endpoint and its evidence metadata; this Web change consumes that contract.
+- Data sources/cache: this client renders the source, freshness, and unavailable-state metadata returned by the Service; it does not create a local data fallback.
 - The unmaintained `trading-toolkit-mp` application is explicitly out of scope.
 - Rollback: retain the existing LOF list; remove the new route and detail endpoint if the evidence contract cannot be maintained, without representing unavailable history as observed data.

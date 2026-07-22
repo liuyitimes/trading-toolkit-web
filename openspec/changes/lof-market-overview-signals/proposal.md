@@ -22,9 +22,12 @@ Where a fund announcement records a positive share increase and a current subscr
 
 ## Scope
 
-- Add a verified daily LOF net-subscription source or an explicitly maintained source feed.
-- Derive a transparent market-direction label from a documented LOF taxonomy.
 - Replace the existing Web overview fields with the three decision signals.
+- Render source dates and explicit unavailable states from the LOF summary response.
+
+## Repository scope
+
+This Web change owns the overview cards, wording, source-date display, and unavailable states. The matching `lof-market-overview-signals` change in `trading-toolkit-service` owns the verified source, aggregation, taxonomy, provenance, and summary response fields.
 
 ## Out of scope
 
