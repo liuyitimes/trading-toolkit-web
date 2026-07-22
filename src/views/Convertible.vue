@@ -178,7 +178,7 @@
             <el-tooltip placement="top" trigger="hover" effect="light" :show-after="120" popper-class="formula-popper">
               <template #content>
                 <div class="formula-tip">
-                  <div class="ft-formula">策略评级 = 综合评分分档</div>
+                  <div class="ft-formula">策略评分 = 发行规模 + 首日可交易量 + 安全垫</div>
                   <div class="ft-section">
                     <div class="ft-subtitle">当前评分</div>
                     <div class="ft-detail">综合评分：<b>{{ row.strategyScore }}/100</b></div>
@@ -186,10 +186,9 @@
                   </div>
                   <div class="ft-divider"></div>
                   <div class="ft-subtitle">评分维度</div>
-                  <div class="ft-detail">· 安全垫（收益风险比）</div>
-                  <div class="ft-detail">· 百元含权（配售性价比）</div>
-                  <div class="ft-detail">· 首日可交易量（上市弹性）</div>
-                  <div class="ft-detail">· 正股趋势（短期动能）</div>
+                  <div class="ft-detail">· 发行规模（30%）</div>
+                  <div class="ft-detail">· 首日可交易量（40%）</div>
+                  <div class="ft-detail">· 安全垫（30%）</div>
                   <div class="ft-divider"></div>
                   <div class="ft-subtitle">分档标准</div>
                   <div class="ft-detail"><b style="color:#f56c6c">推荐</b>：评分 ≥ 80</div>
@@ -211,13 +210,13 @@
                   <div class="ft-formula">安全垫 = 预估收益 ÷ 配售成本 × 100%</div>
                   <div class="ft-section">
                     <div class="ft-subtitle">计算过程</div>
-                    <div class="ft-detail">预估收益 = 1000 × 20% = <b>200元</b></div>
+                    <div class="ft-detail">预估收益 = 1000 × {{ row.placementPremiumRate }}% = <b>{{ row.expectedProfit }}</b></div>
                     <div class="ft-detail" v-if="row._actualSharesFor1Lot > 0 && row._stockPriceRaw > 0">
                       配售成本 = {{ row._actualSharesFor1Lot }}股 × {{ row._stockPriceRaw.toFixed(2) }}元
                       = <b>{{ Math.round(row._costFor10LotsRaw) }}元</b>
                     </div>
                     <div class="ft-detail" v-if="row._safetyPadRaw > 0 && row._costFor10LotsRaw > 0">
-                      安全垫 = 200 ÷ {{ Math.round(row._costFor10LotsRaw) }} × 100%
+                      安全垫 = {{ Math.round(row._expectedProfitRaw) }} ÷ {{ Math.round(row._costFor10LotsRaw) }} × 100%
                       = <b>{{ row._safetyPadRaw.toFixed(2) }}%</b>
                     </div>
                   </div>

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { convertibleApi } from '@/api/convertible'
 import { marketApi } from '@/api/market'
 import { useUserStore } from '@/stores/user'
@@ -92,14 +92,43 @@ function detectSector(stockName = '') {
 }
 
 // 安全垫计算（百元含权兜底公式）
-function computeSafetyPad(perShareAlloc, stockPriceVal, sharesFor10Val, premiumRate = 0.2) {
-  const safeSharesFor10 = sharesFor10Val || 0
-  const safePrice = stockPriceVal || 0
-  if (safeSharesFor10 <= 0 || safePrice <= 0) return { value: 0, profit: 0 }
-  const expectedProfit = 1000 * (premiumRate || 0.2)
+const DEFAULT_PLACEMENT_PREMIUM_RATE = 30
+
+function calculateDefaultPlacementMetrics(item) {
+  const expectedProfit = 1000 * (DEFAULT_PLACEMENT_PREMIUM_RATE / 100)
+  const cost = item._costPerLotRaw || 0
+  const safetyPad = cost > 0 ? expectedProfit / cost * 100 : null
+  const issueSize = item._issueSizeRaw || 0
+  const tradableAmount = item._tradableAmountRaw || 0
+  const issueScore = Math.max(0, 1 - issueSize / 10)
+  const tradableScore = issueSize > 0
+    ? Math.max(0, Math.min(1, 1 - tradableAmount / issueSize))
+    : 0
+  const safetyScore = safetyPad == null ? 0 : Math.min(safetyPad / 10, 1)
+  const strategyScore = Math.round(issueScore * 30 + tradableScore * 40 + safetyScore * 30)
+  const strategyRatingClass = strategyScore >= 80
+    ? 'recommend'
+    : strategyScore >= 60 ? 'watch' : 'caution'
+  const strategyRating = strategyRatingClass === 'recommend'
+    ? '推荐'
+    : strategyRatingClass === 'watch' ? '可关注' : '谨慎'
+
+  return { expectedProfit, safetyPad, strategyScore, strategyRating, strategyRatingClass }
+}
+
+function deriveDefaultPlacementItem(item) {
+  const metrics = calculateDefaultPlacementMetrics(item)
   return {
-    value: expectedProfit / (safeSharesFor10 * safePrice) * 100,
-    profit: expectedProfit
+    ...item,
+    expectedProfit: Math.round(metrics.expectedProfit) + '元',
+    _expectedProfitRaw: metrics.expectedProfit,
+    safetyPad: metrics.safetyPad == null ? '--' : metrics.safetyPad.toFixed(2) + '%',
+    _safetyPadRaw: metrics.safetyPad,
+    strategyScore: metrics.strategyScore,
+    strategyRating: metrics.strategyRating,
+    strategyRatingClass: metrics.strategyRatingClass,
+    _compositeRankRaw: metrics.strategyScore,
+    placementPremiumRate: DEFAULT_PLACEMENT_PREMIUM_RATE
   }
 }
 
@@ -292,12 +321,8 @@ function normalizePendingItem(item) {
   const _costPerLotRaw = _actualSharesFor1Lot * stockPrice;
 
   // 安全垫（用实际股数计算，贴近真实成交成本）
-  const _safetyPadValue = item.safety_pad > 0
-    ? item.safety_pad
-    : computeSafetyPad(perShare, stockPrice, _actualSharesFor1Lot, 0.2).value
-  const expectedProfit = item.expected_profit > 0
-    ? item.expected_profit
-    : computeSafetyPad(perShare, stockPrice, _actualSharesFor1Lot, 0.2).profit
+  const apiSafetyPad = item.safety_pad ?? null
+  const apiExpectedProfit = item.expected_profit ?? null
 
   // 正股趋势（相对20日均价偏离）
   const stockTrend = ma20Price > 0 ? Math.round((stockPrice - ma20Price) / ma20Price * 10000) / 100 : 0
@@ -398,19 +423,23 @@ function normalizePendingItem(item) {
     riskLevel,
     riskLabel,
     riskClass: riskLevel,
-    expectedProfit: Math.round(expectedProfit) + '元',
-    _expectedProfitRaw: expectedProfit,
+    expectedProfit: apiExpectedProfit != null ? Math.round(apiExpectedProfit) + '元' : '--',
+    _expectedProfitRaw: apiExpectedProfit,
+    _apiExpectedProfitRaw: apiExpectedProfit,
     stockTrend: stockTrend !== 0 ? (stockTrend >= 0 ? '+' : '') + stockTrend.toFixed(2) + '%' : '--',
     _stockTrendRaw: stockTrend,
     recordPrice: recordPrice ? recordPrice.toFixed(2) : '--',
     oneHandParty,
-    safetyPad: _safetyPadValue > 0 ? _safetyPadValue.toFixed(2) + '%' : '--',
-    _safetyPadRaw: _safetyPadValue,
+    safetyPad: apiSafetyPad != null ? apiSafetyPad.toFixed(2) + '%' : '--',
+    _safetyPadRaw: apiSafetyPad,
+    _apiSafetyPadRaw: apiSafetyPad,
     tradableAmount,
     _tradableAmountRaw,
     strategyScore,
     strategyRating,
     strategyRatingClass,
+    _apiStrategyScoreRaw: strategyScore,
+    _apiStrategyRating: item.strategy_rating || '',
     _compositeRankRaw,
     progressClass: progress.includes('申购') || progress.includes('上市') ? 'hot' : 'warm',
     _applyDate: item.apply_date || '',
@@ -440,10 +469,10 @@ function normalizePendingItem(item) {
       onlineIssueSize: onlineIssueSize ? onlineIssueSize.toFixed(2) + '亿元' : '暂无',
       winRate: winRate != null ? (winRate * 100).toFixed(3) + '%' : '暂无',
       riskLevel, riskLabel, riskClass: riskLevel,
-      safetyPad: _safetyPadValue > 0 ? _safetyPadValue.toFixed(2) + '%' : '暂无',
-      _safetyPadRaw: _safetyPadValue,
-      expectedProfit: expectedProfit > 0 ? Math.round(expectedProfit) + '元' : '暂无',
-      _expectedProfitRaw: expectedProfit,
+      safetyPad: apiSafetyPad != null ? apiSafetyPad.toFixed(2) + '%' : '暂无',
+      _safetyPadRaw: apiSafetyPad,
+      expectedProfit: apiExpectedProfit != null ? Math.round(apiExpectedProfit) + '元' : '暂无',
+      _expectedProfitRaw: apiExpectedProfit,
       stockTrend: stockTrend !== 0 ? (stockTrend >= 0 ? '+' : '') + stockTrend.toFixed(2) + '%' : '暂无',
       _stockTrendRaw: stockTrend,
       recordPrice: recordPrice ? recordPrice.toFixed(2) + '元' : '暂无',
@@ -475,7 +504,8 @@ function emptySignals() {
 export const useConvertibleStore = defineStore('convertible', () => {
   const bondList = ref([])
   const signals = ref(emptySignals())
-  const pendingList = ref([])
+  const pendingSourceList = ref([])
+  const pendingList = computed(() => pendingSourceList.value.map(deriveDefaultPlacementItem))
   const temperature = ref(null)
   const marketTemp = ref(null)
   const tier = 'beginner'
@@ -529,7 +559,7 @@ export const useConvertibleStore = defineStore('convertible', () => {
     signals.value = normalized
 
     const today = new Date().toISOString().slice(0, 10)
-    pendingList.value = pendingPayload
+    pendingSourceList.value = pendingPayload
       .map(normalizePendingItem)
       .filter(Boolean)
       .filter(item => isPendingPlacementVisible(item, today))
