@@ -134,17 +134,32 @@ function calculatePlacementMetrics(item, premiumRate) {
 
 function derivePlacementItem(item, premiumRate) {
   const metrics = calculatePlacementMetrics(item, premiumRate)
+  const expectedProfit = Math.round(metrics.expectedProfit) + '元'
+  const safetyPad = metrics.safetyPad == null ? '--' : metrics.safetyPad.toFixed(2) + '%'
   return {
     ...item,
-    expectedProfit: Math.round(metrics.expectedProfit) + '元',
+    expectedProfit,
     _expectedProfitRaw: metrics.expectedProfit,
-    safetyPad: metrics.safetyPad == null ? '--' : metrics.safetyPad.toFixed(2) + '%',
+    safetyPad,
     _safetyPadRaw: metrics.safetyPad,
     strategyScore: metrics.strategyScore,
     strategyRating: metrics.strategyRating,
     strategyRatingClass: metrics.strategyRatingClass,
     _compositeRankRaw: metrics.strategyScore,
-    placementPremiumRate: premiumRate
+    placementPremiumRate: premiumRate,
+    detail: item.detail
+      ? {
+          ...item.detail,
+          expectedProfit,
+          _expectedProfitRaw: metrics.expectedProfit,
+          safetyPad,
+          _safetyPadRaw: metrics.safetyPad,
+          strategyScore: metrics.strategyScore,
+          strategyRating: metrics.strategyRating,
+          strategyRatingClass: metrics.strategyRatingClass,
+          placementPremiumRate: premiumRate
+        }
+      : item.detail
   }
 }
 

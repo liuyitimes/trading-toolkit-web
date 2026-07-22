@@ -331,8 +331,8 @@
           </div>
           <div class="mc-metrics">
             <div><span class="mc-label">含权</span><span class="hl">{{ row.cashRatio }}</span></div>
-            <div><span class="mc-label">安全垫</span><span :class="safetyPadClass(row._safetyPadRaw)">{{ row.safetyPad }}</span></div>
-            <div><span class="mc-label">收益</span><span class="hl">{{ row.expectedProfit }}</span></div>
+            <div><span class="mc-label">安全垫（{{ row.placementPremiumRate }}%）</span><span :class="safetyPadClass(row._safetyPadRaw)">{{ row.safetyPad }}</span></div>
+            <div><span class="mc-label">收益（{{ row.placementPremiumRate }}%）</span><span class="hl">{{ row.expectedProfit }}</span></div>
             <div><span class="mc-label">规模</span>{{ row.issueSize }}</div>
             <div><span class="mc-label">可交易量</span>{{ row.tradableAmount }}</div>
           </div>
@@ -641,6 +641,9 @@
             >
               {{ pendingDetail.sectorTag }}<span v-if="pendingDetail.isHotSector">🔥</span>
             </el-tag>
+            <el-tag v-if="pendingDetail" size="small" type="info" effect="light" class="dialog-sector-tag">
+              按 {{ pendingDetail.placementPremiumRate }}% 假设
+            </el-tag>
           </div>
           <a
             v-if="pendingDetail && pendingDetail.stockCode && pendingDetail.stockCode !== '--'"
@@ -748,9 +751,11 @@
         <div class="detail-section">
           <div class="detail-section-title">核心指标</div>
           <div class="detail-grid">
-            <div class="detail-item hl-box"><span class="detail-label">安全垫</span><span class="detail-value hl">{{ pendingDetail.safetyPad }}</span></div>
+            <div class="detail-item hl-box"><span class="detail-label">安全垫（按 {{ pendingDetail.placementPremiumRate }}%）</span><span class="detail-value hl">{{ pendingDetail.safetyPad }}</span></div>
             <div class="detail-item hl-box"><span class="detail-label">百元含权</span><span class="detail-value hl">{{ pendingDetail.cashRatio }}</span></div>
-            <div class="detail-item hl-box"><span class="detail-label">预估收益(10张)</span><span class="detail-value hl">{{ pendingDetail.expectedProfit }}</span></div>
+            <div class="detail-item hl-box"><span class="detail-label">预估收益(10张，按 {{ pendingDetail.placementPremiumRate }}%)</span><span class="detail-value hl">{{ pendingDetail.expectedProfit }}</span></div>
+            <div class="detail-item hl-box"><span class="detail-label">策略评分</span><span class="detail-value hl">{{ pendingDetail.strategyScore }}/100</span></div>
+            <div class="detail-item"><span class="detail-label">策略评级</span><el-tag :class="`rating-tag rating-${pendingDetail.strategyRatingClass}`" size="small">{{ pendingDetail.strategyRating }}</el-tag></div>
             <div class="detail-item"><span class="detail-label">每股配售</span><span class="detail-value">{{ pendingDetail.perShare }}</span></div>
             <div class="detail-item"><span class="detail-label">配10张需</span><span class="detail-value">{{ pendingDetail.sharesFor10 }}</span></div>
             <div class="detail-item"><span class="detail-label">一手党最低</span><span class="detail-value">{{ pendingDetail.oneHandMinCost || '--' }}</span></div>
@@ -1062,7 +1067,12 @@ const placementSortAsc = ref(false)
 const searchKeyword = ref('')
 const showAll = ref(false)
 const pendingDialogVisible = ref(false)
-const pendingDetail = ref(null)
+const pendingDetailKey = ref(null)
+const pendingDetail = computed(() => {
+  const key = pendingDetailKey.value
+  if (!key) return null
+  return store.pendingList.find(row => row.stockCode === key.stockCode && row.bondCode === key.bondCode)?.detail || null
+})
 const costDialogVisible = ref(false)
 const costDialogRow = ref(null)
 const signalDialogVisible = ref(false)
@@ -1396,18 +1406,6 @@ function daysDiff(dateStr) {
   return Number.isFinite(diff) ? diff : null
 }
 
-const liveSafetyPad = computed(() => {
-  const sp = pendingDetail.value?._safetyPadRaw || 0
-  if (sp <= 0) return '--'
-  const newPad = sp * (premiumRate.value / 100 / 0.2)
-  return newPad.toFixed(2) + '%'
-})
-
-const liveExpectedProfit = computed(() => {
-  const profit = 1000 * (premiumRate.value / 100)
-  return Math.round(profit) + '元'
-})
-
 function switchTab(key) {
   activeTab.value = key
   searchKeyword.value = ''
@@ -1446,8 +1444,7 @@ function toggleSignalSort(field) {
 
 function openPendingDetail(row) {
   if (!row?.detail) return
-  pendingDetail.value = { ...row.detail }
-  premiumRate.value = 20
+  pendingDetailKey.value = { stockCode: row.stockCode, bondCode: row.bondCode }
   pendingDialogVisible.value = true
 }
 
@@ -2439,6 +2436,14 @@ onUnmounted(() => {
       grid-template-columns: repeat(2, 1fr);
     }
 
+    .tab-content .sub-toolbar .placement-controls {
+      align-items: flex-start;
+    }
+
+    .tab-content .sub-toolbar .placement-assumption {
+      flex-wrap: wrap;
+    }
+
     .desktop-table { display: none; }
     .mobile-cards {
       display: block;
@@ -2473,8 +2478,6 @@ onUnmounted(() => {
         font-size: 13px;
 
         .mc-label {
-          display: inline-block;
-          min-width: 40px;
           color: var(--text-color-secondary);
           margin-right: 4px;
         }

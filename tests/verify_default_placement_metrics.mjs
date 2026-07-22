@@ -160,6 +160,8 @@ try {
   assert.deepEqual(premiumOptions, [30, 40, 50, 60, 70, 80, 90, 100], 'only approved premium options should be exposed')
 
   const requestsBeforeChange = pendingRequestCount
+  await alphaRow.locator('td').first().click()
+  await page.locator('.pending-dialog').waitFor()
   const adjustedMetrics = await page.evaluate(async () => {
     const { useConvertibleStore } = await import('/src/stores/convertible.js')
     const store = useConvertibleStore()
@@ -185,6 +187,22 @@ try {
     saved: '100'
   }, '100% should synchronously recalculate and persist placement metrics')
   assert.equal(pendingRequestCount, requestsBeforeChange, 'changing the local assumption must not refetch placement data')
+
+  await page.waitForFunction(() => document.querySelector('.pending-dialog')?.textContent?.includes('1000元'))
+  const detailText = await page.locator('.pending-dialog').innerText()
+  assert.match(detailText, /按 100% 假设/, 'open placement detail should disclose the active assumption')
+  assert.match(detailText, /10\.00%/, 'open placement detail should refresh its safety pad')
+  assert.match(detailText, /93\/100/, 'open placement detail should refresh its derived score')
+  assert.match(detailText, /推荐/, 'open placement detail should refresh its derived rating')
+
+  await page.keyboard.press('Escape')
+  await page.locator('.pending-dialog').waitFor({ state: 'hidden' })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.locator('.mobile-cards .mobile-card').first().waitFor()
+  const mobileAlphaText = await page.locator('.mobile-cards .mobile-card').filter({ hasText: 'MetricAlpha' }).innerText()
+  assert.match(mobileAlphaText, /安全垫（100%）10\.00%/, 'mobile card should disclose the same safety-pad assumption')
+  assert.match(mobileAlphaText, /收益（100%）1000元/, 'mobile card should disclose the same expected profit')
+  await page.setViewportSize({ width: 1440, height: 900 })
 
   await page.reload({ waitUntil: 'networkidle' })
   await page.locator('.desktop-table .el-table__row').first().waitFor()

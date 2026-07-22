@@ -6,9 +6,17 @@
 
 **Blocked by:** 03 - 可调整且持久化的收益假设
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 工具提示、详情核心指标和移动端卡片标明当前预期上市溢价率。
-- [ ] 已打开的详情在切换假设后更新收益假设、安全垫、评分和评级，不保留旧副本。
-- [ ] 移动端控制区换行后仍保持筛选、排序和假设控件可用且不重叠。
-- [ ] 验证桌面列表、详情、提示和移动端卡片的数值一致性。
+- [x] 工具提示、详情核心指标和移动端卡片标明当前预期上市溢价率。
+- [x] 已打开的详情在切换假设后更新收益假设、安全垫、评分和评级，不保留旧副本。
+- [x] 移动端控制区换行后仍保持筛选、排序和假设控件可用且不重叠。
+- [x] 验证桌面列表、详情、提示和移动端卡片的数值一致性。
+
+## Answer
+
+Placement detail state now stores a stable candidate key and resolves the current derived item reactively. Desktop tooltips, detail metrics, and mobile cards disclose the active assumption and use the same derived metrics.
+
+## Comments
+
+- 2026-07-22: Browser verification confirms an already-open detail and a 390px mobile card update from the 30% default to the 100% scenario.
