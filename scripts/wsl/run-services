@@ -9,7 +9,7 @@ python3 -c 'from app import app; app.run(host="0.0.0.0", port=8080, debug=False,
 backend_pid=$!
 
 cd "$WEB_DIR"
-npm run preview -- --host 0.0.0.0 --port 5173 --strictPort &
+VITE_BASE_PATH=/ npm run preview -- --host 0.0.0.0 --port 5173 --strictPort &
 frontend_pid=$!
 
 cleanup() {
