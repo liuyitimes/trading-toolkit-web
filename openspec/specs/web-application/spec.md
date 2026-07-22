@@ -69,4 +69,3 @@ The Web repository SHALL provide a versioned WSL operator workflow that validate
 - GIVEN the service checkout contains a modification other than its SQLite database
 - WHEN an operator runs the deploy command
 - THEN the workflow SHALL stop before restarting services.
-
