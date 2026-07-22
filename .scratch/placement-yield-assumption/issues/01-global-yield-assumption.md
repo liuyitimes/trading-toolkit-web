@@ -1,7 +1,7 @@
 # Global Placement Yield Assumption
 
 Type: feature
-Status: resolved
+Status: ready-for-agent
 Labels: ready-for-agent
 
 Implement the OpenSpec change `placement-yield-assumption`: add a persisted placement-only premium selector and derive expected profit, safety pad, rating, and ranking from it without changing the API.
@@ -14,5 +14,4 @@ Implement the OpenSpec change `placement-yield-assumption`: add a persisted plac
 
 ## Comments
 
-- 2026-07-22: Claimed for implementation.
-- 2026-07-22: Completed Store derivation, toolbar controls, responsive disclosure, deterministic Playwright coverage, build, and OpenSpec validation.
+- 2026-07-22: Planning complete. Implementation has not started.
