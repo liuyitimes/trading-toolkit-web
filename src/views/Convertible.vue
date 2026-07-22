@@ -132,7 +132,27 @@
             <span class="sub-count" :class="{ hot: s.key === 'subscribing' }">{{ placementTabStats[s.stat] }}</span>
           </button>
         </div>
-        <div class="sort-row">
+        <div class="placement-controls">
+          <div class="placement-assumption">
+            <span class="assumption-label">预期上市溢价率</span>
+            <el-select v-model="placementPremiumRate" size="small" class="assumption-select" aria-label="预期上市溢价率" data-testid="placement-premium-select">
+              <el-option v-for="rate in placementPremiumRateOptions" :key="rate" :label="`${rate}%`" :value="rate" />
+            </el-select>
+            <span class="assumption-status">按 {{ placementPremiumRate }}% 假设</span>
+            <el-tooltip content="恢复默认 30% 假设" placement="top">
+              <el-button
+                circle
+                text
+                size="small"
+                aria-label="恢复默认 30% 假设"
+                :disabled="placementPremiumRate === 30"
+                @click="resetPlacementPremiumRate"
+              >
+                <el-icon><RefreshLeft /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </div>
+          <div class="sort-row">
           <button
             v-for="f in sortFields"
             :key="f.field"
@@ -142,6 +162,7 @@
           >
             {{ f.label }}<span v-if="placementSortBy === f.field">{{ placementSortAsc ? '↑' : '↓' }}</span>
           </button>
+          </div>
         </div>
       </div>
 
@@ -972,7 +993,7 @@
 import { ref, computed, onMounted, onActivated, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, Star, StarFilled, ArrowDown, TopRight, Calendar, Warning, Check, InfoFilled } from '@element-plus/icons-vue'
+import { Search, Star, StarFilled, ArrowDown, TopRight, Calendar, Warning, Check, InfoFilled, RefreshLeft } from '@element-plus/icons-vue'
 import { useConvertibleStore } from '@/stores/convertible'
 import { useUserStore } from '@/stores/user'
 import TierBadge from '@/components/TierBadge.vue'
@@ -1090,7 +1111,6 @@ const oneHandTierData = computed(() => {
     }
   })
 })
-const premiumRate = ref(20)
 const isMobile = ref(false)
 
 const placementSubs = [
@@ -1108,6 +1128,15 @@ const sortFields = [
 
 const marketTemp = computed(() => store.marketTemp)
 const guideText = computed(() => guideMap[activeTab.value])
+const placementPremiumRate = computed({
+  get: () => store.placementPremiumRate,
+  set: value => store.setPlacementPremiumRate(value)
+})
+const placementPremiumRateOptions = store.placementPremiumRateOptions
+
+function resetPlacementPremiumRate() {
+  store.resetPlacementPremiumRate()
+}
 
 function tabCount(key) {
   // 直接从 store 的 signals / pendingList 取数量，不依赖 marketTemp
@@ -1767,6 +1796,36 @@ onUnmounted(() => {
         display: flex;
         gap: 6px;
         flex-wrap: wrap;
+      }
+
+      .placement-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .placement-assumption {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 28px;
+      }
+
+      .assumption-label,
+      .assumption-status {
+        font-size: 12px;
+        color: var(--text-color-secondary);
+        white-space: nowrap;
+      }
+
+      .assumption-status {
+        color: var(--el-color-primary);
+      }
+
+      .assumption-select {
+        width: 88px;
       }
 
       .sort-btn {

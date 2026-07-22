@@ -6,9 +6,17 @@
 
 **Blocked by:** 02 - 默认收益假设的配债指标
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] 控件仅提供 30% 至 100%、10% 递进的有效选项，并支持恢复至 30%。
-- [ ] 缺失、损坏或越界的本地偏好回退为 30%，不会进入计算或控件。
-- [ ] 切换假设无需重新请求接口，所有配债候选项的计算与排序同步更新。
-- [ ] 验证 30%/100% 边界、持久化、非法缓存和恢复默认。
+- [x] 控件仅提供 30% 至 100%、10% 递进的有效选项，并支持恢复至 30%。
+- [x] 缺失、损坏或越界的本地偏好回退为 30%，不会进入计算或控件。
+- [x] 切换假设无需重新请求接口，所有配债候选项的计算与排序同步更新。
+- [x] 验证 30%/100% 边界、持久化、非法缓存和恢复默认。
+
+## Answer
+
+The convertible store owns the persisted placement premium preference and exposes only the approved 30% to 100% options. The placement toolbar updates the derived list without refetching data.
+
+## Comments
+
+- 2026-07-22: Browser verification covers the approved option set, 30%/100% boundaries, persistence, invalid cache fallback, reset, and no-refetch behavior.

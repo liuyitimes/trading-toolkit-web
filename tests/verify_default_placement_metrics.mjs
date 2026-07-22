@@ -60,6 +60,7 @@ const pendingCandidates = [
 const browser = await chromium.launch({ headless: true })
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
 const browserErrors = []
+let pendingRequestCount = 0
 page.on('pageerror', (error) => browserErrors.push(error.message))
 page.on('console', (message) => {
   if (message.type() === 'error') browserErrors.push(message.text())
@@ -69,7 +70,10 @@ await page.route('**/api/v1/**', async (route) => {
   const { pathname } = new URL(route.request().url())
   let data = {}
 
-  if (pathname.endsWith('/convertible/pending')) data = pendingCandidates
+  if (pathname.endsWith('/convertible/pending')) {
+    pendingRequestCount += 1
+    data = pendingCandidates
+  }
   if (pathname.endsWith('/convertible/signals')) {
     data = { double_low: [], force_redeem: [], discount: [], down_revised: [] }
   }
@@ -148,6 +152,74 @@ try {
     /1000 × 30% = 300元/,
     'formula should disclose the default expected profit'
   )
+
+  const premiumOptions = await page.evaluate(async () => {
+    const { useConvertibleStore } = await import('/src/stores/convertible.js')
+    return useConvertibleStore().placementPremiumRateOptions
+  })
+  assert.deepEqual(premiumOptions, [30, 40, 50, 60, 70, 80, 90, 100], 'only approved premium options should be exposed')
+
+  const requestsBeforeChange = pendingRequestCount
+  const adjustedMetrics = await page.evaluate(async () => {
+    const { useConvertibleStore } = await import('/src/stores/convertible.js')
+    const store = useConvertibleStore()
+    const changed = store.setPlacementPremiumRate(100)
+    const alpha = store.pendingList.find((item) => item.stockName === 'MetricAlpha')
+    return {
+      changed,
+      premiumRate: store.placementPremiumRate,
+      expectedProfit: alpha._expectedProfitRaw,
+      safetyPad: alpha._safetyPadRaw,
+      strategyScore: alpha.strategyScore,
+      strategyRating: alpha.strategyRating,
+      saved: localStorage.getItem('convertiblePlacementPremiumRate')
+    }
+  })
+  assert.deepEqual(adjustedMetrics, {
+    changed: true,
+    premiumRate: 100,
+    expectedProfit: 1000,
+    safetyPad: 10,
+    strategyScore: 93,
+    strategyRating: '推荐',
+    saved: '100'
+  }, '100% should synchronously recalculate and persist placement metrics')
+  assert.equal(pendingRequestCount, requestsBeforeChange, 'changing the local assumption must not refetch placement data')
+
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.locator('.desktop-table .el-table__row').first().waitFor()
+  const reloadedMetrics = await page.evaluate(async () => {
+    const { useConvertibleStore } = await import('/src/stores/convertible.js')
+    const store = useConvertibleStore()
+    return {
+      premiumRate: store.placementPremiumRate,
+      expectedProfit: store.pendingList.find((item) => item.stockName === 'MetricAlpha')._expectedProfitRaw
+    }
+  })
+  assert.deepEqual(reloadedMetrics, { premiumRate: 100, expectedProfit: 1000 }, 'saved assumption should restore after refresh')
+
+  const resetMetrics = await page.evaluate(async () => {
+    const { useConvertibleStore } = await import('/src/stores/convertible.js')
+    const store = useConvertibleStore()
+    store.resetPlacementPremiumRate()
+    const alpha = store.pendingList.find((item) => item.stockName === 'MetricAlpha')
+    return {
+      premiumRate: store.placementPremiumRate,
+      expectedProfit: alpha._expectedProfitRaw,
+      saved: localStorage.getItem('convertiblePlacementPremiumRate')
+    }
+  })
+  assert.deepEqual(resetMetrics, { premiumRate: 30, expectedProfit: 300, saved: '30' }, 'reset should restore and persist the default')
+
+  await page.evaluate(() => localStorage.setItem('convertiblePlacementPremiumRate', '20'))
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.locator('.desktop-table .el-table__row').first().waitFor()
+  const invalidCacheMetrics = await page.evaluate(async () => {
+    const { useConvertibleStore } = await import('/src/stores/convertible.js')
+    const store = useConvertibleStore()
+    return { premiumRate: store.placementPremiumRate, rejected: store.setPlacementPremiumRate(-10) }
+  })
+  assert.deepEqual(invalidCacheMetrics, { premiumRate: 30, rejected: false }, 'invalid persisted or updated values should never enter placement calculations')
 
   assert.deepEqual(browserErrors, [], 'placement rendering should not raise browser errors')
 } finally {

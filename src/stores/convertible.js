@@ -92,10 +92,26 @@ function detectSector(stockName = '') {
 }
 
 // 安全垫计算（百元含权兜底公式）
-const DEFAULT_PLACEMENT_PREMIUM_RATE = 30
+export const DEFAULT_PLACEMENT_PREMIUM_RATE = 30
+export const PLACEMENT_PREMIUM_RATE_OPTIONS = [30, 40, 50, 60, 70, 80, 90, 100]
+export const PLACEMENT_PREMIUM_RATE_STORAGE_KEY = 'convertiblePlacementPremiumRate'
 
-function calculateDefaultPlacementMetrics(item) {
-  const expectedProfit = 1000 * (DEFAULT_PLACEMENT_PREMIUM_RATE / 100)
+function isValidPlacementPremiumRate(value) {
+  return Number.isInteger(value) && PLACEMENT_PREMIUM_RATE_OPTIONS.includes(value)
+}
+
+function readPlacementPremiumRate() {
+  try {
+    const saved = localStorage.getItem(PLACEMENT_PREMIUM_RATE_STORAGE_KEY)
+    const value = Number(saved)
+    return isValidPlacementPremiumRate(value) ? value : DEFAULT_PLACEMENT_PREMIUM_RATE
+  } catch {
+    return DEFAULT_PLACEMENT_PREMIUM_RATE
+  }
+}
+
+function calculatePlacementMetrics(item, premiumRate) {
+  const expectedProfit = 1000 * (premiumRate / 100)
   const cost = item._costPerLotRaw || 0
   const safetyPad = cost > 0 ? expectedProfit / cost * 100 : null
   const issueSize = item._issueSizeRaw || 0
@@ -116,8 +132,8 @@ function calculateDefaultPlacementMetrics(item) {
   return { expectedProfit, safetyPad, strategyScore, strategyRating, strategyRatingClass }
 }
 
-function deriveDefaultPlacementItem(item) {
-  const metrics = calculateDefaultPlacementMetrics(item)
+function derivePlacementItem(item, premiumRate) {
+  const metrics = calculatePlacementMetrics(item, premiumRate)
   return {
     ...item,
     expectedProfit: Math.round(metrics.expectedProfit) + '元',
@@ -128,7 +144,7 @@ function deriveDefaultPlacementItem(item) {
     strategyRating: metrics.strategyRating,
     strategyRatingClass: metrics.strategyRatingClass,
     _compositeRankRaw: metrics.strategyScore,
-    placementPremiumRate: DEFAULT_PLACEMENT_PREMIUM_RATE
+    placementPremiumRate: premiumRate
   }
 }
 
@@ -505,7 +521,8 @@ export const useConvertibleStore = defineStore('convertible', () => {
   const bondList = ref([])
   const signals = ref(emptySignals())
   const pendingSourceList = ref([])
-  const pendingList = computed(() => pendingSourceList.value.map(deriveDefaultPlacementItem))
+  const placementPremiumRate = ref(readPlacementPremiumRate())
+  const pendingList = computed(() => pendingSourceList.value.map(item => derivePlacementItem(item, placementPremiumRate.value)))
   const temperature = ref(null)
   const marketTemp = ref(null)
   const tier = 'beginner'
@@ -514,6 +531,23 @@ export const useConvertibleStore = defineStore('convertible', () => {
   const loading = ref(false)
   const error = ref(null)
   const pagination = ref({ page: 1, pageSize: 20, total: 0 })
+
+  function setPlacementPremiumRate(value) {
+    const nextValue = Number(value)
+    if (!isValidPlacementPremiumRate(nextValue)) return false
+
+    placementPremiumRate.value = nextValue
+    try {
+      localStorage.setItem(PLACEMENT_PREMIUM_RATE_STORAGE_KEY, String(nextValue))
+    } catch {
+      // Keep the in-memory preference when browser storage is unavailable.
+    }
+    return true
+  }
+
+  function resetPlacementPremiumRate() {
+    return setPlacementPremiumRate(DEFAULT_PLACEMENT_PREMIUM_RATE)
+  }
 
   async function loadBonds(params = {}) {
     loading.value = true
@@ -697,8 +731,10 @@ export const useConvertibleStore = defineStore('convertible', () => {
   }
 
   return {
-    bondList, signals, pendingList, temperature, marketTemp, loading, error, pagination,
+    bondList, signals, pendingList, placementPremiumRate, placementPremiumRateOptions: PLACEMENT_PREMIUM_RATE_OPTIONS,
+    temperature, marketTemp, loading, error, pagination,
     tier, threshold, lastUpdated,
-    loadBonds, loadAll, loadSignals, loadTemperature, refreshFavorites
+    loadBonds, loadAll, loadSignals, loadTemperature, refreshFavorites,
+    setPlacementPremiumRate, resetPlacementPremiumRate
   }
 })
