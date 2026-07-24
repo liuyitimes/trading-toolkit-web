@@ -1,10 +1,11 @@
 import api from './index'
+import { apiEndpoints } from './contracts'
 
 export const closedEndApi = {
   list(params) {
-    return api.get('/api/v1/closed-end/list', { params })
+    return api.get(apiEndpoints.closedEnd.list.path, { params })
   },
   summary() {
-    return api.get('/api/v1/closed-end/summary')
+    return api.get(apiEndpoints.closedEnd.summary.path)
   }
 }

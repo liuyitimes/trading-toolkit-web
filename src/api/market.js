@@ -1,13 +1,14 @@
 import api from './index'
+import { apiEndpoints } from './contracts'
 
 export const marketApi = {
   overview() {
-    return api.get('/api/v1/market/overview')
+    return api.get(apiEndpoints.market.overview.path)
   },
   sentiment() {
-    return api.get('/api/v1/market/sentiment')
+    return api.get(apiEndpoints.market.sentiment.path)
   },
   fundFlow() {
-    return api.get('/api/v1/market/fund-flow')
+    return api.get(apiEndpoints.market.fundFlow.path)
   }
 }

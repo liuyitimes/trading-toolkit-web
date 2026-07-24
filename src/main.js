@@ -11,6 +11,18 @@ import './assets/styles/global.scss'
 
 const app = createApp(App)
 
+if (import.meta.env.VITE_SENTRY_DSN) {
+  import('@sentry/vue')
+    .then(({ init }) => {
+      init({
+        app,
+        dsn: import.meta.env.VITE_SENTRY_DSN,
+        tracesSampleRate: 0
+      })
+    })
+    .catch(() => {})
+}
+
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
