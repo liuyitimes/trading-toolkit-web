@@ -489,6 +489,23 @@
             </el-tooltip>
           </template>
         </el-table-column>
+        <el-table-column label="导出" width="64" align="center">
+          <template #default="{ row }">
+            <el-tooltip content="导出配债详情" placement="top">
+              <el-button
+                class="placement-export-button"
+                circle
+                text
+                size="small"
+                :aria-label="`导出${row.stockName}配债详情`"
+                data-testid="placement-export-button"
+                @click.stop="exportPlacement(row)"
+              >
+                <el-icon><Download /></el-icon>
+              </el-button>
+            </el-tooltip>
+          </template>
+        </el-table-column>
       </el-table>
 
       <!-- 移动端卡片 -->
@@ -556,6 +573,17 @@
             <div>
               <span class="mc-label">可交易量</span>{{ row.tradableAmount }}
             </div>
+          </div>
+          <div class="mc-actions">
+            <el-button
+              size="small"
+              :icon="Download"
+              aria-label="导出配债详情"
+              data-testid="placement-export-button"
+              @click.stop="exportPlacement(row)"
+            >
+              导出
+            </el-button>
           </div>
         </el-card>
       </div>
@@ -1751,7 +1779,8 @@ import {
   Warning,
   Check,
   InfoFilled,
-  RefreshLeft
+  RefreshLeft,
+  Download
 } from '@element-plus/icons-vue'
 import { useConvertibleStore } from '@/stores/convertible'
 import { useUserStore } from '@/stores/user'
@@ -2359,6 +2388,11 @@ function openPendingDetail(row) {
   if (!row?.detail) return
   pendingDetailKey.value = { stockCode: row.stockCode, bondCode: row.bondCode }
   pendingDialogVisible.value = true
+}
+
+function exportPlacement(row) {
+  store.exportPendingPlacement(row)
+  ElMessage.success(`已导出${row.stockName}配债详情`)
 }
 
 function openCostDialog(row) {
@@ -2974,6 +3008,12 @@ onUnmounted(() => {
 
   .mobile-cards {
     display: none;
+
+    .mc-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
   }
 
   /* 待发详情弹窗 */

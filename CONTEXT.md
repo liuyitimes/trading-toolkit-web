@@ -6,6 +6,22 @@
 
 A convertible-bond original-shareholder placement opportunity that remains relevant to a user before its registration date has passed. A candidate carries issuer terms, registration timing, source evidence, and derived decision-support metrics.
 
+### Placement Export Detail
+
+单个 Placement Candidate 可导出的决策记录。它包含候选标的完整配债详情字段、用户发起导出时生效的预期上市溢价假设及派生指标、逐候选标的发行人证据和公告链接、可用时的快照新鲜度与发行条款核验或复核状态、1 至 5 手成本表，以及配债是规划观察而非确认收益的固定提示。
+
+### Placement Export Provenance
+
+Placement Export Document 中的逐候选标的发行人证据：参与资格、登记日、配售条款、缴款时点、公告日期、公告 URL、核验时间和需复核状态。缺失字段必须明确显示为不可用，不得推断。
+
+### Placement Export Document
+
+只包含一个 Placement Candidate 的 Placement Export Detail 的 Markdown 文件。Web 从配债视图已加载的候选标的创建它。用户从该候选标的桌面表格行或移动端卡片直接发起下载，无需确认弹窗；配债视图不提供批量下载。未核验或需复核候选标的仍可导出，文档会明确其状态。
+
+### Placement Export Filename
+
+Placement Export Document 的文件名：`配债详情-{正股名称}（{正股代码}）-{导出日期}.md`。导出清洗只能替换用户文件系统不允许的字符。
+
 ### Placement Snapshot
 
 A time-stamped, locally persisted representation of Placement Candidates used for immediate availability. It is not a permanent assertion of current market facts; it records the source and verification time from which the data was last known.
