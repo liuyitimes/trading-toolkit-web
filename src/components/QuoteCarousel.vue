@@ -116,7 +116,7 @@ onBeforeUnmount(() => window.clearTimeout(nextBatchTimer))
 .barrage-track {
   display: inline-block;
   min-width: max-content;
-  animation: marquee 24s linear;
+  animation: marquee 40s linear;
   font-size: 13px;
   color: var(--text-color-secondary);
   padding-left: 100%;
