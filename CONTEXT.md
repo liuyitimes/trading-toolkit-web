@@ -6,58 +6,58 @@
 
 从用户维护的名言列表中随机抽取、横向飘过应用界面的非阻断式展示。它服务于浏览氛围，不得遮挡或妨碍任何页面的主要内容与操作。
 
-### Placement Candidate
+### 配债候选标的（Placement Candidate）
 
-A convertible-bond original-shareholder placement opportunity that remains relevant to a user before its registration date has passed. A candidate carries issuer terms, registration timing, source evidence, and derived decision-support metrics.
+股权登记日尚未结束、仍可能与用户相关的可转债原股东配售机会。候选标的包含发行条款、登记时间、配债来源信息和派生决策指标。
 
-### Placement Export Detail
+### 配债详情
 
-单个 Placement Candidate 可导出的决策记录。它包含候选标的完整配债详情字段、用户发起导出时生效的预期上市溢价假设及派生指标、逐候选标的发行人证据和公告链接、可用时的快照新鲜度与发行条款核验或复核状态、1 至 5 手成本表，以及配债是规划观察而非确认收益的固定提示。
+单个配债候选标的可导出的决策记录。它包含候选标的完整配债详情字段、用户发起导出时生效的预期上市溢价假设及派生指标、逐候选标的配债来源信息和公告链接、可用时的快照新鲜度与发行条款核验或复核状态、1 至 5 手成本表，以及配债是规划观察而非确认收益的固定提示。
 
-### Placement Export Provenance
+### 配债来源信息
 
-Placement Export Document 中的逐候选标的发行人证据：参与资格、登记日、配售条款、缴款时点、公告日期、公告 URL、核验时间和需复核状态。缺失字段必须明确显示为不可用，不得推断。
+配债详情导出文档中的逐候选标的来源依据：参与资格、登记日、配售条款、缴款时点、公告日期、公告 URL、核验时间和需复核状态。跨端唯一字段名为 `placement_provenance`；缺失字段必须明确显示为不可用，不得推断。`placement_evidence` 和裸 `provenance` 是不再支持的历史别名。
 
-### Placement Export Document
+### 配债详情导出文档
 
-只包含一个 Placement Candidate 的 Placement Export Detail 的 Markdown 文件。Web 从配债视图已加载的候选标的创建它。用户从该候选标的桌面表格行或移动端卡片直接发起下载，无需确认弹窗；配债视图不提供批量下载。未核验或需复核候选标的仍可导出，文档会明确其状态。
+只包含一个配债候选标的配债详情的 Markdown 文件。Web 从配债视图已加载的候选标的创建它。用户从该候选标的桌面表格行或移动端卡片直接发起下载，无需确认弹窗；配债视图不提供批量下载。未核验或需复核候选标的仍可导出，文档会明确其状态。
 
-### Placement Export Filename
+### 配债详情导出文件名
 
-Placement Export Document 的文件名：`配债详情-{正股名称}（{正股代码}）-{导出日期}.md`。导出清洗只能替换用户文件系统不允许的字符。
+配债详情导出文档的文件名：`配债详情-{正股名称}（{正股代码}）-{导出日期}.md`。导出清洗只能替换用户文件系统不允许的字符。
 
-### Placement Snapshot
+### 配债快照（Placement Snapshot）
 
-A time-stamped, locally persisted representation of Placement Candidates used for immediate availability. It is not a permanent assertion of current market facts; it records the source and verification time from which the data was last known.
+带时间戳的本地持久化配债候选标的副本，用于保证即时可用。它不是对当前市场事实的永久断言，只记录数据上次已知时的来源和核验时间。
 
-### Placement Observation
+### 配债观察记录（Placement Observation）
 
-A historical version of a Placement Candidate or one of its source fields. Observations preserve changes in issuer terms, dates, and source evidence for audit and later analysis.
+配债候选标的或其来源字段的历史版本。观察记录保留发行条款、日期和配债来源信息的变更，供审计和后续分析使用。
 
-### Stale Placement Snapshot
+### 延迟配债快照（Stale Placement Snapshot）
 
-A Placement Snapshot whose refresh target has elapsed or whose last refresh failed. It remains visible while its candidate is still participation-relevant, and must disclose its data time and stale reason rather than being silently removed.
+刷新目标已过期或上次刷新失败的配债快照。只要候选标的仍与参与资格相关，它就保持可见，并必须披露数据时间和延迟原因，而不是静默删除。
 
-### Placement Field Provenance
+### 配债字段来源追溯信息（Placement Field Provenance）
 
-The source evidence attached to a group of placement fields. Issuer terms and registration dates require announcement identity, URL, publication time, and verification time; market fields require provider and observation time; derived metrics require a calculation version and input snapshot reference.
+附着在一组配债字段上的来源追溯信息。发行条款和股权登记日需要公告标识、URL、发布时间和核验时间；市场字段需要数据提供方和观测时间；派生指标需要计算版本和输入快照引用。它是领域概念，不是待发配债接口的字段别名。
 
-### Placement Refresh Job
+### 配债刷新任务（Placement Refresh Job）
 
-An asynchronous task that obtains external placement data and reconciles it into Placement Snapshots and Observations. User-facing reads never wait for this job; a forced refresh requests or observes the job rather than performing provider I/O in the HTTP request.
+获取外部配债数据并将其协调进配债快照和配债观察记录的异步任务。面向用户的读取不等待该任务；强制刷新只请求或观察任务，而不是在 HTTP 请求中执行数据提供方 I/O。
 
-### Placement Refresh Policy
+### 配债刷新策略（Placement Refresh Policy）
 
-The scheduling policy for Placement Refresh Jobs: run at service start, every 15 minutes on trading days from 08:30 to 18:00, every two hours otherwise, and every five minutes for candidates registering today or tomorrow. Only one equivalent refresh may run at a time; failures retry with exponential backoff.
+配债刷新任务的调度策略：服务启动时执行；交易日 08:30 至 18:00 每 15 分钟执行一次，其他时间每两小时执行一次；登记日为今天或明天的候选标的每五分钟执行一次。同类刷新同一时刻只能运行一个，失败时按指数退避重试。
 
-### Placement Retention Policy
+### 配债保留策略（Placement Retention Policy）
 
-Placement Snapshots remain available through 30 days after registration. Placement Observations and announcement metadata remain available for three years. Daily cleanup soft-deletes obsolete current snapshots without removing their audit history.
+配债快照在登记日后保留 30 天。配债观察记录和公告元数据保留三年。每日清理会软删除过期的当前快照，但不会删除其审计历史。
 
-### Placement Source Priority
+### 配债来源优先级（Placement Source Priority）
 
-The conflict rule for Placement Field Provenance: official exchange or CNINFO announcements outrank issuer announcement pages, which outrank Eastmoney issuance lists, which outrank other market data or inferred values. Equal-priority conflicts require review; an auditable manual confirmation may override automated sources.
+配债字段来源追溯信息的冲突规则：交易所或巨潮资讯官方公告优先于发行人公告页，发行人公告页优先于东方财富发行列表，东方财富发行列表优先于其他市场数据或推断值。同优先级冲突必须复核；可审计的人工确认可覆盖自动来源。
 
-### Placement Freshness State
+### 配债新鲜度状态（Placement Freshness State）
 
-The user-visible state of a Placement Snapshot. Fresh data shows its update time; a stale snapshot shows its last successful time and reason; verified issuer terms identify announcement verification; equal-priority conflicts are shown as requiring review. Imminent candidates remain visible regardless of market-field freshness.
+配债快照的用户可见状态。最新数据展示更新时间；延迟快照展示上次成功时间和原因；已核验发行条款标识公告核验；同优先级冲突显示为需要复核。即将登记的候选标的无论市场字段新鲜度如何都保持可见。

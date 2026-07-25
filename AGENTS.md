@@ -1,25 +1,46 @@
-## Agent skills
+## 智能体技能
 
-### Specification workflow
+### 文档语言
 
-The repository-level `openspec/` directory is the source of truth for current supported Web behavior. Before changing Web behavior, read the relevant baseline specification and follow the OpenSpec workflow in this repository's `openspec/README.md`.
+本仓库产出的所有面向开发、产品、测试和交付的文档必须使用简体中文。SDD 开发流程产生的每份面向读者文件均属于交付文档，必须中文化；包括需求澄清、调研记录、提案、规格、设计、任务、测试计划、验收记录和交付报告，不得因其属于过程文件而保留英文说明。范围还包括 OpenSpec 的变更产物；`.scratch/` 中的问题、分诊记录和任务单；ADR、领域文档、实施计划以及 README 内容。修改既有交付文档时，应将本次涉及的面向读者内容同步改为简体中文。
 
-### Issue tracker
+代码、API 名称、命令、文件路径、配置键和已约定的技术术语保留原文；英文技术术语首次出现时，如有助于理解，应附中文解释。提交信息和代码注释默认使用中文，除非既有文件的语言惯例或外部工具格式要求英文。
 
-Issues and specs live as local Markdown files in `.scratch/`. See `docs/agents/issue-tracker.md`. Use `.scratch/` for issue decomposition and triage; do not treat it as a replacement for an OpenSpec baseline or change artifact.
+软件设计说明（SDD）规格文档应在适用时说明：背景与目标、范围与非目标、术语、行为要求、验收标准，以及风险或待决问题。任务文档必须说明依赖关系和验证方式。
 
-### Triage labels
+### 规范工作流
 
-Use the default canonical triage labels. See `docs/agents/triage-labels.md`.
+仓库根目录的 `openspec/` 是当前受支持前端行为的唯一事实来源。修改前端行为前，须阅读相关基线规范，并遵循本仓库 `openspec/README.md` 中的 OpenSpec 工作流。
 
-### Domain docs
+同时影响后端的前端变更，必须在独立版本管理的 `trading-toolkit-service` 仓库中创建同名的配套 OpenSpec 变更。保持 HTTP 契约一致，但本仓库仅记录前端实现工作。
 
-This repository uses a single-context domain-doc layout. See `docs/agents/domain.md`.
+### 问题跟踪
 
-### Delivery reporting
+问题和规格以本地 Markdown 文件形式存放在 `.scratch/`。详见 `docs/agents/issue-tracker.md`。使用 `.scratch/` 进行问题拆解和分诊，但不得将其作为 OpenSpec 基线或变更产物的替代品。
 
-For every development task, provide stage updates and a final report that states the work completed, outcomes, and elapsed time.
+### 分诊标签
 
-### UI semantics
+使用默认的规范分诊标签。详见 `docs/agents/triage-labels.md`。
 
-Use `ExchangeBadge` for every mainland market marker. Strategy labels use red for positive opportunities, yellow for neutral states, and green for risks or negative states.
+### 领域文档
+
+本仓库采用单上下文的领域文档布局。详见 `docs/agents/domain.md`。
+
+### 交付报告
+
+每项开发任务均须提供阶段进展和最终报告，说明已完成工作、结果与耗时。
+
+### 依赖边界
+
+Web 前端遵循单向依赖和按业务域集中协调的架构约束。完整决策、允许的依赖关系和迁移策略见 `docs/adr/0002-web-dependency-boundaries.md`。
+
+- `views/` 和 `components/` 仅负责展示与用户交互；不得直接调用 `api/`，也不得承载领域计算或跨业务流程。
+- `stores/` 或按业务域建立的应用服务负责请求编排、状态变更、异常处理和跨模块流程；页面通过它们取得状态和执行操作。
+- 领域计算必须是无副作用的纯函数，不得依赖 Vue、Pinia、axios、浏览器 DOM 或全局状态。
+- `api/`、缓存和其他基础设施模块不得反向依赖 `stores/`、`views/` 或 `components/`。
+- 不以固定行数或“原子模块绝不调用原子模块”作为约束；共享逻辑可复用，但依赖方向必须清晰且无循环。
+- 新功能必须遵守上述边界；修改既有功能时，应迁移本次涉及的调用链，而不进行与任务无关的大规模重构。
+
+### 界面语义
+
+所有大陆市场标识均使用 `ExchangeBadge`。策略标签中，红色表示正向机会，黄色表示中性状态，绿色表示风险或负向状态。
