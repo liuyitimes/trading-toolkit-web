@@ -14,6 +14,7 @@
     "verify:placement-export": "node tests/placement-export.mjs",
     "verify:placement-browser": "node tests/verify_default_placement_metrics.mjs",
     "verify:market-browser": "node tests/market-smoke.mjs",
+    "verify:quote-barrage": "node tests/quote-barrage.mjs",
     "debug:filter": "node scripts/browser/debug_filter.mjs",
     "debug:page": "node scripts/browser/debug_page.mjs",
     "verify:gap": "node scripts/browser/verify_gap.mjs",

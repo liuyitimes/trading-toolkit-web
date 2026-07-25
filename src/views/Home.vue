@@ -1,7 +1,5 @@
 <template>
   <div class="page-container">
-    <QuoteCarousel :quotes="quotes" />
-
     <div class="page-header">
       <h2>市场概览</h2>
     </div>
@@ -43,17 +41,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import Card from '@/components/Card.vue'
-import QuoteCarousel from '@/components/QuoteCarousel.vue'
 import Calendar from '@/components/Calendar.vue'
 import SentimentGauge from '@/components/SentimentGauge.vue'
 import { marketApi } from '@/api/market'
-import { quoteManager } from '@/utils/quoteManager'
 
 const overviewCards = ref([])
 const sentiment = ref({ value: 50, level: '中性', description: '市场情绪中性' })
 const calendarEvents = ref([])
-
-const quotes = ref(quoteManager.getQuotes())
 
 onMounted(async () => {
   try {
