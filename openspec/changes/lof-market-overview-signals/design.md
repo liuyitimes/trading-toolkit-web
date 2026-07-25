@@ -14,7 +14,9 @@ investor_limit_lower_bound = ceil(net_subscription_capital / verified_per_invest
 
 ## 展示
 
-Web 概览将用三个卡片替换通用计数：
+`hot_direction` 是完整证据组，包含 `status`、`reason`、方向名称、计算方法、加权溢价、样本量、分类基金构成、未分类覆盖、`as_of`、`source` 和 `retrieved_at`。Web 仅在整组证据完整可用时渲染命名方向，并提供构成基金查看入口；否则显示 `暂缺`、原因和覆盖范围。
+
+Web 概览保留四张决策卡片：
 
 - `溢价热点方向`：最高加权正溢价分类方向。
 - `昨日净申购资金（估）`：汇总资金，附带来源日期。
