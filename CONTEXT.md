@@ -2,6 +2,10 @@
 
 ## Glossary
 
+### 名言弹幕（Quote Barrage）
+
+从用户维护的名言列表中随机抽取、横向飘过应用界面的非阻断式展示。它服务于浏览氛围，不得遮挡或妨碍任何页面的主要内容与操作。
+
 ### Placement Candidate
 
 A convertible-bond original-shareholder placement opportunity that remains relevant to a user before its registration date has passed. A candidate carries issuer terms, registration timing, source evidence, and derived decision-support metrics.
