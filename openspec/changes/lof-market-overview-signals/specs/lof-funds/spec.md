@@ -1,65 +1,65 @@
-## ADDED Requirements
+## 新增需求
 
-### Requirement: LOF market-direction and net-subscription overview
+### 需求：LOF 市场方向与净申购概览
 
-The LOF overview SHALL show the highest-premium market direction, prior-trading-day net subscription capital estimate, and estimated net-subscription participant count only when sourced from dated, verified LOF share-change records.
+LOF 概览**应**展示最高溢价市场方向、前一交易日净申购资金估算和预估净申购参与人数，且仅在基于带日期的已验证 LOF 份额变动记录时展示。
 
-#### Scenario: Verified prior-day share records are available
+#### 场景：已验证的前一日份额记录可用
 
-- GIVEN the service has a dated, verified LOF share-change record for the latest completed trading day
-- WHEN it produces the LOF overview
-- THEN it reports a documented market-direction label
-- AND calculates net subscription capital from positive net-share change and matching NAV
-- AND estimates participants only for funds with a verified per-account subscription limit.
+- **假设** 服务拥有最新已完成交易日的带日期、已验证 LOF 份额变动记录
+- **当** 服务生成 LOF 概览时
+- **则** 报告有文档记录的市场方向标签
+- **且** 根据正向净份额变动和匹配的 NAV 计算净申购资金
+- **且** 仅为已验证单账户申购限额的基金估算参与人数。
 
-#### Scenario: Share records are unavailable or unverified
+#### 场景：份额记录不可用或未经验证
 
-- GIVEN the service cannot obtain verified prior-day LOF share-change records
-- WHEN it produces the LOF overview
-- THEN it returns explicit unavailable fields and source status
-- AND the Web application renders `暂缺` rather than mock or turnover-derived values.
+- **假设** 服务无法获取已验证的前一日 LOF 份额变动记录
+- **当** 服务生成 LOF 概览时
+- **则** 返回明确的不可用字段和数据源状态
+- **且** Web 应用渲染 `暂缺` 而非模拟数据或基于换手率推算的数值。
 
-#### Scenario: A fund has no verified subscription limit
+#### 场景：基金无已验证的申购限额
 
-- GIVEN a fund has a verified positive net-share change but no verified per-account subscription limit
-- WHEN the participant estimate is calculated
-- THEN its capital may contribute to the net-subscription capital total
-- AND it does not contribute to the participant estimate.
+- **假设** 基金有已验证的正向净份额变动，但没有已验证的单账户申购限额
+- **当** 计算参与人数估算时
+- **则** 其资金可以计入净申购资金总额
+- **但** 不参与参与人数估算。
 
-### Requirement: Limit-type-aware participation equivalents
+### 需求：限额类型感知的参与次数等价计算
 
-The service SHALL derive participation lower bounds only from official fund announcements that pair a dated positive net-share-change record with a current subscription limit. It SHALL preserve whether the announcement applies per fund account or per investor, without claiming natural-person identity.
+服务**应**仅从将带日期的正向净份额变动记录与当前申购限额配对的官方基金公告中推导参与人数下限。服务**应**保留公告适用于单个基金账户还是单个投资者的信息，而不声称自然人身份。
 
-#### Scenario: An announcement limits each account
+#### 场景：公告限制每个账户
 
-- GIVEN an official announcement states a daily maximum subscription amount per account
-- AND a compatible positive net-share increase is available for that day
-- WHEN the service estimates participation
-- THEN it calculates an account-count lower bound using the per-account cap
-- AND it labels the result as `按单账户限额折算的账户数下限`, not as people.
+- **假设** 官方公告声明了每个账户的每日最大申购金额
+- **且** 当日有兼容的正向净份额增长记录可用
+- **当** 服务估算参与人数时
+- **则** 使用单账户限额计算账户数下限
+- **且** 将结果标注为 `按单账户限额折算的账户数下限`，而非人数。
 
-#### Scenario: An announcement limits each investor or person
+#### 场景：公告限制每个投资者或个人
 
-- GIVEN an official announcement states a daily maximum subscription amount per investor or person
-- AND a compatible positive net-share increase is available for that day
-- WHEN the service estimates participation
-- THEN it calculates an investor-limit lower bound using the per-investor cap
-- AND it does not label the result as verified unique people.
+- **假设** 官方公告声明了每个投资者或个人的每日最大申购金额
+- **且** 当日有兼容的正向净份额增长记录可用
+- **当** 服务估算参与人数时
+- **则** 使用单投资者限额计算投资者限额下限
+- **且** 不将结果标注为已验证的独立人数。
 
-#### Scenario: Results are aggregated across funds or dates
+#### 场景：跨基金或跨日期聚合结果
 
-- GIVEN multiple fund-day estimates are available
-- WHEN the service produces a market total
-- THEN it sums them as `累计等效参与次数`
-- AND it does not claim cross-fund or cross-day deduplication of accounts, investors, or natural persons.
+- **假设** 有多个基金日估算值可用
+- **当** 服务生成市场合计时
+- **则** 将它们汇总为 `累计等效参与次数`
+- **且** 不声称跨基金或跨日期的账户、投资者或自然人去重。
 
-### Requirement: Market-direction classification transparency
+### 需求：市场方向分类透明度
 
-The highest-premium market direction SHALL be derived through a documented fund taxonomy, with the underlying funds and classification rule available for inspection.
+最高溢价市场方向**应**通过有文档记录的基金分类体系推导，底层基金和分类规则可供审查。
 
-#### Scenario: A fund name does not match a known direction
+#### 场景：基金名称与已知方向不匹配
 
-- GIVEN a positive-premium fund cannot be classified by the documented taxonomy
-- WHEN it is considered for the overview
-- THEN the summary counts it as `其他/未识别` coverage
-- AND it is excluded from the named-theme ranking rather than labelled as a market theme without evidence.
+- **假设** 正溢价基金无法通过文档化的分类体系归类
+- **当** 考虑将其纳入概览时
+- **则** 摘要将其计为 `其他/未识别` 覆盖
+- **且** 将其排除在已命名主题排名之外，而非在无证据的情况下标注为市场主题。

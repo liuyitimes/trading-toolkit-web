@@ -1,21 +1,21 @@
-## 1. Product and Data Decisions
+## 1. 产品与数据决策
 
-- [x] 1.1 Define holdings as fund portfolio exposure; user brokerage positions are out of scope.
-- [ ] 1.2 Select a verified fund-portfolio disclosure source and freshness limit; the implementation returns unavailable until one exists.
-- [x] 1.3 Define 5/20-session observation windows for persistence, liquidity comparison, and volatility components.
-- [x] 1.4 Document the 0.15% purchase-fee and 0.05% sell-commission assumptions as non-account-specific.
+- [x] 1.1 将持仓定义为基金投资组合敞口；用户券商持仓不在范围内。
+- [ ] 1.2 选择一个经过验证的基金投资组合披露来源和数据新鲜度限制；在确定来源之前，实现返回不可用状态。
+- [x] 1.3 定义 5/20 个交易日的观察窗口，用于持续性、流动性比较和波动率部分。
+- [x] 1.4 将 0.15% 申购费和 0.05% 赎回佣金假设记录为非账户特定假设。
 
-## 2. Web Detail Workspace
+## 2. Web 详情工作区
 
-- [x] 2.1 Add the `/lof/:code` route and migrate LOF-list row navigation from the modal to the route.
-- [x] 2.2 Implement the decision header and premium persistence visualization with observation-window and freshness labels.
-- [x] 2.3 Implement the execution-capacity and liquidity sections with current and rolling metrics.
-- [x] 2.4 Implement the holdings-exposure and settlement-window risk sections with explicit unavailable states.
-- [ ] 2.5 Remove the legacy LOF detail dialog after route parity is verified.
+- [x] 2.1 添加 `/lof/:code` 路由，并将 LOF 列表行导航从弹窗迁移至路由。
+- [x] 2.2 实现决策头部和溢价持续性可视化，包含观察窗口和数据新鲜度标签。
+- [x] 2.3 实现执行容量和流动性部分，包含当前指标和滚动指标。
+- [x] 2.4 实现持仓敞口和结算窗口风险部分，包含明确的不可用状态。
+- [ ] 2.5 在路由一致性验证完成后，移除旧版 LOF 详情弹窗。
 
-## 3. Verification and Delivery
+## 3. 验证与交付
 
-- [x] 3.1 Add focused API-consumption and derived-presentation tests.
-- [x] 3.2 Run the Web production build.
-- [x] 3.3 Verify desktop and mobile detail layouts with browser screenshots, including missing-data states.
-- [ ] 3.4 Validate the OpenSpec change and archive it after the implementation is accepted.
+- [x] 3.1 添加聚焦的 API 消费和派生展示测试。
+- [x] 3.2 运行 Web 生产构建。
+- [x] 3.3 通过浏览器截图验证桌面端和移动端详情布局，包括数据缺失状态。
+- [ ] 3.4 在实现被接受后，验证并归档 OpenSpec 变更。
