@@ -2,6 +2,18 @@
 
 ## Glossary
 
+### LOF Published-NAV Premium
+
+以同一交易日的场内收盘价和基金公司已公布单位净值计算的溢价率。它是已观测的日度指标，不等同于盘中估算或可执行套利。
+
+### LOF Holdings-Implied Premium
+
+以基金最近一次披露的组合持仓和盘中证券价格推算的实时溢价估计。它必须显示持仓披露日期、估算时间和覆盖限制，不得表示为基金公司公布净值或确认收益。
+
+### LOF Portfolio Holdings
+
+基金公司披露的基金投资组合及其权重、披露日期和来源。它不是用户的持仓，也不是基金份额或申赎变化。
+
 ### Placement Candidate
 
 A convertible-bond original-shareholder placement opportunity that remains relevant to a user before its registration date has passed. A candidate carries issuer terms, registration timing, source evidence, and derived decision-support metrics.

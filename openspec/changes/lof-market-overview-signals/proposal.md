@@ -6,11 +6,12 @@ The current LOF overview shows broad market counts and exchange-based average pr
 
 ## Intended outcome
 
-Replace the four existing overview cards with:
+Retain and populate the four existing overview cards with:
 
 1. Highest-premium market direction.
 2. Prior-trading-day net subscription capital estimate.
-3. Prior-trading-day estimated subscription participants.
+3. Prior-trading-day net-subscription account lower bound.
+4. Prior-trading-day net-subscription investor-limit lower bound.
 
 ## Evidence and constraint
 
@@ -22,7 +23,7 @@ Where a fund announcement records a positive share increase and a current subscr
 
 ## Scope
 
-- Replace the existing Web overview fields with the three decision signals.
+- Retain the existing four Web overview fields and render their decision-support values.
 - Render source dates and explicit unavailable states from the LOF summary response.
 
 ## Repository scope

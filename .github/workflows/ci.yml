@@ -54,3 +54,4 @@ jobs:
           done
           npm run verify:market-browser
           npm run verify:placement-browser
+          npm run verify:lof-market-overview

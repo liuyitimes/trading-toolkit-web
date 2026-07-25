@@ -63,3 +63,16 @@ The highest-premium market direction SHALL be derived through a documented fund 
 - WHEN it is considered for the overview
 - THEN the summary counts it as `其他/未识别` coverage
 - AND it is excluded from the named-theme ranking rather than labelled as a market theme without evidence.
+
+#### Scenario: Direction constituents are inspectable
+
+- GIVEN the service returns an available direction classification
+- WHEN the Web overview renders the direction card
+- THEN it exposes the classified constituent funds and their documented taxonomy basis for inspection.
+
+#### Scenario: Direction evidence is unavailable
+
+- GIVEN the service cannot produce a dated, source-tagged direction classification
+- WHEN the Web overview renders the direction card
+- THEN it displays `暂缺` with the unavailable reason and unclassified coverage
+- AND it does not render a named direction from incomplete evidence.

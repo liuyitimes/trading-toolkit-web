@@ -12,9 +12,11 @@ investor_limit_lower_bound = ceil(net_subscription_capital / verified_per_invest
 
 The implementation must retain share unit, share date, NAV date, source URL, retrieval time, limit value, limit subject (`account` or `investor`), applicable channels, applicable share class, and a record that non-subscription changes have been excluded. A positive net-share change is a lower-bound proxy for subscription activity, not gross subscriptions. Aggregation is permitted only across records with compatible units and the same latest completed trading date. Across multiple funds or dates it becomes `累计等效参与次数`; it must never be presented as deduplicated accounts, investors, or people.
 
+`hot_direction` is an evidence-bearing group: it returns `status`, `reason`, direction name, method, weighted premium, sample count, classified constituents, unclassified coverage, `as_of`, `source`, and `retrieved_at`. The Web renders a named direction only when this complete evidence group is available, and exposes its constituents for inspection; otherwise it renders `暂缺` with the reason and coverage.
+
 ## Presentation
 
-The Web overview will replace generic counts with three cards:
+The Web overview retains four decision-support cards:
 
 - `溢价热点方向`: highest weighted positive-premium taxonomy direction.
 - `昨日净申购资金（估）`: aggregate capital, with source date.
