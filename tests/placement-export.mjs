@@ -53,7 +53,7 @@ assert.equal(
   '配债详情-测试股份（600000）-2026-07-23.md'
 )
 
-const withoutProvenance = renderPlacementExportDocument({
+const withoutPlacementProvenance = renderPlacementExportDocument({
   candidate,
   snapshotMeta: {
     freshness_state: 'stale',
@@ -65,21 +65,21 @@ const withoutProvenance = renderPlacementExportDocument({
   exportedAt: new Date('2026-07-23T08:00:00Z')
 })
 
-assert.match(withoutProvenance, /配债为规划观察，非确认收益/)
-assert.match(withoutProvenance, /预期上市溢价假设：40%/)
-assert.match(withoutProvenance, /1 至 5 手成本测算/)
+assert.match(withoutPlacementProvenance, /配债为规划观察，非确认收益/)
+assert.match(withoutPlacementProvenance, /预期上市溢价假设：40%/)
+assert.match(withoutPlacementProvenance, /1 至 5 手成本测算/)
 assert.ok(
-  withoutProvenance.indexOf('## 来源证据') <
-    withoutProvenance.lastIndexOf('未提供')
+  withoutPlacementProvenance.indexOf('## 配债来源信息') <
+    withoutPlacementProvenance.lastIndexOf('未提供')
 )
-assert.match(withoutProvenance, /数据新鲜度：延迟/)
-assert.match(withoutProvenance, /需复核：是/)
-assert.match(withoutProvenance, /综合排序分 \| 72/)
+assert.match(withoutPlacementProvenance, /数据新鲜度：延迟/)
+assert.match(withoutPlacementProvenance, /需复核：是/)
+assert.match(withoutPlacementProvenance, /综合排序分 \| 72/)
 
-const withProvenance = renderPlacementExportDocument({
+const withPlacementProvenance = renderPlacementExportDocument({
   candidate: {
     ...candidate,
-    provenance: {
+    placementProvenance: {
       eligibility: '原股东可参与配售',
       allocation_terms: '每股配售 0.5000 元面值',
       payment_timing: '申购日缴款',
@@ -93,9 +93,9 @@ const withProvenance = renderPlacementExportDocument({
   exportedAt: new Date('2026-07-23T08:00:00Z')
 })
 
-assert.match(withProvenance, /原股东可参与配售/)
-assert.match(withProvenance, /https:\/\/example\.com\/announcement/)
-assert.match(withProvenance, /核验状态：已核验/)
+assert.match(withPlacementProvenance, /原股东可参与配售/)
+assert.match(withPlacementProvenance, /https:\/\/example\.com\/announcement/)
+assert.match(withPlacementProvenance, /核验状态：已核验/)
 
 const legacyDocument = renderPlacementExportDocument({
   candidate,

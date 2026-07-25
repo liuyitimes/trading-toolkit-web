@@ -73,6 +73,28 @@
       <span>{{ guideText }}</span>
     </el-alert>
 
+    <!-- 策略条件披露 -->
+    <div class="strategy-conditions" @click="conditionsOpen = !conditionsOpen">
+      <div class="conditions-header">
+        <el-icon class="conditions-toggle" :class="{ expanded: conditionsOpen }"
+          ><ArrowDown
+        /></el-icon>
+        <span class="conditions-title">筛选条件与排序规则</span>
+      </div>
+      <transition name="expand">
+        <div v-show="conditionsOpen" class="conditions-body">
+          <div
+            v-for="item in activeConditions"
+            :key="item.label"
+            class="conditions-item"
+          >
+            <span class="conditions-label">{{ item.label }}</span>
+            <span class="conditions-value">{{ item.value }}</span>
+          </div>
+        </div>
+      </transition>
+    </div>
+
     <!-- 策略沙盘：参数敏感度分析 -->
     <el-card v-if="appStore.showSandbox" class="sandbox-card" shadow="never">
       <template #header>
@@ -1857,10 +1879,80 @@ const guideMap = {
   double_low: '双低值越小投资价值越高，低于150可入场，低于170可关注',
   force_redeem: '溢价率低于10%且价格105-140，接近强赎触发线，关注转股套利机会',
   discount: '溢价率为负说明转债比转股便宜，可研究转股套利空间',
-  down_revised: '高溢价+低价格+短剩余年限，公司下修转股价概率大'
+  down_revised: '高溢价+低价格，公司下修转股价概率较大（策略观察，非确认事件）'
+}
+
+const strategyConditions = {
+  placement: [
+    { label: '筛选范围', value: '观察期内的配售/申购/待上市转债' },
+    {
+      label: '排序依据',
+      value: '综合评分（含权30% + 安全垫30% + 可交易量40%）'
+    },
+    { label: '评分等级', value: '≥70 推荐 / ≥40 关注 / <40 谨慎' },
+    {
+      label: '风险提示',
+      value:
+        '配售为规划观察，非确认收益。需自行核实：申购资格、股权登记日、配售条款、缴款时点、公告日期与公告链接'
+    }
+  ],
+  double_low: [
+    { label: '前置过滤', value: '溢价率 ≠ 0，且转股价值 ≥ 10' },
+    { label: '选取规则', value: '按双低值升序取前 20 只' },
+    { label: '双低值定义', value: '双低值 = 转债价格 + 溢价率' },
+    { label: '默认排序', value: '双低值升序（越小越优）' },
+    {
+      label: '观察标签',
+      value: '双低值 < 130 为"双低优选"，≥ 130 为"双低观察"'
+    },
+    {
+      label: '风险提示',
+      value:
+        '双低值为筛选观察指标，非买入指令。纯债价值按信用评级档位折现估算，仅供参考'
+    }
+  ],
+  force_redeem: [
+    { label: '前置过滤', value: '溢价率 ≠ 0，且转股价值 ≥ 10' },
+    { label: '选取条件', value: '溢价率 < 10%，且转债价格 105 ~ 140' },
+    { label: '返回上限', value: '最多 10 只' },
+    { label: '默认排序', value: '按距强赎幅度升序（最接近触发线排前）' },
+    {
+      label: '风险提示',
+      value:
+        '距强赎幅度为价格接近观察，非确认发行人已满足连续交易日条件。强赎触发价若无上游数据则取转股价×130%作为回退参考值'
+    }
+  ],
+  discount: [
+    { label: '前置过滤', value: '溢价率 ≠ 0，且转股价值 ≥ 10' },
+    { label: '选取条件', value: '溢价率 < 0（转债价格低于转股价值）' },
+    { label: '返回上限', value: '最多 10 只' },
+    {
+      label: '转股价值',
+      value: '转股价值 = 100 / 转股价 × 正股价'
+    },
+    { label: '默认排序', value: '按溢价率升序（折价越大排前）' },
+    {
+      label: '风险提示',
+      value:
+        '折价为筛选观察，非无风险套利。实际转股存在时间差、手续费及流动性成本'
+    }
+  ],
+  down_revised: [
+    { label: '前置过滤', value: '溢价率 ≠ 0，且转股价值 ≥ 10' },
+    { label: '选取条件', value: '溢价率 > 50%，且转债价格 < 115' },
+    { label: '返回上限', value: '最多 10 只' },
+    { label: '下修触发价', value: '下修触发价 = 转股价 × 85%（策略参考线）' },
+    { label: '默认排序', value: '按距下修幅度升序（最接近 85% 基准线排前）' },
+    {
+      label: '风险提示',
+      value:
+        '85% 线为策略参考基准，非发行人公告确认的下修条款。是否下修需以发行人公告为准'
+    }
+  ]
 }
 
 const activeTab = ref('placement')
+const conditionsOpen = ref(false)
 const placementSubTab = ref('all')
 const placementSortBy = ref('composite')
 const placementSortAsc = ref(false)
@@ -1942,6 +2034,9 @@ const sortFields = [
 
 const marketTemp = computed(() => store.marketTemp)
 const guideText = computed(() => guideMap[activeTab.value])
+const activeConditions = computed(
+  () => strategyConditions[activeTab.value] || []
+)
 const placementPremiumRate = computed({
   get: () => store.placementPremiumRate,
   set: (value) => store.setPlacementPremiumRate(value)
@@ -2050,7 +2145,7 @@ function getSignalColumnsForTab(tab) {
         cls: () => 'hl',
         formula: '双低值 = 转债价格 + 溢价率',
         example: '价格 105，溢价 5% → 双低 = 110',
-        note: '双低值越低投资价值越高，低于 150 可入场'
+        note: '筛选观察指标，非买入指令。低于 150 可入场'
       },
       {
         key: 'pureBondValue',
@@ -2086,7 +2181,7 @@ function getSignalColumnsForTab(tab) {
         cls: (r) => r.forceRedemptionClass,
         formula: '距强赎 = (正股价 - 强赎触发价) / 强赎触发价 × 100%',
         example: '正股 13，触发价 13 → 距强赎 = 0%',
-        note: '正值表示已进入强赎倒计时'
+        note: '正值表示接近强赎触发线（价格观察，非确认事件）'
       },
       {
         key: 'conversionPrice',
@@ -2101,9 +2196,9 @@ function getSignalColumnsForTab(tab) {
         width: 100,
         val: (r) => r.forceTriggerPrice,
         cls: () => 'hl',
-        formula: '强赎触发价 = 转股价 × 130%',
+        formula: '强赎触发价 = 转股价 × 130%（回退参考值）',
         example: '转股价 10 → 强赎触发价 = 13',
-        note: '正股连续 15/30 日收盘价高于此价触发强赎'
+        note: '价格接近观察，发行人是否满足连续交易日条件需以公告为准'
       }
     ]
   if (tab === 'discount')
@@ -2139,7 +2234,7 @@ function getSignalColumnsForTab(tab) {
         cls: (r) => r.downReviseClass,
         formula: '距下修 = (正股价 - 下修触发价) / 下修触发价 × 100%',
         example: '正股 8，触发价 10 → 距下修 = -20%',
-        note: '负值表示正股低于下修触发价'
+        note: '负值表示正股低于下修触发价（85%策略参考线，非发行人公告条款）'
       },
       {
         key: 'ytm',
@@ -2613,6 +2708,60 @@ onUnmounted(() => {
 
   .guide-alert {
     margin-bottom: 12px;
+  }
+
+  .strategy-conditions {
+    margin-bottom: 12px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+
+    .conditions-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text-color-secondary);
+
+      .conditions-toggle {
+        transition: transform 0.2s;
+        font-size: 12px;
+
+        &.expanded {
+          transform: rotate(180deg);
+        }
+      }
+
+      .conditions-title {
+        font-weight: 500;
+      }
+    }
+
+    .conditions-body {
+      padding: 0 12px 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 16px;
+
+      .conditions-item {
+        display: flex;
+        gap: 6px;
+        font-size: 12px;
+        line-height: 1.6;
+
+        .conditions-label {
+          color: var(--text-color-secondary);
+          white-space: nowrap;
+          min-width: 56px;
+        }
+
+        .conditions-value {
+          color: var(--text-color);
+        }
+      }
+    }
   }
 
   .sandbox-card {
@@ -3545,6 +3694,11 @@ onUnmounted(() => {
     .desktop-table {
       display: none;
     }
+
+    .strategy-conditions .conditions-body {
+      grid-template-columns: 1fr;
+    }
+
     .mobile-cards {
       display: block;
 

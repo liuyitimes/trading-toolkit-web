@@ -408,11 +408,8 @@ function normalizeBondItem(item) {
 // 归一化待发/配售项
 function normalizePendingItem(item) {
   if (!item || typeof item !== 'object') return null
-  const provenance =
-    item.placement_provenance ||
-    item.placement_evidence ||
-    item.provenance ||
-    null
+  // 待发配债的来源信息只接受跨端约定的 placement_provenance 字段。
+  const placementProvenance = item.placement_provenance || null
   const stockName = item.stock_name || '--'
   const stockCode = item.stock_code || '--'
   const bondCode = item.bond_code || ''
@@ -626,7 +623,7 @@ function normalizePendingItem(item) {
     strategyScore,
     strategyRating,
     strategyRatingClass,
-    provenance,
+    placementProvenance,
     _apiStrategyScoreRaw: strategyScore,
     _apiStrategyRating: item.strategy_rating || '',
     _compositeRankRaw,

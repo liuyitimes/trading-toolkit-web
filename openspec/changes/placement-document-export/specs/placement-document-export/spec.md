@@ -27,25 +27,25 @@ Web MUST 在桌面配债表格和移动端配债卡片中为每个可见 Placeme
 
 ### Requirement: 配债导出文档保真度
 
-Web MUST 从配债视图已加载的候选标的数据，以及用户激活导出时生效的预期上市溢价假设，生成 Placement Export Document。文档必须区分规划观察、已核验事实、需复核证据和不可用字段。
+Web MUST 从配债视图已加载的候选标的数据，以及用户激活导出时生效的预期上市溢价假设，生成 Placement Export Document。文档必须区分规划观察、已核验事实、需复核的配债来源信息和不可用字段。
 
 #### Scenario: 导出证据完整的候选标的
 
-- **GIVEN** Placement Candidate 包含配债详情、逐候选标的来源信息和快照元数据
+- **GIVEN** Placement Candidate 包含配债详情、逐候选标的 `placement_provenance` 配债来源信息和快照元数据
 - **WHEN** 用户导出该候选标的
-- **THEN** 文档必须包含完整配债详情、1 至 5 手成本表、当前溢价假设及派生指标、新鲜度、核验状态、来源信息和公告链接
+- **THEN** 文档必须包含完整配债详情、1 至 5 手成本表、当前溢价假设及派生指标、新鲜度、核验状态、配债来源信息和公告链接
 - **AND THEN** 文档必须包含配债是规划观察而非确认收益的固定提示。
 
 #### Scenario: 导出未核验候选标的
 
-- **GIVEN** Placement Candidate 未核验或需要来源复核
+- **GIVEN** Placement Candidate 未核验或需要复核配债来源信息
 - **WHEN** 用户导出该候选标的
 - **THEN** Web 必须允许导出
 - **AND THEN** 文档必须陈述其核验或复核状态，且不得表示为已确认可执行机会。
 
 #### Scenario: 导出数据不可用
 
-- **GIVEN** Placement Candidate 缺少必需详情或来源字段
+- **GIVEN** Placement Candidate 缺少必需详情或配债来源信息字段
 - **WHEN** 用户导出该候选标的
 - **THEN** 文档必须将该字段显示为不可用
 - **AND THEN** Web 不得推断或虚构该值。

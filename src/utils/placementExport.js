@@ -38,15 +38,16 @@ function freshnessLabel(meta = {}) {
   return UNAVAILABLE
 }
 
-function verificationLabel(provenance = {}, snapshot = {}) {
-  const state = provenance.verification_state ?? snapshot.verification_state
+function verificationLabel(placementProvenance = {}, snapshot = {}) {
+  const state =
+    placementProvenance.verification_state ?? snapshot.verification_state
   if (state === 'verified') return '已核验'
   if (state === 'unverified') return '未核验'
   return UNAVAILABLE
 }
 
-function reviewRequiredLabel(provenance = {}, snapshot = {}) {
-  const state = provenance.review_required ?? snapshot.review_required
+function reviewRequiredLabel(placementProvenance = {}, snapshot = {}) {
+  const state = placementProvenance.review_required ?? snapshot.review_required
   if (state === true) return '是'
   if (state === false) return '否'
   return UNAVAILABLE
@@ -93,18 +94,18 @@ function renderTable(headers, rows) {
   ].join('\n')
 }
 
-function renderProvenance(provenance = {}) {
+function renderPlacementProvenance(placementProvenance = {}) {
   const rows = [
-    ['参与资格', valueOrUnavailable(provenance.eligibility)],
-    ['股权登记日', valueOrUnavailable(provenance.record_date)],
-    ['配售条款', valueOrUnavailable(provenance.allocation_terms)],
-    ['缴款时点', valueOrUnavailable(provenance.payment_timing)],
-    ['公告日期', valueOrUnavailable(provenance.announcement_date)],
-    ['公告链接', announcementLink(provenance.announcement_url)],
+    ['参与资格', valueOrUnavailable(placementProvenance.eligibility)],
+    ['股权登记日', valueOrUnavailable(placementProvenance.record_date)],
+    ['配售条款', valueOrUnavailable(placementProvenance.allocation_terms)],
+    ['缴款时点', valueOrUnavailable(placementProvenance.payment_timing)],
+    ['公告日期', valueOrUnavailable(placementProvenance.announcement_date)],
+    ['公告链接', announcementLink(placementProvenance.announcement_url)],
     [
       '核验时间',
-      provenance.verified_at
-        ? formatDateTime(provenance.verified_at)
+      placementProvenance.verified_at
+        ? formatDateTime(placementProvenance.verified_at)
         : UNAVAILABLE
     ]
   ]
@@ -124,7 +125,7 @@ export function renderPlacementExportDocument({
   exportedAt
 }) {
   const detail = candidate?.detail || {}
-  const provenance = candidate?.provenance || {}
+  const placementProvenance = candidate?.placementProvenance || {}
   const snapshot = snapshotMeta || {}
   const timelineRows = (detail.stageList || []).map((stage) => [
     valueOrUnavailable(stage.name),
@@ -138,8 +139,8 @@ export function renderPlacementExportDocument({
     `- 预期上市溢价假设：${valueOrUnavailable(candidate?.placementPremiumRate)}%`,
     `- 数据新鲜度：${freshnessLabel(snapshot)}`,
     `- 数据时间：${snapshot.data_as_of ? formatDateTime(snapshot.data_as_of) : UNAVAILABLE}`,
-    `- 核验状态：${verificationLabel(provenance, snapshot)}`,
-    `- 需复核：${reviewRequiredLabel(provenance, snapshot)}`,
+    `- 核验状态：${verificationLabel(placementProvenance, snapshot)}`,
+    `- 需复核：${reviewRequiredLabel(placementProvenance, snapshot)}`,
     '',
     '> 风险提示：配债为规划观察，非确认收益。请自行核实申购资格、股权登记日、配售条款、缴款时点、公告日期与公告链接。',
     '',
@@ -206,9 +207,9 @@ export function renderPlacementExportDocument({
       ? renderTable(['阶段', '日期'], timelineRows)
       : UNAVAILABLE,
     '',
-    '## 来源证据',
+    '## 配债来源信息',
     '',
-    renderProvenance(provenance),
+    renderPlacementProvenance(placementProvenance),
     '',
     '## 补充市场信息',
     '',
