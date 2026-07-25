@@ -1,90 +1,92 @@
-# Convertible Bonds Specification
+# 可转债规格
 
-## Purpose
+## 目的
 
-Define the current convertible-bond monitoring, signals, and original-shareholder placement behavior.
-## Requirements
-### Requirement: Convertible monitoring endpoints
+定义当前可转债监控、信号和原股东配售行为。
 
-The service SHALL provide list, signals, market-temperature, detail, and pending-placement data under `/api/v1/convertible/`.
+## 要求
 
-#### Scenario: A user opens the convertible workspace
+### 要求：可转债监控端点
 
-- GIVEN the user navigates to `/convertible`
-- WHEN the view loads its data
-- THEN it obtains normalized list, signal, and pending-placement data from the versioned API
-- AND it can request detail for an individual bond code.
+服务必须在 `/api/v1/convertible/` 下提供列表、信号、市场温度、详情和待定配售数据。
 
-### Requirement: Placement field semantics
+#### 场景：用户打开可转债工作区
 
-For pending placement, `per_share_allocation` SHALL mean per-share convertible face-value allocation, `shares_for_10_lots` SHALL mean the shares required for 1,000 yuan face value, and `cash_ratio` SHALL mean face value obtainable per 100 yuan of stock market value.
+- **假定**：用户导航到 `/convertible`。
+- **当**：视图加载数据。
+- **则**：从版本化 API 获取规范化的列表、信号和待定配售数据。
+- **并且**：可以请求单个可转债代码的详情。
 
-#### Scenario: Cash ratio is rendered
+### 要求：配售字段语义
 
-- GIVEN `per_share_allocation` and `stock_price` are available
-- WHEN the service computes the placement metric
-- THEN `cash_ratio = per_share_allocation / stock_price * 100`
-- AND it does not use `stock_cash_ratio` as a substitute.
+对于待定配售，`per_share_allocation` 必须表示每股可转债面值配售额，`shares_for_10_lots` 必须表示 1,000 元面值所需的股数，`cash_ratio` 必须表示每 100 元股票市值可获得的面值。
 
-### Requirement: Placement cost and integer-lot display
+#### 场景：渲染现金比率
 
-The Web placement view SHALL calculate and display the stock cost required for one bond lot using the A-share 100-share purchase constraint.
+- **假定**：`per_share_allocation` 和 `stock_price` 可用。
+- **当**：服务计算配售指标。
+- **则**：`cash_ratio = per_share_allocation / stock_price * 100`。
+- **并且**：不使用 `stock_cash_ratio` 作为替代。
 
-#### Scenario: A raw share requirement is not a 100-share multiple
+### 要求：配售成本和整手显示
 
-- GIVEN the theoretical shares required for one lot are 1,050
-- WHEN placement cost is shown
-- THEN the display uses 1,100 actual shares
-- AND the cost equals actual shares multiplied by current stock price.
+Web 配售视图必须使用 A 股 100 股购买约束计算并显示一手可转债所需的股票成本。
 
-### Requirement: Placement score assumptions
+#### 场景：原始股数要求不是 100 的倍数
 
-The Web placement view SHALL calculate expected profit, safety pad, placement score, rating, and composite rank from the active global expected-listing-premium assumption. The assumption SHALL be comparison-only, SHALL NOT be presented as a verified return, and SHALL override API-provided display values for those derived metrics while retaining their source values.
+- **假定**：一手所需的理论股数为 1,050。
+- **当**：显示配售成本。
+- **则**：显示使用 1,100 股实际股数。
+- **并且**：成本等于实际股数乘以当前股价。
 
-#### Scenario: A safety pad is shown
+### 要求：配售评分假设
 
-- **GIVEN** the system has required placement and stock fields
-- **WHEN** it calculates the placement metrics for an approved premium assumption
-- **THEN** expected profit equals 1,000 yuan multiplied by that premium percentage
-- **AND THEN** safety pad equals expected profit divided by actual one-lot placement cost multiplied by 100 percent.
+Web 配售视图必须根据活动的全局预期上市溢价假设计算预期收益、安全垫、配售评分、评级和综合排名。该假设必须仅用于比较，不得呈现为已验证的回报，并且必须在保留源值的同时覆盖这些派生指标的 API 提供显示值。
 
-#### Scenario: A placement score is recalculated
+#### 场景：显示安全垫
 
-- **GIVEN** a placement candidate has issue size, tradable amount, and valid placement cost data
-- **WHEN** the user changes the approved premium assumption
-- **THEN** the Web score recalculates with issue-size, tradable-amount, and safety-pad weights of 30, 40, and 30
-- **AND THEN** ratings are recommend at 80 or greater, watch from 60 through 79, and cautious below 60.
+- **假定**：系统具有所需的配售和股票字段。
+- **当**：根据批准的溢价假设计算配售指标。
+- **则**：预期收益等于 1,000 元乘以该溢价百分比。
+- **并且**：安全垫等于预期收益除以实际一手配售成本乘以 100%。
 
-#### Scenario: Placement data cannot produce a safety pad
+#### 场景：重新计算配售评分
 
-- **GIVEN** a placement candidate has no positive actual one-lot cost
-- **WHEN** the Web derives placement metrics
-- **THEN** it shows expected profit from the active assumption
-- **AND THEN** it renders safety pad as unavailable and does not divide by zero.
+- **假定**：配售候选标的具有发行规模、可交易金额和有效的配售成本数据。
+- **当**：用户更改批准的溢价假设。
+- **则**：Web 评分使用发行规模、可交易金额和安全垫权重 30、40 和 30 重新计算。
+- **并且**：评级为 80 或更高时推荐，60 到 79 时关注，低于 60 时谨慎。
 
-### Requirement: Placement eligibility evidence
+#### 场景：配售数据无法产生安全垫
 
-The system SHALL distinguish a placement observation from a verified executable opportunity. A verified executable record requires issuer evidence for eligibility, record date, allocation terms, payment timing, and relevant announcement date and URL.
+- **假定**：配售候选标的没有正的一手实际成本。
+- **当**：Web 派生配售指标。
+- **则**：显示来自活动假设的预期收益。
+- **并且**：将安全垫渲染为不可用，且不进行除以零操作。
 
-#### Scenario: A pending bond only has market and issuance fields
+### 要求：配售资格证据
 
-- GIVEN a bond has issue size, stock price, and a calculated score
-- WHEN it lacks verified original-shareholder allocation evidence
-- THEN the UI treats it as an observation or planning aid
-- AND does not label it an executable guaranteed opportunity.
+系统必须区分配售观察和已验证的可执行机会。已验证的可执行记录需要发行人的资格证据、记录日期、配售条款、付款时间以及相关的公告日期和 URL。
 
-### Requirement: Placement timeline fidelity
+#### 场景：待定可转债仅有市场和发行字段
 
-The placement timeline SHALL render known stage dates and show missing dates explicitly. Notice-derived stage dates MAY be cached, and missing data for unsupported exchanges SHALL not be fabricated.
+- **假定**：可转债具有发行规模、股价和计算出的评分。
+- **当**：缺少已验证的原股东配售证据。
+- **则**：UI 将其视为观察或规划辅助。
+- **并且**：不将其标记为可执行的保证机会。
 
-#### Scenario: An exchange has no usable announcement data
+### 要求：配售时间线保真度
 
-- GIVEN the announcement provider does not return a supported record
-- WHEN the timeline is rendered
-- THEN the affected stage remains unknown or is marked data-limited
-- AND no inferred date is shown as factual.
+配售时间线必须渲染已知的阶段日期，并明确显示缺失的日期。从公告派生的阶段日期可以缓存，且对于不支持的交易所的缺失数据不得伪造。
 
-## Known limitations
+#### 场景：交易所没有可用的公告数据
 
-- Announcement enrichment may take significant time on a cold refresh because it scans notice pages serially.
-- Some stage dates remain unavailable, including unsupported Beijing Stock Exchange records and notices beyond the configured scan depth.
+- **假定**：公告提供商未返回支持的记录。
+- **当**：渲染时间线。
+- **则**：受影响的阶段保持未知或标记为数据有限。
+- **并且**：不将推断的日期显示为事实。
+
+## 已知限制
+
+- 公告增强在冷刷新时可能需要较长时间，因为它会串行扫描通知页面。
+- 某些阶段日期仍然不可用，包括不支持的北京证券交易所记录和超出配置扫描深度的通知。

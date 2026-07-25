@@ -1,52 +1,52 @@
-## Context
+## 背景
 
-The placement API can return `expected_profit`, `safety_pad`, and `strategy_score`, while the Web store falls back to a fixed 20 percent listing-premium premise. Those values are normalized once at fetch time, so the page cannot consistently recalculate a user-selected scenario. The Web application already uses Pinia composition stores and browser `localStorage` for client preferences.
+打新 API 可以返回 `expected_profit`、`safety_pad` 和 `strategy_score`，而 Web store 回退到固定的 20% 上市溢价前提。这些值在获取时一次性标准化，因此页面无法一致地重新计算用户选择的场景。Web 应用已经使用 Pinia 组合式 store 和浏览器 `localStorage` 存储客户端偏好。
 
-## Goals / Non-Goals
+## 目标 / 非目标
 
-**Goals:**
+**目标：**
 
-- Let users compare all placement candidates with one persisted listing-premium assumption.
-- Derive all affected placement metrics from the same premise without changing source data or APIs.
-- Keep the existing normalized-data and direct HTTP-client architecture.
+- 让用户使用一个持久化的上市溢价假设比较所有打新候选。
+- 从相同前提派生所有受影响的打新指标，不更改来源数据或 API。
+- 保持现有的标准化数据和直接 HTTP 客户端架构。
 
-**Non-Goals:**
+**非目标：**
 
-- Estimate a market premium, verify a return, or change issuer terms, service scoring, data sources, caches, or the mini-program.
-- Apply the parameter to listed-bond signals or other product modules.
+- 估算市场溢价、验证收益、或更改发行条款、服务评分、数据源、缓存或小程序。
+- 将参数应用于上市债券信号或其他产品模块。
 
-## Decisions
+## 决策
 
-### Keep normalized source rows separate from assumption-derived rows
+### 将标准化来源行与假设派生行分开
 
-`applySignals` will store placement rows whose source values include the API-derived fields. A computed `pendingList` will map those source rows through one derivation function each time the selected premium changes. This preserves source traceability and keeps the existing view/filter/sort consumers reactive.
+`applySignals` 将存储来源值包含 API 派生字段的打新行。一个计算属性 `pendingList` 将在每次所选溢价变更时通过一个派生函数映射这些来源行。这保留了来源可追溯性，并保持现有视图/筛选/排序消费者的响应性。
 
-Alternative considered: mutate normalized rows when the selector changes. Rejected because it discards source fields and makes reloads and detail synchronization error-prone.
+考虑的替代方案：在选择器变更时修改标准化行。被否决，因为它丢弃来源字段，使重新加载和详情同步容易出错。
 
-### Own the parameter in the convertible store
+### 在可转债 store 中拥有该参数
 
-The parameter belongs to the placement strategy, so the convertible store will expose its value, fixed options, setter, and reset operation. A validated local-storage read provides the default of 30 when no valid value exists. This prevents an application-wide setting from affecting unrelated strategies.
+该参数属于打新策略，因此可转债 store 将暴露其值、固定选项、setter 和重置操作。经过验证的本地存储读取在没有有效值时提供默认值 30。这防止了影响无关策略的全局应用设置。
 
-### Recalculate the Web score from source factors
+### 从来源因子重新计算 Web 评分
 
-The derivation will use issue size and tradable amount from the API and a safety pad calculated from the selected premium. It will preserve the three-factor weights: issue size 30, tradable amount 40, safety pad 30. Ratings use 80/60 thresholds and existing red/yellow/green semantic classes.
+派生将使用 API 中的发行规模和可交易金额，以及从所选溢价计算的安全垫。它将保留三因子权重：发行规模 30、可交易金额 40、安全垫 30。评级使用 80/60 阈值和现有的红/黄/绿语义类。
 
-Alternative considered: rescale the API score. Rejected because it cannot reliably isolate the original safety-pad contribution.
+考虑的替代方案：重新缩放 API 评分。被否决，因为它无法可靠地隔离原始安全垫贡献。
 
-### Resolve open detail from the current derived list
+### 从当前派生列表解析已打开的详情
 
-The view will retain a stable placement identifier and compute the selected detail from `pendingList`, rather than copying the row detail once. Therefore the open dialog updates with the selector while retaining the same candidate.
+视图将保留稳定的打新标识符，并从 `pendingList` 计算所选详情，而非一次性复制行详情。因此已打开的弹窗随选择器更新，同时保留同一候选。
 
-## Risks / Trade-offs
+## 风险 / 权衡
 
-- [A user treats the assumption as a forecast] -> Label all affected values with the active assumption and retain the existing observation boundary.
-- [Invalid local storage] -> Accept only the eight approved values and revert to 30 otherwise.
-- [Future server scoring changes] -> The score derivation and its source factors remain localized in the placement store and are specified in this change.
+- [用户将假设视为预测] -> 用当前活跃假设标记所有受影响的值，并保留现有的观测边界。
+- [无效的本地存储] -> 仅接受八个已批准的值，否则回退到 30。
+- [未来服务端评分变更] -> 评分派生及其来源因子保持在打新 store 中局部化，并在本变更中指定。
 
-## Migration Plan
+## 迁移计划
 
-Deploy as a Web-only change. Existing users without a preference receive 30; users with malformed or legacy values also receive 30. Roll back by removing the stored parameter and restoring the fixed comparison calculation. No API, schema, cache, or database migration is required.
+作为仅 Web 变更部署。没有偏好的现有用户接收 30；具有畸形或旧值的用户也接收 30。通过移除存储的参数并恢复固定的比较计算来回滚。不需要 API、schema、缓存或数据库迁移。
 
-## Open Questions
+## 待决问题
 
-None.
+无。

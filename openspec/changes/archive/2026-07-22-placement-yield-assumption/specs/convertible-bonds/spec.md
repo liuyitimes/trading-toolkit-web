@@ -1,26 +1,26 @@
-## MODIFIED Requirements
+## 修改需求
 
-### Requirement: Placement score assumptions
+### 需求：打新评分假设
 
-The Web placement view SHALL calculate expected profit, safety pad, placement score, rating, and composite rank from the active global expected-listing-premium assumption. The assumption SHALL be comparison-only, SHALL NOT be presented as a verified return, and SHALL override API-provided display values for those derived metrics while retaining their source values.
+Web 打新视图应从当前活跃的全局预期上市溢价假设计算预期收益、安全垫、打新评分、评级和综合排名。该假设应仅用于比较，不应呈现为已验证的收益，且应覆盖这些派生指标的 API 提供显示值，同时保留其来源值。
 
-#### Scenario: A safety pad is shown
+#### 场景：显示安全垫
 
-- **GIVEN** the system has required placement and stock fields
-- **WHEN** it calculates the placement metrics for an approved premium assumption
-- **THEN** expected profit equals 1,000 yuan multiplied by that premium percentage
-- **AND THEN** safety pad equals expected profit divided by actual one-lot placement cost multiplied by 100 percent.
+- **假设** 系统具有所需的打新和正股字段
+- **当** 使用已批准的溢价假设计算打新指标时
+- **则** 预期收益等于 1,000 元乘以该溢价百分比
+- **然后** 安全垫等于预期收益除以实际一手打新成本乘以 100%。
 
-#### Scenario: A placement score is recalculated
+#### 场景：打新评分重新计算
 
-- **GIVEN** a placement candidate has issue size, tradable amount, and valid placement cost data
-- **WHEN** the user changes the approved premium assumption
-- **THEN** the Web score recalculates with issue-size, tradable-amount, and safety-pad weights of 30, 40, and 30
-- **AND THEN** ratings are recommend at 80 or greater, watch from 60 through 79, and cautious below 60.
+- **假设** 一个打新候选具有发行规模、可交易金额和有效的打新成本数据
+- **当** 用户更改已批准的溢价假设时
+- **则** Web 评分使用发行规模、可交易金额和安全垫权重 30、40 和 30 重新计算
+- **然后** 评级为：80 及以上推荐、60 到 79 关注、低于 60 谨慎。
 
-#### Scenario: Placement data cannot produce a safety pad
+#### 场景：打新数据无法生成安全垫
 
-- **GIVEN** a placement candidate has no positive actual one-lot cost
-- **WHEN** the Web derives placement metrics
-- **THEN** it shows expected profit from the active assumption
-- **AND THEN** it renders safety pad as unavailable and does not divide by zero.
+- **假设** 一个打新候选没有正的实际一手成本
+- **当** Web 派生打新指标时
+- **则** 显示来自当前活跃假设的预期收益
+- **然后** 将安全垫渲染为不可用，且不进行除零运算。

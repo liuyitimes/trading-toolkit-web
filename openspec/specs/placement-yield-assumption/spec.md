@@ -1,40 +1,43 @@
-# placement-yield-assumption Specification
+# placement-yield-assumption 规格
 
-## Purpose
-TBD - created by archiving change placement-yield-assumption. Update Purpose after archive.
-## Requirements
-### Requirement: Global placement premium assumption
+## 目的
 
-The Web application SHALL provide one locally persisted expected-listing-premium assumption for the convertible-placement strategy. The value SHALL default to 30 percent and SHALL be one of 30, 40, 50, 60, 70, 80, 90, or 100 percent.
+待定 - 通过归档变更 placement-yield-assumption 创建。归档后更新目的。
 
-#### Scenario: A user has no saved assumption
+## 要求
 
-- **GIVEN** local storage has no placement premium value
-- **WHEN** the user opens the convertible placement strategy
-- **THEN** the active value is 30 percent
-- **AND THEN** the toolbar identifies it as the assumption used for placement metrics.
+### 要求：全局配售溢价假设
 
-#### Scenario: A saved value is malformed or unsupported
+Web 应用必须提供一个本地持久化的可转债配售策略预期上市溢价假设。该值必须默认为 30%，且必须是 30%、40%、50%、60%、70%、80%、90% 或 100% 之一。
 
-- **GIVEN** local storage contains a non-numeric value or a value outside the approved set
-- **WHEN** the placement store initializes
-- **THEN** it uses 30 percent
-- **AND THEN** it does not expose the invalid value to placement calculations or controls.
+#### 场景：用户没有已保存的假设
 
-#### Scenario: A user changes or resets the assumption
+- **假定**：本地存储中没有配售溢价值。
+- **当**：用户打开可转债配售策略。
+- **则**：活动值为 30%。
+- **并且**：工具栏将其标识为配售指标所使用的假设。
 
-- **GIVEN** the placement strategy is open
-- **WHEN** the user selects an approved value or activates the reset control
-- **THEN** the store persists the selected value or 30 percent respectively
-- **AND THEN** all placement-only derived metrics update without another API request.
+#### 场景：已保存的值格式错误或不支持
 
-### Requirement: Assumption disclosure
+- **假定**：本地存储包含非数值或不在批准集合中的值。
+- **当**：配售 store 初始化。
+- **则**：使用 30%。
+- **并且**：不将无效值暴露给配售计算或控件。
 
-The Web application SHALL identify expected profit, safety pad, score, rating, and composite rank as values calculated with the active placement assumption. It SHALL not present the assumption as a verified return or executable investment outcome.
+#### 场景：用户更改或重置假设
 
-#### Scenario: A user inspects a placement calculation
+- **假定**：配售策略已打开。
+- **当**：用户选择批准的值或激活重置控件。
+- **则**：store 分别持久化所选值或 30%。
+- **并且**：所有仅限配售的派生指标更新，无需再次 API 请求。
 
-- **GIVEN** a candidate has valid placement cost data
-- **WHEN** the user views the safety-pad tooltip or the pending-placement detail dialog
-- **THEN** the view shows the active premium rate and the resulting expected profit
-- **AND THEN** it retains the observation and verification boundary for placement data.
+### 要求：假设披露
+
+Web 应用必须将预期收益、安全垫、评分、评级和综合排名标识为使用活动配售假设计算的值。不得将假设呈现为已验证的回报或可执行的投资结果。
+
+#### 场景：用户检查配售计算
+
+- **假定**：候选标的具有有效的配售成本数据。
+- **当**：用户查看安全垫工具提示或待定配售详情对话框。
+- **则**：视图显示活动溢价率和由此产生的预期收益。
+- **并且**：保留配售数据的观察和验证边界。

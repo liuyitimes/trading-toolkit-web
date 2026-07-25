@@ -1,71 +1,76 @@
-# Web Application Specification
+# Web 应用规格
 
-## Purpose
+## 目的
 
-Define supported Web routes, interaction principles, and client behavior.
-## Requirements
-### Requirement: Supported Web routes
+定义受支持的 Web 路由、交互原则和客户端行为。
 
-The Web application SHALL provide routes for home, convertible monitoring and detail, LOF, closed-end funds, Hong Kong IPO and detail, favorites, settings, quote management, and API logs.
+## 要求
 
-#### Scenario: A route is loaded directly
+### 要求：受支持的 Web 路由
 
-- GIVEN a supported route is requested in the Web application
-- WHEN the router initializes
-- THEN it resolves through the shared layout and its corresponding lazy-loaded view.
+Web 应用必须提供主页、可转债监控与详情、LOF、封闭式基金、港股 IPO 与详情、收藏、设置、行情管理和 API 日志路由。
 
-### Requirement: Normalized API consumption
+#### 场景：直接加载路由
 
-The shared Axios client SHALL unwrap successful `{ success, data, meta }` envelopes and reject unsuccessful envelopes. A configurable base URL MAY be read from the build environment or local storage.
+- **假定**：在 Web 应用中请求一个受支持路由。
+- **当**：路由器初始化。
+- **则**：它通过共享布局和相应的懒加载视图完成解析。
 
-#### Scenario: A service request succeeds
+### 要求：规范化 API 调用
 
-- GIVEN the service returns a successful envelope
-- WHEN the Axios response interceptor handles it
-- THEN callers receive the inner `data`
-- AND application code need not parse provider-specific response formats.
+共享 Axios 客户端必须解包成功响应中的 `{ success, data, meta }` 信封，并拒绝失败信封。可配置的基础 URL 可以从构建环境或本地存储读取。
 
-### Requirement: Decision-support presentation
+#### 场景：服务请求成功
 
-The Web experience SHALL present finance data as research and decision support, with progressive disclosure for formulas, assumptions, and detailed calculations. It SHALL not present assumptions or stale data as confirmed investment outcomes.
+- **假定**：服务返回成功信封。
+- **当**：Axios 响应拦截器处理响应。
+- **则**：调用方收到内部的 `data`。
+- **并且**：应用代码无需解析供应商特定的响应格式。
 
-#### Scenario: A user inspects a calculated metric
+### 要求：决策支持展示
 
-- GIVEN the page displays a derived strategy metric
-- WHEN the user requests explanation through the available interaction
-- THEN the view exposes the relevant inputs, formula, and assumptions.
+Web 体验必须将金融数据展示为研究和决策支持，并对公式、假设和详细计算采用渐进披露。不得将假设或过期数据表述为已经确认的投资结果。
 
-### Requirement: Market marker consistency
+#### 场景：用户查看计算指标
 
-Mainland exchange markers in supported Web surfaces SHALL use `ExchangeBadge`. Strategy labels SHALL use red for positive opportunities, yellow for neutral states, and green for risks or negative states, as defined by the project UI convention.
+- **假定**：页面展示派生策略指标。
+- **当**：用户通过可用交互请求说明。
+- **则**：视图展示相关输入、公式和假设。
 
-#### Scenario: A list renders an exchange
+### 要求：市场标识一致性
 
-- GIVEN an item has a mainland exchange value
-- WHEN the view renders its market marker
-- THEN it uses `ExchangeBadge` rather than duplicating exchange-label logic.
+受支持 Web 页面中的大陆交易所标识必须使用 `ExchangeBadge`。策略标签必须遵循项目 UI 约定：红色表示正向机会，黄色表示中性状态，绿色表示风险或负向状态。
 
-### Requirement: Responsive verification
+#### 场景：列表渲染交易所
 
-User-visible Web changes SHALL be verified at relevant desktop and mobile dimensions, including absence of console errors and coherent layout for the affected interaction.
+- **假定**：条目包含大陆交易所值。
+- **当**：视图渲染其市场标识。
+- **则**：使用 `ExchangeBadge`，而不是重复实现交易所标签逻辑。
 
-#### Scenario: A placement-dialog layout changes
+### 要求：响应式验证
 
-- GIVEN a change affects the convertible placement dialog
-- WHEN verification runs
-- THEN it checks desktop and small-screen rendering
-- AND it confirms scrollable content is not clipped or overlapped.
+面向用户的 Web 变更必须在相关桌面端和移动端尺寸下验证，包括确认没有控制台错误，且受影响交互的布局连贯。
 
-### Requirement: WSL local delivery
-The Web repository SHALL provide a versioned WSL operator workflow that validates the Web build before restarting the local Web and service processes.
+#### 场景：配售弹窗布局变更
 
-#### Scenario: A local deployment succeeds
-- GIVEN the Web checkout is buildable and the service checkout has no non-database local changes
-- WHEN an operator runs the deploy command
-- THEN the workflow restarts the managed WSL services
-- AND THEN it verifies HTTP reachability on ports 5173 and 8080.
+- **假定**：某项变更影响可转债配售弹窗。
+- **当**：执行验证。
+- **则**：检查桌面端和小屏幕渲染。
+- **并且**：确认可滚动内容没有被裁剪或重叠。
 
-#### Scenario: Local service code is modified
-- GIVEN the service checkout contains a modification other than its SQLite database
-- WHEN an operator runs the deploy command
-- THEN the workflow SHALL stop before restarting services.
+### 要求：WSL 本地交付
+
+Web 仓库必须提供版本化的 WSL 操作流程，在重启本地 Web 和服务进程前验证 Web 构建。
+
+#### 场景：本地部署成功
+
+- **假定**：Web 检出可构建，且服务检出除 SQLite 数据库外没有本地改动。
+- **当**：操作人员运行部署命令。
+- **则**：流程重启受管的 WSL 服务。
+- **并且**：验证端口 `5173` 和 `8080` 上的 HTTP 可达性。
+
+#### 场景：本地服务代码已修改
+
+- **假定**：服务检出中存在 SQLite 数据库以外的修改。
+- **当**：操作人员运行部署命令。
+- **则**：流程必须在重启服务前停止。

@@ -1,19 +1,19 @@
-## 1. Specification and Tracking
+## 1. 规格与跟踪
 
-- [x] 1.1 Record the placement-yield-assumption requirements, implementation design, and local implementation issue.
-- [x] 1.2 Align the existing placement-rating documentation with the 30-to-100 percent assumption and 80/60 rating thresholds.
+- [x] 1.1 记录打新收益率假设的需求、实现设计和本地实现问题。
+- [x] 1.2 将现有的打新评级文档与 30% 到 100% 的假设和 80/60 评级阈值对齐。
 
-## 2. Placement Derivation
+## 2. 打新派生
 
-- [x] 2.1 Add validated, locally persisted placement premium state and controls to the convertible store.
-- [x] 2.2 Preserve normalized API source fields and derive expected profit, safety pad, score, rating, and composite rank from the active assumption.
+- [x] 2.1 在可转债 store 中添加经过验证的、本地持久化的打新溢价状态和控件。
+- [x] 2.2 保留标准化的 API 来源字段，并从当前活跃假设派生预期收益、安全垫、评分、评级和综合排名。
 
-## 3. Placement UI
+## 3. 打新 UI
 
-- [x] 3.1 Add the placement-toolbar selector, active-assumption disclosure, and accessible reset control.
-- [x] 3.2 Synchronize list, mobile cards, safety-pad tooltip, and open detail dialog; remove the obsolete detail-only premium state.
+- [x] 3.1 添加打新工具栏选择器、当前假设披露和无障碍重置控件。
+- [x] 3.2 同步列表、移动端卡片、安全垫工具提示和已打开的详情弹窗；移除过时的仅详情溢价状态。
 
-## 4. Verification
+## 4. 验证
 
-- [x] 4.1 Add deterministic Playwright coverage with mocked placement data for calculation, validation, persistence, reset, ranking, and scope isolation.
-- [x] 4.2 Run OpenSpec validation, formatting checks, production build, and desktop/mobile browser verification.
+- [x] 4.1 添加使用模拟打新数据的确定性 Playwright 覆盖测试，涵盖计算、验证、持久化、重置、排名和范围隔离。
+- [x] 4.2 运行 OpenSpec 验证、格式检查、生产构建和桌面/移动端浏览器验证。

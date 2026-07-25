@@ -1,15 +1,15 @@
-# WSL Local Delivery
+# WSL 本地交付
 
-## Why
+## 动机
 
-The WSL deployment currently depends on an unversioned launcher and manually started development servers. It has no build gate, managed lifecycle, health check, or safe handling of the service repository's local SQLite database.
+当前 WSL 部署依赖于无版本的启动器和手动启动的开发服务器。它没有构建门控、托管生命周期、健康检查或对服务仓库本地 SQLite 数据库的安全处理。
 
-## What Changes
+## 变更内容
 
-- Add a versioned WSL control script and systemd user-service template.
-- Gate deployment on Web build and browser verification, then restart managed services and check both HTTP listeners.
-- Preserve the service SQLite database and refuse deployment when any other service working-tree change is present.
+- 添加版本化的 WSL 控制脚本和 systemd 用户服务模板。
+- 在重启托管服务并检查两个 HTTP 监听器之前，以 Web 构建和浏览器验证作为部署门控。
+- 保留服务 SQLite 数据库，并在存在其他服务工作树变更时拒绝部署。
 
-## Scope
+## 范围
 
-This is a local WSL deployment workflow only. It does not replace GitHub Actions, change APIs, or push/deploy to a cloud provider.
+这仅是一个本地 WSL 部署工作流。它不替代 GitHub Actions、不更改 API，也不推送/部署到云提供商。

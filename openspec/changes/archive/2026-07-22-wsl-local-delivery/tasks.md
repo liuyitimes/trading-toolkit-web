@@ -1,6 +1,6 @@
-## 1. Delivery Workflow
+## 1. 交付工作流
 
-- [x] Add the WSL operator script and systemd user-service template.
-- [x] Add installation and health-check behavior, including service-checkout protection.
-- [x] Add deterministic script verification and operator documentation.
-- [x] Validate OpenSpec and run the production build.
+- [x] 添加 WSL 操作脚本和 systemd 用户服务模板。
+- [x] 添加安装和健康检查行为，包括服务检出保护。
+- [x] 添加确定性脚本验证和操作员文档。
+- [x] 验证 OpenSpec 并运行生产构建。
