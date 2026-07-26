@@ -5,6 +5,7 @@ Web 需要从 GitHub Pages 迁移到 Cloudflare Pages，并将已有构建与浏
 ## What Changes
 
 - 增加 Cloudflare Pages 发布工作流和最小 CI 验证。
+- Cloudflare Pages 仅在 `main` 的 CI 成功后发布该次已验证的提交。
 - 集中 API 端点定义，并针对 Service 端点矩阵做校验。
 - 移除未实现的收藏切换路由调用。
 
