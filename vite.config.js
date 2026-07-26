@@ -5,7 +5,7 @@ import { fileURLToPath, URL } from 'node:url'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const base =
-    mode === 'production' ? env.VITE_BASE_PATH || '/trading-toolkit-web/' : '/'
+    mode === 'production' ? env.VITE_BASE_PATH || '/' : '/'
 
   return {
     base,
