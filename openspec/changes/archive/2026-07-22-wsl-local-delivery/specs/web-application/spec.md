@@ -1,15 +1,18 @@
-## ADDED Requirements
+## 新增需求
 
-### Requirement: WSL local delivery
-The Web repository SHALL provide a versioned WSL operator workflow that validates the Web build before restarting the local Web and service processes.
+### 需求：WSL 本地交付
 
-#### Scenario: A local deployment succeeds
-- GIVEN the Web checkout is buildable and the service checkout has no non-database local changes
-- WHEN an operator runs the deploy command
-- THEN the workflow restarts the managed WSL services
-- AND THEN it verifies HTTP reachability on ports 5173 and 8080.
+Web 仓库应提供版本化的 WSL 操作工作流，在重启本地 Web 和服务进程之前验证 Web 构建。
 
-#### Scenario: Local service code is modified
-- GIVEN the service checkout contains a modification other than its SQLite database
-- WHEN an operator runs the deploy command
-- THEN the workflow SHALL stop before restarting services.
+#### 场景：本地部署成功
+
+- 假设 Web 检出可构建且服务检出没有非数据库的本地变更
+- 当操作员运行部署命令时
+- 则工作流重启受托管的 WSL 服务
+- 然后验证 5173 和 8080 端口的 HTTP 可达性。
+
+#### 场景：本地服务代码被修改
+
+- 假设服务检出包含除 SQLite 数据库之外的修改
+- 当操作员运行部署命令时
+- 则工作流应在重启服务之前停止。

@@ -1,13 +1,11 @@
 import api from './index'
+import { apiEndpoints } from './contracts'
 
 export const userApi = {
   login(code) {
-    return api.post('/api/v1/user/login', { code })
+    return api.post(apiEndpoints.user.login.path, { code })
   },
   getFavorites() {
-    return api.get('/api/v1/user/favorites')
-  },
-  toggleFavorite(type, code) {
-    return api.post('/api/v1/user/favorites/toggle', { type, code })
+    return api.get(apiEndpoints.user.favorites.path)
   }
 }

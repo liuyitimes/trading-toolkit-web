@@ -4,6 +4,7 @@ import { convertibleApi } from '@/api/convertible'
 import { marketApi } from '@/api/market'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
+import { downloadPlacementExport } from '@/utils/placementExportDownload'
 
 // 交易所判定
 function detectExchange(stockCode = '', bondCode = '') {
@@ -407,6 +408,8 @@ function normalizeBondItem(item) {
 // 归一化待发/配售项
 function normalizePendingItem(item) {
   if (!item || typeof item !== 'object') return null
+  // 待发配债的来源信息只接受跨端约定的 placement_provenance 字段。
+  const placementProvenance = item.placement_provenance || null
   const stockName = item.stock_name || '--'
   const stockCode = item.stock_code || '--'
   const bondCode = item.bond_code || ''
@@ -620,6 +623,7 @@ function normalizePendingItem(item) {
     strategyScore,
     strategyRating,
     strategyRatingClass,
+    placementProvenance,
     _apiStrategyScoreRaw: strategyScore,
     _apiStrategyRating: item.strategy_rating || '',
     _compositeRankRaw,
@@ -764,6 +768,13 @@ export const useConvertibleStore = defineStore('convertible', () => {
 
   function resetPlacementPremiumRate() {
     return setPlacementPremiumRate(DEFAULT_PLACEMENT_PREMIUM_RATE)
+  }
+
+  function exportPendingPlacement(candidate) {
+    downloadPlacementExport({
+      candidate,
+      snapshotMeta: pendingSnapshotMeta.value
+    })
   }
 
   async function loadBonds(params = {}) {
@@ -999,6 +1010,7 @@ export const useConvertibleStore = defineStore('convertible', () => {
     loadTemperature,
     refreshFavorites,
     setPlacementPremiumRate,
-    resetPlacementPremiumRate
+    resetPlacementPremiumRate,
+    exportPendingPlacement
   }
 })

@@ -1,37 +1,37 @@
-## ADDED Requirements
+## 新增需求
 
-### Requirement: Global placement premium assumption
+### 需求：全局打新溢价假设
 
-The Web application SHALL provide one locally persisted expected-listing-premium assumption for the convertible-placement strategy. The value SHALL default to 30 percent and SHALL be one of 30, 40, 50, 60, 70, 80, 90, or 100 percent.
+Web 应用应为可转债打新策略提供一个本地持久化的预期上市溢价假设。该值默认为 30%，且必须是 30%、40%、50%、60%、70%、80%、90% 或 100% 之一。
 
-#### Scenario: A user has no saved assumption
+#### 场景：用户没有已保存的假设
 
-- **GIVEN** local storage has no placement premium value
-- **WHEN** the user opens the convertible placement strategy
-- **THEN** the active value is 30 percent
-- **AND THEN** the toolbar identifies it as the assumption used for placement metrics.
+- **假设** 本地存储中没有打新溢价值
+- **当** 用户打开可转债打新策略时
+- **则** 当前活跃值为 30%
+- **然后** 工具栏将其标识为用于打新指标的假设。
 
-#### Scenario: A saved value is malformed or unsupported
+#### 场景：已保存的值格式错误或不支持
 
-- **GIVEN** local storage contains a non-numeric value or a value outside the approved set
-- **WHEN** the placement store initializes
-- **THEN** it uses 30 percent
-- **AND THEN** it does not expose the invalid value to placement calculations or controls.
+- **假设** 本地存储包含非数值或不在已批准集合中的值
+- **当** 打新 store 初始化时
+- **则** 使用 30%
+- **然后** 不将无效值暴露给打新计算或控件。
 
-#### Scenario: A user changes or resets the assumption
+#### 场景：用户更改或重置假设
 
-- **GIVEN** the placement strategy is open
-- **WHEN** the user selects an approved value or activates the reset control
-- **THEN** the store persists the selected value or 30 percent respectively
-- **AND THEN** all placement-only derived metrics update without another API request.
+- **假设** 打新策略已打开
+- **当** 用户选择一个已批准的值或激活重置控件时
+- **则** store 分别持久化所选值或 30%
+- **然后** 所有仅打新的派生指标无需额外 API 请求即可更新。
 
-### Requirement: Assumption disclosure
+### 需求：假设披露
 
-The Web application SHALL identify expected profit, safety pad, score, rating, and composite rank as values calculated with the active placement assumption. It SHALL not present the assumption as a verified return or executable investment outcome.
+Web 应用应将预期收益、安全垫、评分、评级和综合排名标识为使用当前活跃打新假设计算的值。不应将该假设呈现为已验证的收益或可执行的投资结果。
 
-#### Scenario: A user inspects a placement calculation
+#### 场景：用户检查打新计算
 
-- **GIVEN** a candidate has valid placement cost data
-- **WHEN** the user views the safety-pad tooltip or the pending-placement detail dialog
-- **THEN** the view shows the active premium rate and the resulting expected profit
-- **AND THEN** it retains the observation and verification boundary for placement data.
+- **假设** 一个候选具有有效的打新成本数据
+- **当** 用户查看安全垫工具提示或待打新详情弹窗时
+- **则** 视图显示当前活跃的溢价率和由此产生的预期收益
+- **然后** 保留打新数据的观测和验证边界。

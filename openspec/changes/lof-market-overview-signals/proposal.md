@@ -1,40 +1,41 @@
-# LOF Market Overview Signals
+# LOF 市场概览信号
 
-## Why
+## 背景
 
-The current LOF overview shows broad market counts and exchange-based average premium. The desired decision view instead needs the highest-premium market direction, prior-trading-day subscription-share-derived capital scale, and an estimated participant count.
+当前 LOF 概览展示的是大盘计数和按交易所计算的平均溢价。而期望的决策视图需要的是最高溢价市场方向、前一交易日基于申购份额推算的资金额度，以及预估参与人数。
 
-## Intended outcome
+## 预期成果
 
-Replace the four existing overview cards with:
+保留并填充现有四个概览卡片：
 
-1. Highest-premium market direction.
-2. Prior-trading-day net subscription capital estimate.
-3. Prior-trading-day estimated subscription participants.
+1. 最高溢价市场方向。
+2. 前一交易日净申购资金估算。
+3. 前一交易日净申购账户数下限。
+4. 前一交易日净申购投资者限额下限。
 
-## Evidence and constraint
+## 依据与约束
 
-The existing share-history implementation requests Eastmoney report `RPT_FUND_LOF_SHARE_CHANGE`. On 2026-07-14 the upstream returned `9501: 报表配置不存在`; the existing fallback generates mock history. Mock history cannot support a decision metric and SHALL NOT be used by this overview.
+现有的份额历史实现请求东方财富报表 `RPT_FUND_LOF_SHARE_CHANGE`。2026-07-14 上游返回 `9501: 报表配置不存在`；现有的兜底逻辑会生成模拟历史数据。模拟历史数据无法支撑决策指标，**不得**在本概览中使用。
 
-Daily share change, where available, represents net subscriptions after redemptions. It does not prove gross applications or exact individual count. The UI must therefore use the terms `净申购资金（估）` and `净申购账户（估）`, identify the source date, and show unavailable state when no verified source is available.
+每日份额变动（在可用时）代表赎回后的净申购量，不能证明总申购量或确切的个人账户数。因此，UI 必须使用 `净申购资金（估）` 和 `净申购账户（估）` 这两个术语，标注数据来源日期，并在无已验证数据可用时显示不可用状态。
 
-Where a fund announcement records a positive share increase and a current subscription cap, the system may calculate a lower-bound participation proxy. It must distinguish a `per-account` cap from a `per-investor` cap. Neither establishes natural-person identity. Aggregating across funds or dates cannot deduplicate entities, so the all-market value is an `累计等效参与次数`, never a unique participant total.
+当基金公告记录了正向份额增长和当前申购上限时，系统可以计算参与人数的下限近似值。它必须区分 `per-account`（按单账户）上限和 `per-investor`（按单投资者）上限。两者均不能确认自然人身份。跨基金或跨日期聚合无法去重实体，因此全市场数值为 `累计等效参与次数`，绝不是独立参与人数。
 
-## Scope
+## 范围
 
-- Replace the existing Web overview fields with the three decision signals.
-- Render source dates and explicit unavailable states from the LOF summary response.
+- 保留现有四个 Web 概览字段，并渲染其决策支持数值。
+- 从 LOF 摘要响应中渲染数据来源日期和明确的不可用状态。
 
-## Repository scope
+## 仓库范围
 
-This Web change owns the overview cards, wording, source-date display, and unavailable states. The matching `lof-market-overview-signals` change in `trading-toolkit-service` owns the verified source, aggregation, taxonomy, provenance, and summary response fields.
+本 Web 变更负责概览卡片、措辞、来源日期展示和不可用状态。`trading-toolkit-service` 中对应的 `lof-market-overview-signals` 变更负责已验证的数据源、聚合、分类、溯源和摘要响应字段。
 
-## Out of scope
+## 范围外
 
-- Mini-program behavior.
-- Displaying mock, inferred-from-turnover, or unverified values as fund subscriptions.
-- Claiming gross application count, allocation count, or guaranteed arbitrage capacity.
+- 小程序行为。
+- 将模拟数据、基于换手率推算的数值或未经验证的数值显示为基金申购数据。
+- 声称总申购量、配售量或保证套利能力。
 
-## Rollback
+## 回滚方案
 
-Restore the previous overview cards and remove the new summary fields if the verified source is withdrawn or the calculation proves incorrect.
+如果已验证的数据源被撤回或计算结果被证明不正确，则恢复之前的概览卡片并移除新的摘要字段。

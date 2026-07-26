@@ -1,56 +1,56 @@
-## ADDED Requirements
+## 新增需求
 
-### Requirement: LOF arbitrage detail decision view
+### 需求：LOF 套利详情决策视图
 
-The Web application SHALL provide a deep-linkable LOF detail view that orders information by arbitrage decision: current premium and cost assumptions, premium persistence, execution capacity, fund holdings exposure, and settlement-window volatility risk. It SHALL identify the instrument, quote timestamp, NAV date, and execution-path verification state before presenting any return estimate.
+Web 应用应提供一个可深度链接的 LOF 详情视图，按套利决策顺序排列信息：当前溢价和费用假设、溢价持续性、执行容量、基金持仓敞口和结算窗口波动率风险。在展示任何收益估算之前，应先标识标的、行情时间戳、净值日期和执行路径验证状态。
 
-#### Scenario: A user opens an LOF detail view
+#### 场景：用户打开 LOF 详情视图
 
-- **GIVEN** the user selects an LOF from the supported Web application
-- **WHEN** the detail view loads
-- **THEN** it presents a decision summary before secondary reference data
-- **AND THEN** it separates observed metrics from estimates and unavailable metrics
-- **AND THEN** it links back to the LOF list without requiring a stale modal state.
+- **假设** 用户从受支持的 Web 应用中选择了一个 LOF
+- **当** 详情视图加载时
+- **则** 在次要参考数据之前展示决策摘要
+- **然后** 将已观测指标与估算和不可用指标分开
+- **然后** 链接回 LOF 列表，无需依赖过时的弹窗状态。
 
-#### Scenario: An execution path is not verified
+#### 场景：执行路径未验证
 
-- **GIVEN** the current subscription, custody-transfer, or expected-sale evidence is incomplete
-- **WHEN** the detail view displays a positive premium
-- **THEN** it labels the fund as an observation or analysis candidate
-- **AND THEN** it does not label the premium or return estimate as executable arbitrage.
+- **假设** 当前申购、托管转出或预期卖出证据不完整
+- **当** 详情视图显示正溢价时
+- **则** 将该基金标记为观测或分析候选
+- **然后** 不将溢价或收益估算标记为可执行套利。
 
-### Requirement: LOF detail evidence and unavailable states
+### 需求：LOF 详情证据和不可用状态
 
-The Web application SHALL render source, observation date, retrieval time, and freshness state returned by the LOF detail service for premium history, liquidity history, disclosed fund holdings, and risk inputs. It MUST distinguish fund portfolio holdings from a user's brokerage position and SHALL NOT substitute a local fallback when the service reports an unavailable input.
+Web 应用应渲染 LOF 详情服务返回的来源、观测日期、检索时间和新鲜度状态，涵盖溢价历史、流动性历史、已披露的基金持仓和风险输入。必须区分基金投资组合持仓与用户券商持仓，且当服务报告输入不可用时，不应替换为本地回退。
 
-#### Scenario: Disclosed fund holdings are available
+#### 场景：已披露的基金持仓可用
 
-- **GIVEN** a dated official or manager-published portfolio disclosure is available
-- **WHEN** the detail service returns holdings exposure
-- **THEN** the detail view displays the disclosure date, source, concentration metrics, and top holdings
-- **AND THEN** it labels the data as fund portfolio holdings rather than user holdings.
+- **假设** 存在带日期的官方或管理人发布的投资组合披露
+- **当** 详情服务返回持仓敞口时
+- **则** 详情视图显示披露日期、来源、集中度指标和前十大持仓
+- **然后** 将数据标记为基金投资组合持仓而非用户持仓。
 
-#### Scenario: A required historical or holdings input is unavailable
+#### 场景：必需的历史或持仓输入不可用
 
-- **GIVEN** no verified source exists for a requested history or holdings input
-- **WHEN** the detail view renders that panel
-- **THEN** it shows an explicit unavailable state and its source status
-- **AND THEN** it does not substitute zeroes, mock history, or turnover-derived values.
+- **假设** 所请求的历史或持仓输入不存在经过验证的来源
+- **当** 详情视图渲染该面板时
+- **则** 显示明确的不可用状态及其来源状态
+- **然后** 不替换为零值、模拟历史或基于换手率派生的数值。
 
-### Requirement: LOF premium persistence, liquidity, and volatility risk disclosure
+### 需求：LOF 溢价持续性、流动性和波动率风险披露
 
-The Web application SHALL present premium persistence and settlement-window risk returned by the detail service as dated analysis, not as a trade instruction. It SHALL expose the measured window and inputs returned for price, NAV, premium variation, and liquidity rather than recalculating a client-only risk conclusion.
+Web 应用应将详情服务返回的溢价持续性和结算窗口风险作为带日期的分析呈现，而非交易指令。应暴露价格、净值、溢价变动和流动性的已测度窗口和输入，而非重新计算仅客户端的风险结论。
 
-#### Scenario: Sufficient observed history is available
+#### 场景：已观测历史充足
 
-- **GIVEN** the detail service has sufficient dated premium, price, NAV, and liquidity observations
-- **WHEN** it builds the detail analysis
-- **THEN** it reports the observation window, premium range or duration, liquidity comparison, and volatility measures
-- **AND THEN** it separates current observed values from derived risk indicators.
+- **假设** 详情服务有充足的带日期溢价、价格、净值和流动性观测
+- **当** 构建详情分析时
+- **则** 报告观察窗口、溢价范围或持续时间、流动性对比和波动率度量
+- **然后** 将当前已观测值与派生风险指标分开。
 
-#### Scenario: History is insufficient or simulated
+#### 场景：历史不足或为模拟数据
 
-- **GIVEN** the available history is shorter than the documented window or is sourced from a mock fallback
-- **WHEN** the detail view renders premium persistence or risk
-- **THEN** it marks the analysis unavailable or simulated with the source status
-- **AND THEN** it excludes that data from any decision label, risk grade, or expected-return conclusion.
+- **假设** 可用历史短于文档化的窗口或来自模拟回退
+- **当** 详情视图渲染溢价持续性或风险时
+- **则** 标记分析为不可用或模拟，并附来源状态
+- **然后** 将该数据排除在任何决策标签、风险评级或预期收益结论之外。

@@ -21,7 +21,12 @@
           <el-button type="primary" size="small" plain @click="openEdit(index)">
             <el-icon><Edit /></el-icon> 编辑
           </el-button>
-          <el-button type="danger" size="small" plain @click="handleDelete(index)">
+          <el-button
+            type="danger"
+            size="small"
+            plain
+            @click="handleDelete(index)"
+          >
             <el-icon><Delete /></el-icon> 删除
           </el-button>
         </div>
@@ -55,10 +60,7 @@
           />
         </el-form-item>
         <el-form-item label="作者">
-          <el-input
-            v-model="form.author"
-            placeholder="请输入作者（可选）"
-          />
+          <el-input v-model="form.author" placeholder="请输入作者（可选）" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -71,11 +73,13 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { storeToRefs } from 'pinia'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import { quoteManager } from '@/utils/quoteManager'
+import { useQuoteStore } from '@/stores/quote'
 import { Edit, Delete, Plus, RefreshLeft } from '@element-plus/icons-vue'
 
-const quotes = ref(quoteManager.getQuotes())
+const quoteStore = useQuoteStore()
+const { quotes } = storeToRefs(quoteStore)
 const dialogVisible = ref(false)
 const isEditing = ref(false)
 const editIndex = ref(-1)
@@ -84,10 +88,6 @@ const form = reactive({
   text: '',
   author: ''
 })
-
-function loadQuotes() {
-  quotes.value = quoteManager.getQuotes()
-}
 
 function openAdd() {
   isEditing.value = false
@@ -114,14 +114,13 @@ function handleSave() {
   }
 
   if (isEditing.value && editIndex.value >= 0) {
-    quoteManager.updateQuote(editIndex.value, form.text, form.author)
+    quoteStore.updateQuote(editIndex.value, form.text, form.author)
     ElMessage.success('修改成功')
   } else {
-    quoteManager.addQuote(form.text, form.author)
+    quoteStore.addQuote(form.text, form.author)
     ElMessage.success('添加成功')
   }
 
-  loadQuotes()
   dialogVisible.value = false
 }
 
@@ -130,23 +129,29 @@ function handleDelete(index) {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    quoteManager.deleteQuote(index)
-    loadQuotes()
-    ElMessage.success('删除成功')
-  }).catch(() => {})
+  })
+    .then(() => {
+      quoteStore.deleteQuote(index)
+      ElMessage.success('删除成功')
+    })
+    .catch(() => {})
 }
 
 function handleReset() {
-  ElMessageBox.confirm('确定要恢复为默认名言列表吗？所有自定义名言将被覆盖。', '恢复默认', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    quoteManager.resetToDefault()
-    loadQuotes()
-    ElMessage.success('已恢复默认')
-  }).catch(() => {})
+  ElMessageBox.confirm(
+    '确定要恢复为默认名言列表吗？所有自定义名言将被覆盖。',
+    '恢复默认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  )
+    .then(() => {
+      quoteStore.resetToDefault()
+      ElMessage.success('已恢复默认')
+    })
+    .catch(() => {})
 }
 </script>
 

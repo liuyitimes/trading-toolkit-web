@@ -1,6 +1,6 @@
-# Tasks
+# 任务
 
-- [x] Define display semantics and unavailable-state requirements for the summary response.
-- [x] Render the three decision signals and source dates from the LOF summary response.
-- [x] Render `暂缺` without treating absent source data as a zero or mock observation.
-- [x] Run the Web build and browser verification.
+- [x] 定义摘要响应的显示语义和不可用状态要求。
+- [x] 从 LOF 摘要响应中渲染四个决策支持信号和数据日期。
+- [x] 在缺失源数据时渲染 `暂缺`，而不将其视为零值或模拟数据。
+- [x] 运行 Web 构建并进行浏览器验证。

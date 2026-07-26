@@ -53,30 +53,52 @@
       </el-menu>
     </el-aside>
 
-    <el-container>
+    <el-container class="layout-content">
       <el-header class="layout-header">
         <div class="header-left">
-          <el-icon :size="20" class="collapse-btn" @click="isCollapse = !isCollapse">
+          <el-icon
+            :size="20"
+            class="collapse-btn"
+            @click="isCollapse = !isCollapse"
+          >
             <Fold v-if="!isCollapse" />
             <Expand v-else />
           </el-icon>
           <el-breadcrumb>
-            <el-breadcrumb-item :to="{ path: '/home' }">首页</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="route.meta.title">{{ route.meta.title }}</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: '/home' }"
+              >首页</el-breadcrumb-item
+            >
+            <el-breadcrumb-item v-if="route.meta.title">{{
+              route.meta.title
+            }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         <div class="header-right">
           <span v-if="appStore.lastUpdated" class="header-update">
             更新于 <TimeStamp :time="appStore.lastUpdated" :stale-after="60" />
           </span>
-          <el-tooltip :content="appStore.isDarkMode ? '切换明亮' : '切换暗黑'" placement="bottom">
-            <el-icon :size="20" class="header-action" @click="appStore.toggleDarkMode()">
+          <el-tooltip
+            :content="appStore.isDarkMode ? '切换明亮' : '切换暗黑'"
+            placement="bottom"
+          >
+            <el-icon
+              :size="20"
+              class="header-action"
+              @click="appStore.toggleDarkMode()"
+            >
               <Moon v-if="!appStore.isDarkMode" />
               <Sunny v-else />
             </el-icon>
           </el-tooltip>
         </div>
       </el-header>
+
+      <QuoteCarousel
+        v-if="quoteStore.isBarrageVisible"
+        :quotes="quotes"
+        :route-key="route.fullPath"
+        @close="quoteStore.closeBarrage()"
+      />
 
       <el-main class="layout-main">
         <router-view v-slot="{ Component }">
@@ -92,17 +114,37 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useFloatingStore } from '@/stores/floating'
-import { HomeFilled, TrendCharts, Money, Ship, StarFilled, Setting, Fold, Expand, Moon, Sunny, Coin, ChatLineRound, Document, Lock } from '@element-plus/icons-vue'
+import { useQuoteStore } from '@/stores/quote'
+import {
+  HomeFilled,
+  TrendCharts,
+  Money,
+  Ship,
+  StarFilled,
+  Setting,
+  Fold,
+  Expand,
+  Moon,
+  Sunny,
+  Coin,
+  ChatLineRound,
+  Document,
+  Lock
+} from '@element-plus/icons-vue'
 import FloatToolbar from '@/components/floating/FloatToolbar.vue'
+import QuoteCarousel from '@/components/QuoteCarousel.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
 
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
 const floatStore = useFloatingStore()
+const quoteStore = useQuoteStore()
+const { quotes } = storeToRefs(quoteStore)
 const isCollapse = ref(false)
 const isMobile = ref(false)
 const asideWidth = computed(() => {
@@ -133,15 +175,19 @@ const strategyMap = {
   '/hkipo': '港股打新',
   '/closed-end': '封闭式基金折价套利'
 }
-watch(() => route.path, (path) => {
-  for (const [prefix, name] of Object.entries(strategyMap)) {
-    if (path.startsWith(prefix)) {
-      floatStore.setStrategy(name)
-      return
+watch(
+  () => route.path,
+  (path) => {
+    for (const [prefix, name] of Object.entries(strategyMap)) {
+      if (path.startsWith(prefix)) {
+        floatStore.setStrategy(name)
+        return
+      }
     }
-  }
-  floatStore.setStrategy('')
-}, { immediate: true })
+    floatStore.setStrategy('')
+  },
+  { immediate: true }
+)
 </script>
 
 <style lang="scss" scoped>
@@ -156,6 +202,10 @@ watch(() => route.path, (path) => {
   overflow-y: auto;
   overflow-x: hidden;
   transition: width 0.3s;
+}
+
+.layout-content {
+  min-width: 0;
 }
 
 .logo {

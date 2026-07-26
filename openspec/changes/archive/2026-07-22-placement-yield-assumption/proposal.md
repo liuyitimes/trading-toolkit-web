@@ -1,28 +1,28 @@
-# Global Placement Yield Assumption
+# 全局打新收益率假设
 
-## Why
+## 动机
 
-Placement safety pads, scores, and expected profits are currently tied to an opaque fixed 20 percent listing-premium assumption or optional API values. Users cannot compare candidates under their own consistent premise, and the displayed score can contradict the displayed safety pad.
+打新安全垫、评分和预期收益当前绑定到一个不透明的固定 20% 上市溢价假设或可选的 API 值。用户无法在自己一致的前提下比较候选，且显示的评分可能与显示的安全垫矛盾。
 
-## What Changes
+## 变更内容
 
-- Add a Web-only, locally persisted expected-listing-premium assumption for convertible placement.
-- Replace API-provided expected-profit, safety-pad, score, rating, and composite-rank display values with client-derived values based on that assumption.
-- Add a placement-toolbar selector, reset control, and assumption disclosure in the list, detail dialog, and calculation tooltip.
-- Remove the obsolete detail-only premium-rate state.
+- 添加仅限 Web 的、本地持久化的可转债打新预期上市溢价假设。
+- 用基于该假设的客户端派生值替换 API 提供的预期收益、安全垫、评分、评级和综合排名显示值。
+- 在列表、详情弹窗和计算工具提示中添加打新工具栏选择器、重置控件和假设披露。
+- 移除过时的仅详情溢价率状态。
 
-## Capabilities
+## 能力
 
-### New Capabilities
+### 新增能力
 
-- `placement-yield-assumption`: A user-controlled, locally persisted placement yield assumption and its UI controls.
+- `placement-yield-assumption`：用户控制的、本地持久化的打新收益率假设及其 UI 控件。
 
-### Modified Capabilities
+### 修改能力
 
-- `convertible-bonds`: Placement expected-profit, safety-pad, score, rating, and ranking requirements become assumption-derived Web values.
+- `convertible-bonds`：打新预期收益、安全垫、评分、评级和排名需求变为基于假设的 Web 值。
 
-## Impact
+## 影响
 
-- Affects the Vue Web placement store, view, browser verification, and placement documentation.
-- Does not change APIs, API envelopes, data sources, cache policy, backend behavior, or the out-of-maintenance mini-program.
-- Rollback removes the Web parameter and restores the prior fixed comparison assumption; no user data migration or API rollback is required.
+- 影响 Vue Web 打新 store、视图、浏览器验证和打新文档。
+- 不更改 API、API 信封、数据源、缓存策略、后端行为或已停止维护的小程序。
+- 回滚移除 Web 参数并恢复之前的固定比较假设；不需要用户数据迁移或 API 回滚。

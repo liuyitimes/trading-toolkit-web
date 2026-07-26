@@ -76,17 +76,19 @@ await page.route('**/api/v1/**', async (route) => {
   }
   if (pathname.endsWith('/convertible/signals')) {
     data = {
-      double_low: [{
-        bond_name: 'Unrelated Signal',
-        bond_code: '110100',
-        stock_name: 'Signal Stock',
-        stock_code: '600100',
-        price: 100,
-        premium_rate: 5,
-        conversion_value: 95,
-        conversion_price: 10,
-        stock_price: 9.5
-      }],
+      double_low: [
+        {
+          bond_name: 'Unrelated Signal',
+          bond_code: '110100',
+          stock_name: 'Signal Stock',
+          stock_code: '600100',
+          price: 100,
+          premium_rate: 5,
+          conversion_value: 95,
+          conversion_price: 10,
+          stock_price: 9.5
+        }
+      ],
       force_redeem: [],
       discount: [],
       down_revised: []
@@ -97,13 +99,24 @@ await page.route('**/api/v1/**', async (route) => {
   if (pathname.endsWith('/market/overview')) data = { convertible_bond: {} }
   if (pathname.endsWith('/lof/list')) {
     data = {
-      items: [{
-        name: 'Unrelated LOF', code: '501000', exchange: 'sh', price: 1.1, valuation: 1,
-        premium: 10, change_pct: 1, amount: 1000, volume: 1000, limit_status: '不限'
-      }]
+      items: [
+        {
+          name: 'Unrelated LOF',
+          code: '501000',
+          exchange: 'sh',
+          price: 1.1,
+          valuation: 1,
+          premium: 10,
+          change_pct: 1,
+          amount: 1000,
+          volume: 1000,
+          limit_status: '不限'
+        }
+      ]
     }
   }
-  if (pathname.endsWith('/lof/summary')) data = { count: 1, premium_avg: 10, top_premium: 10 }
+  if (pathname.endsWith('/lof/summary'))
+    data = { count: 1, premium_avg: 10, top_premium: 10 }
 
   await route.fulfill({
     contentType: 'application/json',
@@ -119,9 +132,21 @@ try {
   assert.equal(await rows.count(), 3, 'fixed candidates should all render')
 
   const rowTexts = await rows.allTextContents()
-  assert.match(rowTexts[0], /MetricBeta/, 'higher derived score should rank first')
-  assert.match(rowTexts[1], /MetricAlpha/, 'second derived score should rank next')
-  assert.match(rowTexts[2], /MetricNoCost/, 'missing-cost candidate should remain visible')
+  assert.match(
+    rowTexts[0],
+    /MetricBeta/,
+    'higher derived score should rank first'
+  )
+  assert.match(
+    rowTexts[1],
+    /MetricAlpha/,
+    'second derived score should rank next'
+  )
+  assert.match(
+    rowTexts[2],
+    /MetricNoCost/,
+    'missing-cost candidate should remain visible'
+  )
 
   const placementMetrics = await page.evaluate(async () => {
     const { useConvertibleStore } = await import('/src/stores/convertible.js')
@@ -137,8 +162,12 @@ try {
       apiStrategyScore: item._apiStrategyScoreRaw
     }))
   })
-  const alphaMetrics = placementMetrics.find((item) => item.stockName === 'MetricAlpha')
-  const noCostMetrics = placementMetrics.find((item) => item.stockName === 'MetricNoCost')
+  const alphaMetrics = placementMetrics.find(
+    (item) => item.stockName === 'MetricAlpha'
+  )
+  const noCostMetrics = placementMetrics.find(
+    (item) => item.stockName === 'MetricNoCost'
+  )
 
   assert.deepEqual(alphaMetrics, {
     stockName: 'MetricAlpha',
@@ -162,12 +191,28 @@ try {
   })
 
   const alphaRow = rows.filter({ hasText: 'MetricAlpha' })
-  assert.match(await alphaRow.innerText(), /3\.00%/, '30% assumption should yield a 3% safety pad')
-  assert.match(await alphaRow.innerText(), /可关注/, 'derived score should override the API rating')
+  assert.match(
+    await alphaRow.innerText(),
+    /3\.00%/,
+    '30% assumption should yield a 3% safety pad'
+  )
+  assert.match(
+    await alphaRow.innerText(),
+    /可关注/,
+    'derived score should override the API rating'
+  )
 
   const noCostRow = rows.filter({ hasText: 'MetricNoCost' })
-  assert.match(await noCostRow.innerText(), /--/, 'missing cost should render safety pad as unavailable')
-  assert.match(await noCostRow.innerText(), /可关注/, 'missing cost should not inherit the API rating')
+  assert.match(
+    await noCostRow.innerText(),
+    /--/,
+    'missing cost should render safety pad as unavailable'
+  )
+  assert.match(
+    await noCostRow.innerText(),
+    /可关注/,
+    'missing cost should not inherit the API rating'
+  )
 
   await alphaRow.locator('.hover-value').first().hover()
   const formulaText = await page.locator('.formula-popper').last().innerText()
@@ -181,12 +226,19 @@ try {
     const { useConvertibleStore } = await import('/src/stores/convertible.js')
     return useConvertibleStore().placementPremiumRateOptions
   })
-  assert.deepEqual(premiumOptions, [30, 40, 50, 60, 70, 80, 90, 100], 'only approved premium options should be exposed')
+  assert.deepEqual(
+    premiumOptions,
+    [30, 40, 50, 60, 70, 80, 90, 100],
+    'only approved premium options should be exposed'
+  )
 
   const requestsBeforeChange = pendingRequestCount
   const unrelatedSignalBefore = await page.evaluate(async () => {
     const { useConvertibleStore } = await import('/src/stores/convertible.js')
-    return useConvertibleStore().signals.double_low.map((item) => ({ bondName: item.bondName, doubleLow: item.doubleLow }))
+    return useConvertibleStore().signals.double_low.map((item) => ({
+      bondName: item.bondName,
+      doubleLow: item.doubleLow
+    }))
   })
   await alphaRow.locator('td').first().click()
   await page.locator('.pending-dialog').waitFor()
@@ -194,7 +246,9 @@ try {
     const { useConvertibleStore } = await import('/src/stores/convertible.js')
     const store = useConvertibleStore()
     const changed = store.setPlacementPremiumRate(100)
-    const alpha = store.pendingList.find((item) => item.stockName === 'MetricAlpha')
+    const alpha = store.pendingList.find(
+      (item) => item.stockName === 'MetricAlpha'
+    )
     return {
       changed,
       premiumRate: store.placementPremiumRate,
@@ -205,36 +259,80 @@ try {
       saved: localStorage.getItem('convertiblePlacementPremiumRate')
     }
   })
-  assert.deepEqual(adjustedMetrics, {
-    changed: true,
-    premiumRate: 100,
-    expectedProfit: 1000,
-    safetyPad: 10,
-    strategyScore: 93,
-    strategyRating: '推荐',
-    saved: '100'
-  }, '100% should synchronously recalculate and persist placement metrics')
-  assert.equal(pendingRequestCount, requestsBeforeChange, 'changing the local assumption must not refetch placement data')
+  assert.deepEqual(
+    adjustedMetrics,
+    {
+      changed: true,
+      premiumRate: 100,
+      expectedProfit: 1000,
+      safetyPad: 10,
+      strategyScore: 93,
+      strategyRating: '推荐',
+      saved: '100'
+    },
+    '100% should synchronously recalculate and persist placement metrics'
+  )
+  assert.equal(
+    pendingRequestCount,
+    requestsBeforeChange,
+    'changing the local assumption must not refetch placement data'
+  )
   const unrelatedSignalAfter = await page.evaluate(async () => {
     const { useConvertibleStore } = await import('/src/stores/convertible.js')
-    return useConvertibleStore().signals.double_low.map((item) => ({ bondName: item.bondName, doubleLow: item.doubleLow }))
+    return useConvertibleStore().signals.double_low.map((item) => ({
+      bondName: item.bondName,
+      doubleLow: item.doubleLow
+    }))
   })
-  assert.deepEqual(unrelatedSignalAfter, unrelatedSignalBefore, 'placement-only assumption must not alter other convertible strategies')
+  assert.deepEqual(
+    unrelatedSignalAfter,
+    unrelatedSignalBefore,
+    'placement-only assumption must not alter other convertible strategies'
+  )
 
-  await page.waitForFunction(() => document.querySelector('.pending-dialog')?.textContent?.includes('1000元'))
+  await page.waitForFunction(() =>
+    document.querySelector('.pending-dialog')?.textContent?.includes('1000元')
+  )
   const detailText = await page.locator('.pending-dialog').innerText()
-  assert.match(detailText, /按 100% 假设/, 'open placement detail should disclose the active assumption')
-  assert.match(detailText, /10\.00%/, 'open placement detail should refresh its safety pad')
-  assert.match(detailText, /93\/100/, 'open placement detail should refresh its derived score')
-  assert.match(detailText, /推荐/, 'open placement detail should refresh its derived rating')
+  assert.match(
+    detailText,
+    /按 100% 假设/,
+    'open placement detail should disclose the active assumption'
+  )
+  assert.match(
+    detailText,
+    /10\.00%/,
+    'open placement detail should refresh its safety pad'
+  )
+  assert.match(
+    detailText,
+    /93\/100/,
+    'open placement detail should refresh its derived score'
+  )
+  assert.match(
+    detailText,
+    /推荐/,
+    'open placement detail should refresh its derived rating'
+  )
 
   await page.keyboard.press('Escape')
   await page.locator('.pending-dialog').waitFor({ state: 'hidden' })
   await page.setViewportSize({ width: 390, height: 844 })
   await page.locator('.mobile-cards .mobile-card').first().waitFor()
-  const mobileAlphaText = await page.locator('.mobile-cards .mobile-card').filter({ hasText: 'MetricAlpha' }).innerText()
-  assert.match(mobileAlphaText, /安全垫（100%）10\.00%/, 'mobile card should disclose the same safety-pad assumption')
-  assert.match(mobileAlphaText, /收益（100%）1000元/, 'mobile card should disclose the same expected profit')
+  const mobileAlphaText = await page
+    .locator('.mobile-cards .mobile-card')
+    .filter({ hasText: 'MetricAlpha' })
+    .innerText()
+  assert.match(
+    mobileAlphaText,
+    /安全垫（100%）10\.00%/,
+    'mobile card should disclose the same safety-pad assumption'
+  )
+  assert.match(
+    mobileAlphaText,
+    /收益（100%）1000元/,
+    'mobile card should disclose the same expected profit'
+  )
   await page.setViewportSize({ width: 1440, height: 900 })
 
   await page.reload({ waitUntil: 'networkidle' })
@@ -244,47 +342,84 @@ try {
     const store = useConvertibleStore()
     return {
       premiumRate: store.placementPremiumRate,
-      expectedProfit: store.pendingList.find((item) => item.stockName === 'MetricAlpha')._expectedProfitRaw
+      expectedProfit: store.pendingList.find(
+        (item) => item.stockName === 'MetricAlpha'
+      )._expectedProfitRaw
     }
   })
-  assert.deepEqual(reloadedMetrics, { premiumRate: 100, expectedProfit: 1000 }, 'saved assumption should restore after refresh')
+  assert.deepEqual(
+    reloadedMetrics,
+    { premiumRate: 100, expectedProfit: 1000 },
+    'saved assumption should restore after refresh'
+  )
 
   const resetMetrics = await page.evaluate(async () => {
     const { useConvertibleStore } = await import('/src/stores/convertible.js')
     const store = useConvertibleStore()
     store.resetPlacementPremiumRate()
-    const alpha = store.pendingList.find((item) => item.stockName === 'MetricAlpha')
+    const alpha = store.pendingList.find(
+      (item) => item.stockName === 'MetricAlpha'
+    )
     return {
       premiumRate: store.placementPremiumRate,
       expectedProfit: alpha._expectedProfitRaw,
       saved: localStorage.getItem('convertiblePlacementPremiumRate')
     }
   })
-  assert.deepEqual(resetMetrics, { premiumRate: 30, expectedProfit: 300, saved: '30' }, 'reset should restore and persist the default')
+  assert.deepEqual(
+    resetMetrics,
+    { premiumRate: 30, expectedProfit: 300, saved: '30' },
+    'reset should restore and persist the default'
+  )
 
-  await page.evaluate(() => localStorage.setItem('convertiblePlacementPremiumRate', '20'))
+  await page.evaluate(() =>
+    localStorage.setItem('convertiblePlacementPremiumRate', '20')
+  )
   await page.reload({ waitUntil: 'networkidle' })
   await page.locator('.desktop-table .el-table__row').first().waitFor()
   const invalidCacheMetrics = await page.evaluate(async () => {
     const { useConvertibleStore } = await import('/src/stores/convertible.js')
     const store = useConvertibleStore()
-    return { premiumRate: store.placementPremiumRate, rejected: store.setPlacementPremiumRate(-10) }
+    return {
+      premiumRate: store.placementPremiumRate,
+      rejected: store.setPlacementPremiumRate(-10)
+    }
   })
-  assert.deepEqual(invalidCacheMetrics, { premiumRate: 30, rejected: false }, 'invalid persisted or updated values should never enter placement calculations')
+  assert.deepEqual(
+    invalidCacheMetrics,
+    { premiumRate: 30, rejected: false },
+    'invalid persisted or updated values should never enter placement calculations'
+  )
 
   const lofIsolation = await page.evaluate(async () => {
     const { useConvertibleStore } = await import('/src/stores/convertible.js')
     const { useLofStore } = await import('/src/stores/lof.js')
     const lofStore = useLofStore()
     await lofStore.loadAll()
-    const before = lofStore.fundList.map((item) => ({ code: item.code, premium: item.premium, expectedProfit: item.expectedProfit }))
+    const before = lofStore.fundList.map((item) => ({
+      code: item.code,
+      premium: item.premium,
+      expectedProfit: item.expectedProfit
+    }))
     useConvertibleStore().setPlacementPremiumRate(100)
-    const after = lofStore.fundList.map((item) => ({ code: item.code, premium: item.premium, expectedProfit: item.expectedProfit }))
+    const after = lofStore.fundList.map((item) => ({
+      code: item.code,
+      premium: item.premium,
+      expectedProfit: item.expectedProfit
+    }))
     return { before, after }
   })
-  assert.deepEqual(lofIsolation.after, lofIsolation.before, 'placement-only assumption must not alter LOF data or derived results')
+  assert.deepEqual(
+    lofIsolation.after,
+    lofIsolation.before,
+    'placement-only assumption must not alter LOF data or derived results'
+  )
 
-  assert.deepEqual(browserErrors, [], 'placement rendering should not raise browser errors')
+  assert.deepEqual(
+    browserErrors,
+    [],
+    'placement rendering should not raise browser errors'
+  )
 } finally {
   await browser.close()
 }
