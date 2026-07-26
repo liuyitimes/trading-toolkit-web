@@ -40,9 +40,11 @@ This confirms short-run availability from the test network. It is not a substitu
 
 Cloudflare serves Brotli for the main JavaScript when the client advertises it. Before this change, Pages returned `Cache-Control: public, max-age=0, must-revalidate` for hashed static assets, so repeat visits unnecessarily revalidated the largest files.
 
-## Improvement Applied
+## Improvement In Rollout
 
-`public/_headers` now marks `/assets/*` as immutable for one year. Vite emits content-hashed asset filenames, so a release creates new URLs whenever their content changes. This makes the cache policy safe and improves repeat-visit performance without slowing iteration.
+`public/_headers` marks `/assets/*` as immutable for one year. Vite emits content-hashed asset filenames, so a release creates new URLs whenever their content changes. This makes the cache policy safe and improves repeat-visit performance without slowing iteration.
+
+The initial Pages deployment still returned `Cache-Control: public, max-age=0, must-revalidate`. Its log showed that `cloudflare/pages-action@v1` used deprecated Wrangler 2, which did not apply the header manifest. The workflow now explicitly uses Wrangler 4; the policy is considered applied only after the production response-header check passes.
 
 ## Remaining Performance Work
 
