@@ -8,4 +8,5 @@
 - [x] 2.1 增加统一验证命令和 CI 门禁。
 - [x] 2.2 增加 Cloudflare Pages、依赖扫描和代码扫描配置。
 - [x] 2.3 将 Cloudflare Pages 发布绑定到成功的 `main` CI，并部署该次验证提交。
-- [x] 2.4 将 WSL 交付绑定到服务测试、生产预览与同源 API 转发。
+- [x] 2.4 显式发布到 Cloudflare Pages 的 `main` 生产分支，并验证稳定生产入口已切换到构建产物。
+- [x] 2.5 将 WSL 交付绑定到服务测试、生产预览与同源 API 转发。
