@@ -280,7 +280,12 @@
                 <el-tag
                   v-if="row.regBadge"
                   size="small"
-                  :type="row.regBadgeClass === 'hot' ? 'danger' : 'warning'"
+                  :type="
+                    row.regBadgeClass === 'hot' ||
+                    row.regBadgeClass === 'expired'
+                      ? 'danger'
+                      : 'warning'
+                  "
                   effect="dark"
                   >{{ row.regBadge }}</el-tag
                 >
@@ -550,7 +555,11 @@
             <el-tag
               v-if="row.regBadge"
               size="small"
-              :type="row.regBadgeClass === 'hot' ? 'danger' : 'warning'"
+              :type="
+                row.regBadgeClass === 'hot' || row.regBadgeClass === 'expired'
+                  ? 'danger'
+                  : 'warning'
+              "
               effect="dark"
               >{{ row.regBadge }}</el-tag
             >
@@ -1073,6 +1082,17 @@
             >
               按 {{ pendingDetail.placementPremiumRate }}% 假设
             </el-tag>
+            <el-tag
+              v-if="
+                pendingDetail &&
+                pendingDetail.placementObservationState === 'expired'
+              "
+              size="small"
+              type="danger"
+              effect="dark"
+              class="dialog-sector-tag"
+              >已过期</el-tag
+            >
           </div>
           <a
             v-if="
@@ -1804,7 +1824,10 @@ import {
   RefreshLeft,
   Download
 } from '@element-plus/icons-vue'
-import { useConvertibleStore } from '@/stores/convertible'
+import {
+  comparePendingPlacementObservation,
+  useConvertibleStore
+} from '@/stores/convertible'
 import { useUserStore } from '@/stores/user'
 import TierBadge from '@/components/TierBadge.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
@@ -2090,6 +2113,8 @@ function filterPendingBySub(list, sub) {
 
 function sortPendingBy(list, field, asc) {
   const sorted = [...list].sort((a, b) => {
+    const observationDiff = comparePendingPlacementObservation(a, b)
+    if (observationDiff) return observationDiff
     let va = 0,
       vb = 0
     if (field === 'cashRatio') {
