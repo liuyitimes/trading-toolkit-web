@@ -5,7 +5,7 @@ WEB_DIR="${WEB_DIR:?WEB_DIR is required}"
 SERVICE_DIR="${SERVICE_DIR:?SERVICE_DIR is required}"
 
 cd "$SERVICE_DIR/cloudrun"
-python3 -c 'from app import app; app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)' &
+python3 -c 'from app import serve; serve()' &
 backend_pid=$!
 
 cd "$WEB_DIR"
