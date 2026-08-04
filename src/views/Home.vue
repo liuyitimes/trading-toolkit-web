@@ -49,77 +49,62 @@ const overviewCards = ref([])
 const sentiment = ref({ value: 50, level: '中性', description: '市场情绪中性' })
 const calendarEvents = ref([])
 
-onMounted(async () => {
-  try {
-    const data = await marketApi.overview()
-    // 后端返回 {convertible_bond, lof_fund, market_sentiment, fund_flow}
-    const cb = data.convertible_bond || {}
-    const lof = data.lof_fund || {}
-    overviewCards.value = [
-      {
-        title: '可转债',
-        value: cb.count || '--',
-        subtitle: '上市交易',
-        icon: 'TrendCharts',
-        color: '#409eff'
-      },
-      {
-        title: 'LOF 基金',
-        value: lof.count || '--',
-        subtitle: '套利机会',
-        icon: 'Money',
-        color: '#67c23a'
-      },
-      {
-        title: '市场温度',
-        value: cb.double_low_median != null ? cb.double_low_median : '--',
-        subtitle: cb.market_status || '当前热度',
-        icon: 'DataBoard',
-        color: '#f56c6c'
-      }
-    ]
-  } catch {
-    overviewCards.value = [
-      {
-        title: '可转债',
-        value: '--',
-        subtitle: '上市交易',
-        icon: 'TrendCharts',
-        color: '#409eff'
-      },
-      {
-        title: 'LOF 基金',
-        value: '--',
-        subtitle: '套利机会',
-        icon: 'Money',
-        color: '#67c23a'
-      },
-      {
-        title: '市场温度',
-        value: '--',
-        subtitle: '当前热度',
-        icon: 'DataBoard',
-        color: '#f56c6c'
-      }
-    ]
-  }
-
-  try {
-    const s = await marketApi.sentiment()
-    sentiment.value = {
-      value: s.value ?? 50,
-      level: s.level || '中性',
-      description: s.description || '市场情绪中性'
+function applyOverview(data) {
+  // 后端返回 {convertible_bond, lof_fund, market_sentiment, fund_flow}
+  const cb = data.convertible_bond || {}
+  const lof = data.lof_fund || {}
+  overviewCards.value = [
+    {
+      title: '可转债',
+      value: cb.count || '--',
+      subtitle: '上市交易',
+      icon: 'TrendCharts',
+      color: '#409eff'
+    },
+    {
+      title: 'LOF 基金',
+      value: lof.count || '--',
+      subtitle: '套利机会',
+      icon: 'Money',
+      color: '#67c23a'
+    },
+    {
+      title: '市场温度',
+      value: cb.double_low_median != null ? cb.double_low_median : '--',
+      subtitle: cb.market_status || '当前热度',
+      icon: 'DataBoard',
+      color: '#f56c6c'
     }
-  } catch {}
+  ]
+}
 
-  try {
-    const flow = await marketApi.fundFlow()
-    if (flow.items) {
-      calendarEvents.value = flow.items
-        .map((f) => ({ date: f.date, label: f.label || '' }))
-        .filter((f) => f.date)
-    }
-  } catch {}
+function applyUnavailableOverview() {
+  applyOverview({})
+}
+
+onMounted(() => {
+  marketApi.overview().then(applyOverview).catch(applyUnavailableOverview)
+
+  marketApi
+    .sentiment()
+    .then((s) => {
+      sentiment.value = {
+        value: s.value ?? 50,
+        level: s.level || '中性',
+        description: s.description || '市场情绪中性'
+      }
+    })
+    .catch(() => {})
+
+  marketApi
+    .fundFlow()
+    .then((flow) => {
+      if (flow.items) {
+        calendarEvents.value = flow.items
+          .map((f) => ({ date: f.date, label: f.label || '' }))
+          .filter((f) => f.date)
+      }
+    })
+    .catch(() => {})
 })
 </script>

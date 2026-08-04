@@ -16,6 +16,7 @@
     "verify:lof-market-overview": "node tests/lof-market-overview.mjs",
     "verify:lof-premium-persistence": "node tests/lof-premium-persistence.mjs",
     "verify:lof-premium-persistence-browser": "node tests/lof-premium-persistence-browser.mjs",
+    "verify:home-load-performance": "node tests/home-load-performance.mjs",
     "verify:market-browser": "node tests/market-smoke.mjs",
     "verify:quote-barrage": "node tests/quote-barrage.mjs",
     "debug:filter": "node scripts/browser/debug_filter.mjs",
