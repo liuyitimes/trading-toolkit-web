@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { lofApi } from '@/api/lof'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
+import { normalizePremiumPersistence } from '@/domains/lof/premiumPersistence'
 
 const PURCHASE_FEE = 0.15
 
@@ -12,11 +13,20 @@ function safeNum(val, def = 0) {
 
 // 成交额格式化（万元单位）
 function formatAmount(amount) {
-  if (amount == null || isNaN(amount) || amount <= 0) return { text: '--', level: '', raw: 0 }
-  if (amount >= 10000) return { text: (amount / 10000).toFixed(2) + '亿', level: 'safe', raw: amount }
-  if (amount >= 1000) return { text: amount.toFixed(2) + '万', level: 'safe', raw: amount }
-  if (amount >= 100) return { text: amount.toFixed(2) + '万', level: 'warn', raw: amount }
-  if (amount >= 10) return { text: amount.toFixed(2) + '万', level: '', raw: amount }
+  if (amount == null || isNaN(amount) || amount <= 0)
+    return { text: '--', level: '', raw: 0 }
+  if (amount >= 10000)
+    return {
+      text: (amount / 10000).toFixed(2) + '亿',
+      level: 'safe',
+      raw: amount
+    }
+  if (amount >= 1000)
+    return { text: amount.toFixed(2) + '万', level: 'safe', raw: amount }
+  if (amount >= 100)
+    return { text: amount.toFixed(2) + '万', level: 'warn', raw: amount }
+  if (amount >= 10)
+    return { text: amount.toFixed(2) + '万', level: '', raw: amount }
   return { text: amount.toFixed(0) + '元', level: 'danger', raw: amount }
 }
 
@@ -36,11 +46,14 @@ function getAdvice(item) {
 
   if (premium >= 3 && amountRaw >= 100) {
     const parts = [`当前溢价 ${premium.toFixed(2)}%，`]
-    if (consecutivePremium >= 5) parts.push(`已连续溢价 ${consecutivePremium} 天，`)
+    if (consecutivePremium >= 5)
+      parts.push(`已连续溢价 ${consecutivePremium} 天，`)
     parts.push('成交额充足。')
-    if (amountRaw < 1000) parts.push('注意流动性一般，建议 14:50 后操作以降低净值波动风险。')
+    if (amountRaw < 1000)
+      parts.push('注意流动性一般，建议 14:50 后操作以降低净值波动风险。')
     parts.push('使用一折券商(申购费 0.15%)可最大化收益。')
-    if (limitStatus === '限100') parts.push('单账户限购 100 元，可一拖六账户放大收益。')
+    if (limitStatus === '限100')
+      parts.push('单账户限购 100 元，可一拖六账户放大收益。')
     return parts.join('')
   }
 
@@ -64,7 +77,10 @@ function normalizeLofItem(raw) {
   const valuation = safeNum(raw.valuation)
   const premium = safeNum(raw.premium)
   const changePct = safeNum(raw.change_pct)
-  const consecutivePremium = raw.consecutive_premium || 0
+  const premiumPersistence = normalizePremiumPersistence(
+    raw.premium_persistence
+  )
+  const consecutivePremium = premiumPersistence.consecutivePremium
   const limitStatus = raw.limit_status || '不限'
   const exchange = raw.exchange || ''
   const code = raw.code || ''
@@ -73,12 +89,15 @@ function normalizeLofItem(raw) {
   // 成交额/成交量（后端可能缺失）
   const amountRaw = raw.amount != null ? safeNum(raw.amount) : null
   const volumeRaw = raw.volume != null ? safeNum(raw.volume) : null
-  const amountInfo = amountRaw != null ? formatAmount(amountRaw) : { text: '--', level: '', raw: 0 }
+  const amountInfo =
+    amountRaw != null
+      ? formatAmount(amountRaw)
+      : { text: '--', level: '', raw: 0 }
 
   // 价格偏离
   let spread = '--'
   if (valuation > 0) {
-    spread = ((price - valuation) / valuation * 100).toFixed(2) + '%'
+    spread = (((price - valuation) / valuation) * 100).toFixed(2) + '%'
   }
 
   // 净溢价（扣申购费 0.15%）
@@ -102,7 +121,7 @@ function normalizeLofItem(raw) {
   // 套利标记
   const canArbitrage = premium >= 3 && amountInfo.raw >= 100 && !isPaused
   const lowLiquidity = amountInfo.raw > 0 && amountInfo.raw < 10
-  const sustainedPremium = consecutivePremium >= 5
+  const sustainedPremium = consecutivePremium != null && consecutivePremium >= 5
 
   // 申购限额
   let limitAmount = null
@@ -117,6 +136,7 @@ function normalizeLofItem(raw) {
     premium,
     changePct,
     consecutivePremium,
+    ...premiumPersistence,
     limitStatus,
     amountRaw: amountInfo.raw,
     priceText: price ? price.toFixed(3) : '--',
@@ -140,7 +160,8 @@ function normalizeLofItem(raw) {
     amountLevel: amountInfo.level,
     volumeText: volumeRaw != null ? formatVolume(volumeRaw) : '--',
     // 预期收益（按1万元申购估算）= 10000 × 净溢价 / 100
-    expectedProfit: netPremium != null ? (100 * netPremium).toFixed(0) + '元' : '--',
+    expectedProfit:
+      netPremium != null ? (100 * netPremium).toFixed(0) + '元' : '--',
     isFavorite: false
   }
 
@@ -199,10 +220,12 @@ export const useLofStore = defineStore('lof', () => {
   // 从列表本地计算概览（summary 接口失败时的兜底）
   function computeSummaryFromList(list) {
     if (!list || list.length === 0) return null
-    const premiums = list.map(i => i.premium)
-    const positiveCount = premiums.filter(p => p > 0).length
-    const discountCount = premiums.filter(p => p < 0).length
-    const netPremiums = list.filter(i => i.netPremium != null).map(i => i.netPremium)
+    const premiums = list.map((i) => i.premium)
+    const positiveCount = premiums.filter((p) => p > 0).length
+    const discountCount = premiums.filter((p) => p < 0).length
+    const netPremiums = list
+      .filter((i) => i.netPremium != null)
+      .map((i) => i.netPremium)
     const totalAmount = list.reduce((sum, i) => sum + (i.amountRaw || 0), 0)
 
     return {
@@ -210,13 +233,16 @@ export const useLofStore = defineStore('lof', () => {
       premium_avg: premiums.reduce((a, b) => a + b, 0) / premiums.length,
       top_premium: Math.max(...premiums),
       positive_count: positiveCount,
-      positive_rate: Math.round(positiveCount / list.length * 1000) / 10,
+      positive_rate: Math.round((positiveCount / list.length) * 1000) / 10,
       discount_count: discountCount,
-      sustained_count: list.filter(i => i.sustainedPremium).length,
-      limited_count: list.filter(i => i.limitAmount).length,
-      paused_count: list.filter(i => i.limitStatus === '暂停').length,
-      arbitrage_count: list.filter(i => i.canArbitrage).length,
-      avg_net_premium: netPremiums.length > 0 ? netPremiums.reduce((a, b) => a + b, 0) / netPremiums.length : null,
+      sustained_count: list.filter((i) => i.sustainedPremium).length,
+      limited_count: list.filter((i) => i.limitAmount).length,
+      paused_count: list.filter((i) => i.limitStatus === '暂停').length,
+      arbitrage_count: list.filter((i) => i.canArbitrage).length,
+      avg_net_premium:
+        netPremiums.length > 0
+          ? netPremiums.reduce((a, b) => a + b, 0) / netPremiums.length
+          : null,
       total_amount: totalAmount,
       hot_direction: null,
       daily_subscription: {
@@ -252,7 +278,8 @@ export const useLofStore = defineStore('lof', () => {
             count: s.count ?? normalized.length,
             premium_avg: s.premium_avg ?? fallback?.premium_avg ?? '--',
             top_premium: s.top_premium ?? fallback?.top_premium ?? '--',
-            positive_count: s.positive_count ?? fallback?.positive_count ?? '--',
+            positive_count:
+              s.positive_count ?? fallback?.positive_count ?? '--',
             positive_rate: s.positive_rate ?? fallback?.positive_rate ?? '--',
             discount_count: fallback?.discount_count ?? 0,
             sustained_count: fallback?.sustained_count ?? 0,
@@ -262,7 +289,8 @@ export const useLofStore = defineStore('lof', () => {
             avg_net_premium: fallback?.avg_net_premium ?? null,
             total_amount: fallback?.total_amount ?? 0,
             hot_direction: s.hot_direction ?? fallback?.hot_direction ?? null,
-            daily_subscription: s.daily_subscription ?? fallback?.daily_subscription
+            daily_subscription:
+              s.daily_subscription ?? fallback?.daily_subscription
           }
         } else {
           summary.value = computeSummaryFromList(normalized)
@@ -279,15 +307,32 @@ export const useLofStore = defineStore('lof', () => {
 
   function refreshFavorites() {
     const userStore = useUserStore()
-    const favSet = new Set(userStore.favorites.filter(f => f.type === 'lof').map(f => f.code))
-    fundList.value = fundList.value.map(item => ({ ...item, isFavorite: favSet.has(item.code) }))
+    const favSet = new Set(
+      userStore.favorites.filter((f) => f.type === 'lof').map((f) => f.code)
+    )
+    fundList.value = fundList.value.map((item) => ({
+      ...item,
+      isFavorite: favSet.has(item.code)
+    }))
   }
 
   return {
-    fundList, summary, opportunities, loading, error,
-    tier, threshold, lastUpdated,
-    arbitragePredict, arbitrageLoading, arbitrageError,
-    loadList, loadOpportunities, loadAll, refreshFavorites,
-    loadArbitragePredict, clearArbitragePredict
+    fundList,
+    summary,
+    opportunities,
+    loading,
+    error,
+    tier,
+    threshold,
+    lastUpdated,
+    arbitragePredict,
+    arbitrageLoading,
+    arbitrageError,
+    loadList,
+    loadOpportunities,
+    loadAll,
+    refreshFavorites,
+    loadArbitragePredict,
+    clearArbitragePredict
   }
 })

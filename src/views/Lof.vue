@@ -245,8 +245,13 @@
       </el-table-column>
       <el-table-column label="连续溢价" width="90" align="center">
         <template #default="{ row }">
-          <span :class="{ hl: row.sustainedPremium }"
-            >{{ row.consecutivePremium }}天</span
+          <span
+            :class="{ hl: row.sustainedPremium }"
+            :title="row.consecutivePremiumReason || ''"
+            >{{ row.consecutivePremiumText }}</span
+          >
+          <span v-if="row.isPartialPremiumPersistence" class="price-sub"
+            >历史不足</span
           >
         </template>
       </el-table-column>
@@ -388,8 +393,13 @@
           </div>
           <div class="mc-metric">
             <span class="mc-label">连续溢价</span>
-            <span :class="{ hl: row.sustainedPremium }"
-              >{{ row.consecutivePremium }}天</span
+            <span
+              :class="{ hl: row.sustainedPremium }"
+              :title="row.consecutivePremiumReason || ''"
+              >{{ row.consecutivePremiumText }}</span
+            >
+            <span v-if="row.isPartialPremiumPersistence" class="price-sub"
+              >历史不足</span
             >
           </div>
           <div class="mc-metric">
@@ -511,7 +521,7 @@
               type="warning"
               size="small"
               effect="plain"
-              >连续溢价{{ row.consecutivePremium }}天</el-tag
+              >连续溢价{{ row.consecutivePremiumText }}</el-tag
             >
             <el-tag
               v-if="row.limitAmount"
@@ -596,7 +606,7 @@
             type="warning"
             size="small"
             effect="plain"
-            >连续溢价{{ row.consecutivePremium }}天</el-tag
+            >连续溢价{{ row.consecutivePremiumText }}</el-tag
           >
           <el-tag
             v-if="row.limitAmount"
@@ -783,8 +793,18 @@
               <span
                 class="detail-value"
                 :class="{ hl: detailData.sustainedPremium }"
-                >{{ detailData.consecutivePremium }}天</span
+                :title="detailData.consecutivePremiumReason || ''"
+                >{{ detailData.consecutivePremiumText }}</span
               >
+              <div v-if="detailData.consecutivePremiumReason" class="price-sub">
+                {{ detailData.consecutivePremiumReason }}
+              </div>
+              <div
+                v-if="detailData.isPartialPremiumPersistence"
+                class="price-sub"
+              >
+                历史不足
+              </div>
             </div>
           </div>
         </div>
