@@ -14,6 +14,7 @@
     "verify:placement-export": "node tests/placement-export.mjs",
     "verify:placement-browser": "node tests/verify_default_placement_metrics.mjs",
     "verify:lof-market-overview": "node tests/lof-market-overview.mjs",
+    "verify:lof-settlement": "node tests/lof-settlement-timing.mjs",
     "verify:market-browser": "node tests/market-smoke.mjs",
     "verify:quote-barrage": "node tests/quote-barrage.mjs",
     "debug:filter": "node scripts/browser/debug_filter.mjs",

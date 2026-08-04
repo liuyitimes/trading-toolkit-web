@@ -34,11 +34,11 @@
             trigger="click"
             width="260"
           >
-            <template #reference>
-              <button type="button" class="direction-evidence-btn">
+            <template #reference
+              ><button type="button" class="direction-evidence-btn">
                 查看构成
-              </button>
-            </template>
+              </button></template
+            >
             <div class="direction-constituents">
               <div
                 v-for="constituent in hotDirectionConstituents"
@@ -266,6 +266,34 @@
           <span class="expected-return">{{ row.expectedProfit }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="申/赎时效" width="190">
+        <template #default="{ row }">
+          <div class="settlement-timing">
+            <span>{{ row.settlementTiming.compactText }}</span>
+            <el-tag
+              v-if="row.settlementTiming.hasStale"
+              type="success"
+              size="small"
+              effect="plain"
+              >含陈旧时效</el-tag
+            >
+            <el-tag
+              v-if="row.settlementTiming.hasStale"
+              type="success"
+              size="small"
+              effect="plain"
+              >含陈旧时效</el-tag
+            >
+            <el-tag
+              v-if="!row.settlementTiming.isComplete"
+              type="warning"
+              size="small"
+              effect="plain"
+              >未完整核验</el-tag
+            >
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="申购状态" width="100" align="center">
         <template #default="{ row }">
           <el-tag
@@ -284,7 +312,7 @@
           <div class="tag-group">
             <el-tag
               v-if="row.canArbitrage"
-              type="success"
+              type="danger"
               size="small"
               effect="dark"
               >可套利</el-tag
@@ -396,17 +424,41 @@
             <span class="mc-label">成交额</span>
             <span :class="amountClass(row)">{{ row.amountText }}</span>
           </div>
+          <div class="mc-metric mc-settlement-timing">
+            <span class="mc-label">申/赎时效</span>
+            <span>{{ row.settlementTiming.compactText }}</span>
+          </div>
         </div>
         <div
           class="mc-tags"
-          v-if="row.canArbitrage || row.sustainedPremium || row.lowLiquidity"
+          v-if="
+            row.canArbitrage ||
+            row.sustainedPremium ||
+            row.lowLiquidity ||
+            row.settlementTiming.hasStale ||
+            !row.settlementTiming.isComplete
+          "
         >
           <el-tag
             v-if="row.canArbitrage"
-            type="success"
+            type="danger"
             size="small"
             effect="dark"
             >可套利</el-tag
+          >
+          <el-tag
+            v-if="row.settlementTiming.hasStale"
+            type="success"
+            size="small"
+            effect="plain"
+            >含陈旧时效</el-tag
+          >
+          <el-tag
+            v-if="!row.settlementTiming.isComplete"
+            type="warning"
+            size="small"
+            effect="plain"
+            >未完整核验</el-tag
           >
           <el-tag
             v-if="row.sustainedPremium"
@@ -496,6 +548,20 @@
           <span class="expected-return">{{ row.expectedProfit }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="申/赎时效" width="190">
+        <template #default="{ row }">
+          <div class="settlement-timing">
+            <span>{{ row.settlementTiming.compactText }}</span>
+            <el-tag
+              v-if="!row.settlementTiming.isComplete"
+              type="warning"
+              size="small"
+              effect="plain"
+              >未完整核验</el-tag
+            >
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="风险提示" width="220">
         <template #default="{ row }">
           <div class="tag-group">
@@ -579,11 +645,35 @@
             <span class="mc-label">预期收益</span>
             <span class="expected-return">{{ row.expectedProfit }}</span>
           </div>
+          <div class="mc-metric mc-settlement-timing">
+            <span class="mc-label">申/赎时效</span>
+            <span>{{ row.settlementTiming.compactText }}</span>
+          </div>
         </div>
         <div
           class="mc-tags"
-          v-if="row.lowLiquidity || row.sustainedPremium || row.limitAmount"
+          v-if="
+            row.lowLiquidity ||
+            row.sustainedPremium ||
+            row.limitAmount ||
+            row.settlementTiming.hasStale ||
+            !row.settlementTiming.isComplete
+          "
         >
+          <el-tag
+            v-if="row.settlementTiming.hasStale"
+            type="success"
+            size="small"
+            effect="plain"
+            >含陈旧时效</el-tag
+          >
+          <el-tag
+            v-if="!row.settlementTiming.isComplete"
+            type="warning"
+            size="small"
+            effect="plain"
+            >未完整核验</el-tag
+          >
           <el-tag
             v-if="row.lowLiquidity"
             type="danger"
@@ -641,9 +731,7 @@
           <div class="detail-grid">
             <div class="detail-item">
               <span class="detail-label">交易所</span>
-              <span class="detail-value">{{
-                detailData.exchange || '--'
-              }}</span>
+              <ExchangeBadge :exchange="detailData.exchange" />
             </div>
             <div class="detail-item">
               <span class="detail-label">涨跌幅</span>
@@ -662,9 +750,15 @@
               }}</span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">赎回规则</span>
+              <span class="detail-label">申购确认时效</span>
               <span class="detail-value">{{
-                detailData.exchange === '深' ? 'T+1可赎' : '当天可赎'
+                detailData.settlementTiming.subscriptionConfirmation.timingText
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">赎回到账时效</span>
+              <span class="detail-value">{{
+                detailData.settlementTiming.redemptionPayment.timingText
               }}</span>
             </div>
           </div>
@@ -1021,7 +1115,7 @@ const guideTextMap = {
   discount: '折价基金，可考虑持有套利（需≥7天，赎回费0.5%）。注意净值波动。',
   paused: '申购暂停的基金，无法套利。关注恢复申购后的溢价变化。',
   arbitrage:
-    '筛选可套利机会（溢价≥3%且成交额≥100万），按溢价率降序排列。注意流动性风险与限购影响。'
+    '筛选可套利机会（溢价≥3%、成交额≥100万且申购确认与赎回到账时效已核验），按溢价率降序排列。注意流动性风险与限购影响。'
 }
 
 const guideText = computed(() => guideTextMap[activeTab.value])
@@ -1103,12 +1197,12 @@ const hotDirectionAvailable = computed(() => {
     direction.constituents.length === direction.sample_count
   )
 })
-const hotDirectionConstituents = computed(() => {
-  return hotDirectionAvailable.value ? hotDirection.value.constituents : []
-})
-const hotDirectionName = computed(() => {
-  return hotDirectionAvailable.value ? hotDirection.value.name : '暂缺'
-})
+const hotDirectionConstituents = computed(() =>
+  hotDirectionAvailable.value ? hotDirection.value.constituents : []
+)
+const hotDirectionName = computed(() =>
+  hotDirectionAvailable.value ? hotDirection.value.name : '暂缺'
+)
 const hotDirectionDetail = computed(() => {
   const direction = hotDirection.value
   const coverage = Number.isInteger(direction?.unclassified_count)
@@ -1283,6 +1377,13 @@ onUnmounted(() => {
     }
   }
 
+  .settlement-timing {
+    display: grid;
+    gap: 4px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
   .market-overview {
     background: var(--el-fill-color-light);
     border: 1px solid var(--el-border-color-lighter);
@@ -1330,16 +1431,6 @@ onUnmounted(() => {
         margin-top: 2px;
         font-size: 11px;
         color: var(--text-color-secondary);
-      }
-
-      .direction-evidence-btn {
-        margin-top: 2px;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        color: var(--el-color-primary);
-        cursor: pointer;
-        font-size: 11px;
       }
     }
   }
@@ -1894,6 +1985,10 @@ onUnmounted(() => {
           color: var(--text-color-secondary);
           margin-right: 4px;
         }
+      }
+
+      .mc-settlement-timing {
+        grid-column: 1 / -1;
       }
 
       .mc-tags {
