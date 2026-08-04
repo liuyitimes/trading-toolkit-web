@@ -14,6 +14,8 @@ const pendingCandidates = [
     issue_size: 1,
     tradable_amount: 0.1,
     stock_price: 10,
+    registration_date: '2099-01-02',
+    placement_observation_state: 'eligible',
     shares_for_10_lots: 1000,
     per_share_allocation: 1,
     expected_profit: 999,
@@ -31,6 +33,7 @@ const pendingCandidates = [
     issue_size: 0.5,
     tradable_amount: 0,
     stock_price: 10,
+    placement_observation_state: 'registration_unknown',
     shares_for_10_lots: 100,
     per_share_allocation: 10,
     expected_profit: 888,
@@ -48,6 +51,8 @@ const pendingCandidates = [
     issue_size: 1,
     tradable_amount: 0.1,
     stock_price: 0,
+    registration_date: '2000-01-02',
+    placement_observation_state: 'expired',
     shares_for_10_lots: 100,
     per_share_allocation: 1,
     expected_profit: 0,
@@ -134,18 +139,23 @@ try {
   const rowTexts = await rows.allTextContents()
   assert.match(
     rowTexts[0],
-    /MetricBeta/,
-    'higher derived score should rank first'
+    /MetricAlpha/,
+    'future registration date should be first'
   )
   assert.match(
     rowTexts[1],
-    /MetricAlpha/,
-    'second derived score should rank next'
+    /MetricBeta/,
+    'unknown registration date should be second'
   )
   assert.match(
     rowTexts[2],
     /MetricNoCost/,
-    'missing-cost candidate should remain visible'
+    'expired registration date should remain visible at the end'
+  )
+  assert.match(
+    rowTexts[2],
+    /已过期/,
+    'expired candidate should be visibly labelled'
   )
 
   const placementMetrics = await page.evaluate(async () => {
@@ -159,7 +169,8 @@ try {
       strategyRating: item.strategyRating,
       apiExpectedProfit: item._apiExpectedProfitRaw,
       apiSafetyPad: item._apiSafetyPadRaw,
-      apiStrategyScore: item._apiStrategyScoreRaw
+      apiStrategyScore: item._apiStrategyScoreRaw,
+      placementObservationState: item.placementObservationState
     }))
   })
   const alphaMetrics = placementMetrics.find(
@@ -177,7 +188,8 @@ try {
     strategyRating: '可关注',
     apiExpectedProfit: 999,
     apiSafetyPad: 88,
-    apiStrategyScore: 1
+    apiStrategyScore: 1,
+    placementObservationState: 'eligible'
   })
   assert.deepEqual(noCostMetrics, {
     stockName: 'MetricNoCost',
@@ -187,7 +199,8 @@ try {
     strategyRating: '可关注',
     apiExpectedProfit: 0,
     apiSafetyPad: 0,
-    apiStrategyScore: 0
+    apiStrategyScore: 0,
+    placementObservationState: 'expired'
   })
 
   const alphaRow = rows.filter({ hasText: 'MetricAlpha' })

@@ -406,6 +406,12 @@ function normalizeBondItem(item) {
 }
 
 // 归一化待发/配售项
+function getChinaToday() {
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Shanghai'
+  }).format(new Date())
+}
+
 function normalizePendingItem(item) {
   if (!item || typeof item !== 'object') return null
   // 待发配债的来源信息只接受跨端约定的 placement_provenance 字段。
@@ -468,12 +474,22 @@ function normalizePendingItem(item) {
 
   const exchange = detectExchange(stockCode, bondCode)
 
-  // 登记日徽标：仅在申购日未过期时显示
-  const today = new Date().toISOString().slice(0, 10)
+  // 登记日状态由服务端提供；旧响应才使用登记日做兼容性回退。
+  const today = getChinaToday()
   const applyDate = item.apply_date || ''
+  const placementObservationState =
+    item.placement_observation_state ||
+    (regDate && regDate !== '--'
+      ? regDate < today
+        ? 'expired'
+        : 'eligible'
+      : 'registration_unknown')
   let regBadge = ''
   let regBadgeClass = ''
-  if (regDate && (!applyDate || applyDate >= today)) {
+  if (placementObservationState === 'expired') {
+    regBadge = '已过期'
+    regBadgeClass = 'expired'
+  } else if (regDate && (!applyDate || applyDate >= today)) {
     if (regDate === today) {
       regBadge = '今日登记'
       regBadgeClass = 'hot'
@@ -599,6 +615,13 @@ function normalizePendingItem(item) {
     regDate: regDate || '--',
     regBadge,
     regBadgeClass,
+    placementObservationState,
+    placementObservationLabel:
+      placementObservationState === 'expired'
+        ? '已过期'
+        : placementObservationState === 'registration_unknown'
+          ? '登记日未知'
+          : '可观察',
     onlineIssueSize: onlineIssueSize ? onlineIssueSize.toFixed(2) + '亿' : '--',
     winRate: winRate != null ? (winRate * 100).toFixed(3) + '%' : '--',
     riskLevel,
@@ -648,6 +671,13 @@ function normalizePendingItem(item) {
       status,
       regDate: regDate || '暂无',
       regDateRaw: regDate,
+      placementObservationState,
+      placementObservationLabel:
+        placementObservationState === 'expired'
+          ? '已过期'
+          : placementObservationState === 'registration_unknown'
+            ? '登记日未知'
+            : '可观察',
       applyDate: item.apply_date || '',
       listDate: item.list_date || '',
       progressDt: item.progress_dt || '',
@@ -720,6 +750,50 @@ function sortByBest(list, tabKey) {
   })
 }
 
+const PLACEMENT_OBSERVATION_ORDER = {
+  eligible: 0,
+  registration_unknown: 1,
+  expired: 2
+}
+
+export function comparePendingPlacementObservation(
+  a,
+  b,
+  today = getChinaToday()
+) {
+  const resolveObservationState = (item) => {
+    if (item.placementObservationState) return item.placementObservationState
+    if (!item.regDate || item.regDate === '--') return 'registration_unknown'
+    return item.regDate < today ? 'expired' : 'eligible'
+  }
+  const aState = resolveObservationState(a)
+  const bState = resolveObservationState(b)
+  const stateDiff =
+    (PLACEMENT_OBSERVATION_ORDER[aState] ?? 1) -
+    (PLACEMENT_OBSERVATION_ORDER[bState] ?? 1)
+  if (stateDiff) return stateDiff
+  if (aState === 'eligible') {
+    return String(a.regDate || '').localeCompare(String(b.regDate || ''))
+  }
+  if (aState === 'expired') {
+    return String(b.regDate || '').localeCompare(String(a.regDate || ''))
+  }
+  return 0
+}
+
+/** 按登记日观察优先级排序，保留相同日期的来源顺序。 */
+export function sortPendingPlacementItems(items, today = getChinaToday()) {
+  return [...(items || [])]
+    .map((item, index) => ({ item, index }))
+    .sort((left, right) => {
+      return (
+        comparePendingPlacementObservation(left.item, right.item, today) ||
+        left.index - right.index
+      )
+    })
+    .map(({ item }) => item)
+}
+
 function emptySignals() {
   return {
     placement: [],
@@ -737,8 +811,10 @@ export const useConvertibleStore = defineStore('convertible', () => {
   const pendingSnapshotMeta = ref(null)
   const placementPremiumRate = ref(readPlacementPremiumRate())
   const pendingList = computed(() =>
-    pendingSourceList.value.map((item) =>
-      derivePlacementItem(item, placementPremiumRate.value)
+    sortPendingPlacementItems(
+      pendingSourceList.value.map((item) =>
+        derivePlacementItem(item, placementPremiumRate.value)
+      )
     )
   )
   const temperature = ref(null)
@@ -835,27 +911,9 @@ export const useConvertibleStore = defineStore('convertible', () => {
     })
     signals.value = normalized
 
-    const today = new Date().toISOString().slice(0, 10)
     pendingSourceList.value = pendingPayload
       .map(normalizePendingItem)
       .filter(Boolean)
-      .filter((item) => isPendingPlacementVisible(item, today))
-  }
-
-  /**
-   * 配售列表可见性过滤
-   *
-   * 语义：只保留"还能参与配售"的标的，即股权登记日尚未过期的标的。
-   *   - regDate >= today → 还能登记 → 保留
-   *   - regDate <  today → 登记窗口已关闭 → 过滤
-   *   - regDate 缺失/为占位符 '--' → 当作"无登记日"，按当前数据放行
-   *
-   * 字符串日期 YYYY-MM-DD 字典序等价于日期序，可直接 < 比较
-   */
-  function isPendingPlacementVisible(item, today) {
-    const regDate = item.regDate && item.regDate !== '--' ? item.regDate : ''
-    if (regDate && regDate < today) return false
-    return true
   }
 
   function applyMarketTemp(rawSignals, overview) {
