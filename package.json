@@ -13,6 +13,7 @@
     "verify:contract": "node tests/api-contract.mjs",
     "verify:placement-export": "node tests/placement-export.mjs",
     "verify:placement-browser": "node tests/verify_default_placement_metrics.mjs",
+    "verify:lof-settlement": "node tests/lof-settlement-timing.mjs",
     "verify:market-browser": "node tests/market-smoke.mjs",
     "debug:filter": "node scripts/browser/debug_filter.mjs",
     "debug:page": "node scripts/browser/debug_page.mjs",

@@ -2,6 +2,10 @@
 
 ## Glossary
 
+### LOF 交割时效
+
+一只 LOF 从申购提交到份额确认，以及从赎回提交到资金到账所需的基金业务日规则。申购确认和赎回到账分别以 `T+n` 表示；它们必须保留当前有效的基金管理人或发行人来源，未核验时显示为暂缺。
+
 ### Placement Candidate
 
 A convertible-bond original-shareholder placement opportunity that remains relevant to a user before its registration date has passed. A candidate carries issuer terms, registration timing, source evidence, and derived decision-support metrics.
