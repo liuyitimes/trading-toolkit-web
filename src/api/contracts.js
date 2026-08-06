@@ -14,7 +14,8 @@ export const apiEndpoints = Object.freeze({
     signals: endpoint('GET', '/api/v1/convertible/signals'),
     temperature: endpoint('GET', '/api/v1/convertible/temperature'),
     detail: endpoint('GET', '/api/v1/convertible/detail/:code'),
-    pending: endpoint('GET', '/api/v1/convertible/pending')
+    pending: endpoint('GET', '/api/v1/convertible/pending'),
+    newListed: endpoint('GET', '/api/v1/convertible/new-listed')
   }),
   placement: Object.freeze({
     sync: endpoint('POST', '/api/v1/placement/sync'),

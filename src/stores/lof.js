@@ -4,6 +4,12 @@ import { lofApi } from '@/api/lof'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import { normalizeLofSettlementTiming } from '@/utils/lofSettlementTiming'
+import {
+  formatPremiumPersistenceText,
+  isSustainedPremium,
+  normalizePremiumPersistence,
+  premiumPersistenceTip
+} from '@/domain/lofPremium'
 
 const PURCHASE_FEE = 0.15
 
@@ -50,7 +56,7 @@ function getAdvice(item) {
 
   if (premium >= 3 && amountRaw >= 100) {
     const parts = [`当前溢价 ${premium.toFixed(2)}%，`]
-    if (consecutivePremium >= 5)
+    if (consecutivePremium != null && consecutivePremium >= 5)
       parts.push(`已连续溢价 ${consecutivePremium} 天，`)
     parts.push('成交额充足。')
     if (amountRaw < 1000)
@@ -81,7 +87,8 @@ function normalizeLofItem(raw) {
   const valuation = safeNum(raw.valuation)
   const premium = safeNum(raw.premium)
   const changePct = safeNum(raw.change_pct)
-  const consecutivePremium = raw.consecutive_premium || 0
+  const persistence = normalizePremiumPersistence(raw.premium_persistence)
+  const consecutivePremium = persistence ? persistence.consecutivePremium : null
   const limitStatus = raw.limit_status || '不限'
   const exchange = raw.exchange || ''
   const code = raw.code || ''
@@ -129,7 +136,7 @@ function normalizeLofItem(raw) {
     !isPaused &&
     settlementTiming.isComplete
   const lowLiquidity = amountInfo.raw > 0 && amountInfo.raw < 10
-  const sustainedPremium = consecutivePremium >= 5
+  const sustainedPremium = isSustainedPremium(persistence)
 
   // 申购限额
   let limitAmount = null
@@ -144,6 +151,14 @@ function normalizeLofItem(raw) {
     premium,
     changePct,
     consecutivePremium,
+    premiumPersistenceStatus: persistence ? persistence.status : 'unavailable',
+    premiumPersistenceReason: persistence ? persistence.reason : null,
+    premiumPersistenceAsOf: persistence ? persistence.asOf : null,
+    premiumPersistenceHistoryStartedOn: persistence
+      ? persistence.historyStartedOn
+      : null,
+    premiumPersistenceText: formatPremiumPersistenceText(persistence),
+    premiumPersistenceTip: premiumPersistenceTip(persistence),
     limitStatus,
     amountRaw: amountInfo.raw,
     priceText: price ? price.toFixed(3) : '--',

@@ -243,11 +243,22 @@
           >
         </template>
       </el-table-column>
-      <el-table-column label="连续溢价" width="90" align="center">
+      <el-table-column label="连续溢价" width="120" align="center">
         <template #default="{ row }">
-          <span :class="{ hl: row.sustainedPremium }"
-            >{{ row.consecutivePremium }}天</span
+          <el-tooltip
+            v-if="row.premiumPersistenceTip"
+            placement="top"
+            trigger="hover"
+            :show-after="120"
           >
+            <template #content>{{ row.premiumPersistenceTip }}</template>
+            <span :class="{ hl: row.sustainedPremium }">{{
+              row.premiumPersistenceText
+            }}</span>
+          </el-tooltip>
+          <span v-else :class="{ hl: row.sustainedPremium }">{{
+            row.premiumPersistenceText
+          }}</span>
         </template>
       </el-table-column>
       <el-table-column
@@ -416,9 +427,20 @@
           </div>
           <div class="mc-metric">
             <span class="mc-label">连续溢价</span>
-            <span :class="{ hl: row.sustainedPremium }"
-              >{{ row.consecutivePremium }}天</span
+            <el-tooltip
+              v-if="row.premiumPersistenceTip"
+              placement="top"
+              trigger="hover"
+              :show-after="120"
             >
+              <template #content>{{ row.premiumPersistenceTip }}</template>
+              <span :class="{ hl: row.sustainedPremium }">{{
+                row.premiumPersistenceText
+              }}</span>
+            </el-tooltip>
+            <span v-else :class="{ hl: row.sustainedPremium }">{{
+              row.premiumPersistenceText
+            }}</span>
           </div>
           <div class="mc-metric">
             <span class="mc-label">成交额</span>
@@ -874,10 +896,26 @@
             </div>
             <div class="detail-item">
               <span class="detail-label">连续溢价</span>
+              <el-tooltip
+                v-if="detailData.premiumPersistenceTip"
+                placement="top"
+                trigger="hover"
+                :show-after="120"
+              >
+                <template #content>{{
+                  detailData.premiumPersistenceTip
+                }}</template>
+                <span
+                  class="detail-value"
+                  :class="{ hl: detailData.sustainedPremium }"
+                  >{{ detailData.premiumPersistenceText }}</span
+                >
+              </el-tooltip>
               <span
+                v-else
                 class="detail-value"
                 :class="{ hl: detailData.sustainedPremium }"
-                >{{ detailData.consecutivePremium }}天</span
+                >{{ detailData.premiumPersistenceText }}</span
               >
             </div>
           </div>

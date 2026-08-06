@@ -16,5 +16,8 @@ export const convertibleApi = {
   },
   pending() {
     return api.get(apiEndpoints.convertible.pending.path)
+  },
+  newListed() {
+    return api.get(apiEndpoints.convertible.newListed.path)
   }
 }
