@@ -34,11 +34,11 @@
             trigger="click"
             width="260"
           >
-            <template #reference
-              ><button type="button" class="direction-evidence-btn">
+            <template #reference>
+              <button type="button" class="direction-evidence-btn">
                 查看构成
-              </button></template
-            >
+              </button>
+            </template>
             <div class="direction-constituents">
               <div
                 v-for="constituent in hotDirectionConstituents"
@@ -323,7 +323,7 @@
           <div class="tag-group">
             <el-tag
               v-if="row.canArbitrage"
-              type="danger"
+              type="success"
               size="small"
               effect="dark"
               >可套利</el-tag
@@ -463,7 +463,7 @@
         >
           <el-tag
             v-if="row.canArbitrage"
-            type="danger"
+            type="success"
             size="small"
             effect="dark"
             >可套利</el-tag
@@ -1235,12 +1235,12 @@ const hotDirectionAvailable = computed(() => {
     direction.constituents.length === direction.sample_count
   )
 })
-const hotDirectionConstituents = computed(() =>
-  hotDirectionAvailable.value ? hotDirection.value.constituents : []
-)
-const hotDirectionName = computed(() =>
-  hotDirectionAvailable.value ? hotDirection.value.name : '暂缺'
-)
+const hotDirectionConstituents = computed(() => {
+  return hotDirectionAvailable.value ? hotDirection.value.constituents : []
+})
+const hotDirectionName = computed(() => {
+  return hotDirectionAvailable.value ? hotDirection.value.name : '暂缺'
+})
 const hotDirectionDetail = computed(() => {
   const direction = hotDirection.value
   const coverage = Number.isInteger(direction?.unclassified_count)
@@ -1469,6 +1469,16 @@ onUnmounted(() => {
         margin-top: 2px;
         font-size: 11px;
         color: var(--text-color-secondary);
+      }
+
+      .direction-evidence-btn {
+        margin-top: 2px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--el-color-primary);
+        cursor: pointer;
+        font-size: 11px;
       }
     }
   }

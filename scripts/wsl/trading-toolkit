@@ -21,8 +21,16 @@ check_prerequisites() {
   command -v npm >/dev/null || fail "npm is required"
   command -v python3 >/dev/null || fail "python3 is required"
   command -v curl >/dev/null || fail "curl is required"
-  python3 -c 'import flask' || fail "Flask is not installed"
+  python3 -c 'import flask, pytest' || fail "Flask and pytest are required; install cloudrun/requirements-dev.txt"
   require_clean_service_code
+}
+
+verify_service() {
+  (
+    cd "$SERVICE_DIR"
+    USE_MOCK=true ENABLE_ADMIN_API=true DATABASE_URL=sqlite:////tmp/trading_toolkit_wsl_verify.db python3 cloudrun/scripts/test_api_logs.py
+    USE_MOCK=true DATABASE_URL=sqlite:////tmp/trading_toolkit_wsl_verify.db python3 -m pytest cloudrun/tests backtest/tests
+  )
 }
 
 health_check() {
@@ -44,7 +52,8 @@ deploy() {
   check_prerequisites
   cd "$WEB_DIR"
   npm ci
-  VITE_BASE_PATH=/ VITE_API_BASE_URL=http://127.0.0.1:8080 npm run build
+  VITE_BASE_PATH=/ VITE_API_BASE_URL=/ npm run build
+  verify_service
   install
   systemctl --user restart "$UNIT_NAME"
   for _ in $(seq 1 15); do health_check && break || sleep 1; done

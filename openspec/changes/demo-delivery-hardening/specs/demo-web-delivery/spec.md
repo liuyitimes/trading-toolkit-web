@@ -17,3 +17,15 @@ Web MUST 在合并到受保护主分支前通过格式检查、生产构建和�
 
 - **WHEN** 生产构建或关键验证失败
 - **THEN** 发布工作流不得部署该提交。
+
+#### Scenario: 主分支验证成功
+
+- **WHEN** `main` 上的 CI 成功完成
+- **THEN** Cloudflare Pages 工作流检出并发布该次 CI 的 `head_sha`
+- **AND THEN** 不发布 CI 期间进入 `main` 的更新提交。
+
+#### Scenario: 生产入口发布验证
+
+- **WHEN** Cloudflare Pages 上传完成
+- **THEN** 工作流必须验证 `https://trading-toolkit-web.pages.dev/` 返回 Vite 构建产物引用的 `/assets/` 文件
+  - **AND THEN** 生产入口在限定重试时间内未切换时发布失败。

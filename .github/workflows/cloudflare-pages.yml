@@ -1,15 +1,32 @@
 name: Deploy to Cloudflare Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-pages-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
+    if: >-
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: 检出已验证的提交
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -32,6 +49,7 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
       - name: Publish
+        id: publish
         if: steps.configuration.outputs.configured == 'true'
         uses: cloudflare/pages-action@v1
         with:
@@ -39,4 +57,19 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: trading-toolkit-web
           directory: dist
+          branch: main
           wranglerVersion: '4'
+      - name: 验证生产站点已切换到构建产物
+        if: steps.configuration.outputs.configured == 'true'
+        run: |
+          set -eu
+          production_url='https://trading-toolkit-web.pages.dev/'
+          for attempt in $(seq 1 18); do
+            html="$(curl --fail --silent --show-error --max-time 20 "$production_url" || true)"
+            if printf '%s' "$html" | grep -q 'src="/assets/'; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Cloudflare Pages production URL did not serve the Vite build artifact." >&2
+          exit 1

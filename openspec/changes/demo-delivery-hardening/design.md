@@ -11,6 +11,7 @@ Web 是 Cloudflare Pages 上的静态 Vue 应用，直接请求 Render 新加坡
 ## Decisions
 
 - Cloudflare Pages 凭据只通过 GitHub Secrets 提供。
+- Cloudflare Pages 工作流由成功完成的 `CI` 触发，检出 `head_sha` 并串行发布；手动发布仅允许 `main`，避免部署更新但未经 CI 验证的提交。
 - API 路径与方法集中为可导入元数据，测试不解析源码。
 - Service 矩阵以 GitHub Actions checkout 读取，不建立共享仓库或代码生成。
 
