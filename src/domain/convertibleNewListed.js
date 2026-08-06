@@ -38,6 +38,12 @@ function formatPrice(value) {
     : '--'
 }
 
+function formatIssueSize(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value.toFixed(2) + '亿'
+    : '--'
+}
+
 export function normalizeNewListedItem(item) {
   if (!item || typeof item !== 'object') return null
   const bondCode = item.bond_code || ''
@@ -48,10 +54,13 @@ export function normalizeNewListedItem(item) {
   const price = typeof item.price === 'number' ? item.price : latestClose
   const gainSinceListing =
     typeof item.gain_since_listing === 'number' ? item.gain_since_listing : null
-  const monthGain = typeof item.month_gain === 'number' ? item.month_gain : null
-  const threeDayGain =
-    typeof item.three_day_gain === 'number' ? item.three_day_gain : null
   const changePct = typeof item.change_pct === 'number' ? item.change_pct : null
+  const issueSize =
+    typeof item.issue_size === 'number' && item.issue_size > 0
+      ? item.issue_size
+      : null
+  const turnoverRate =
+    typeof item.turnover_rate === 'number' ? item.turnover_rate : null
 
   return {
     bondCode,
@@ -64,21 +73,17 @@ export function normalizeNewListedItem(item) {
     latestClose: formatPrice(latestClose),
     latestTradeDate: item.latest_trade_date || '--',
     listingClose: formatPrice(item.listing_close),
-    monthBaseClose: formatPrice(item.month_base_close),
-    threeDayPrice: formatPrice(item.three_day_price),
-    threeDayPriceDate: item.three_day_price_date || '--',
-    threeDayStage: item.three_day_stage || 0,
     gainSinceListing: formatPercent(gainSinceListing),
     _gainSinceListingRaw: gainSinceListing,
-    monthGain: formatPercent(monthGain),
-    _monthGainRaw: monthGain,
-    threeDayGain: formatPercent(threeDayGain),
-    _threeDayGainRaw: threeDayGain,
     changePct: formatPercent(changePct),
     _changePctRaw: changePct,
     premiumRate: formatPercent(item.premium_rate),
     _premiumRateRaw:
       typeof item.premium_rate === 'number' ? item.premium_rate : null,
+    issueSize: formatIssueSize(issueSize),
+    _issueSizeRaw: issueSize,
+    turnoverRate: formatPercent(turnoverRate),
+    _turnoverRateRaw: turnoverRate,
     isFavorite: false
   }
 }

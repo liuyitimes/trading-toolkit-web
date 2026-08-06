@@ -11,45 +11,34 @@ const listedDayOne = normalizeNewListedItem({
   latest_close: 126.66,
   latest_trade_date: '2026-08-03',
   listing_close: 126.66,
-  three_day_price: 126.66,
-  three_day_price_date: '2026-08-03',
-  three_day_stage: 1,
   gain_since_listing: 0,
-  month_gain: null,
-  three_day_gain: 26.66,
   change_pct: 12.34,
-  premium_rate: 18.9
+  premium_rate: 18.9,
+  issue_size: 4.5,
+  turnover_rate: 23.45
 })
 
 assert.equal(listedDayOne.exchange, '深')
-assert.equal(listedDayOne.threeDayStage, 1)
-assert.equal(listedDayOne.threeDayGain, '+26.66%')
-assert.equal(listedDayOne.threeDayPrice, '126.66')
-assert.equal(listedDayOne.monthGain, '--')
 assert.equal(listedDayOne.gainSinceListing, '+0.00%')
+assert.equal(listedDayOne.issueSize, '4.50亿')
+assert.equal(listedDayOne.turnoverRate, '+23.45%')
 
-const listedDayThree = normalizeNewListedItem({
+const listedMissingMarket = normalizeNewListedItem({
   bond_code: '113999',
-  bond_name: '三日转债',
+  bond_name: '缺失行情转债',
   stock_code: '600001',
-  stock_name: '三日股份',
+  stock_name: '缺失股份',
   list_date: '2026-07-27',
   latest_close: 132.5,
   listing_close: 121,
-  month_base_close: 118,
-  three_day_price: 130,
-  three_day_price_date: '2026-07-29',
-  three_day_stage: 3,
-  gain_since_listing: 9.5,
-  month_gain: 12.29,
-  three_day_gain: 30
+  gain_since_listing: 9.5
 })
 
-assert.equal(listedDayThree.exchange, '沪')
-assert.equal(listedDayThree.latestPrice, '132.50')
-assert.equal(listedDayThree.threeDayStage, 3)
-assert.equal(listedDayThree.threeDayGain, '+30.00%')
-assert.equal(listedDayThree.listingClose, '121.00')
-assert.equal(listedDayThree.monthBaseClose, '118.00')
+assert.equal(listedMissingMarket.exchange, '沪')
+assert.equal(listedMissingMarket.latestPrice, '132.50')
+assert.equal(listedMissingMarket.listingClose, '121.00')
+assert.equal(listedMissingMarket.issueSize, '--')
+assert.equal(listedMissingMarket.turnoverRate, '--')
+assert.equal(listedMissingMarket.gainSinceListing, '+9.50%')
 
 console.log('convertible new listed normalization tests passed')
