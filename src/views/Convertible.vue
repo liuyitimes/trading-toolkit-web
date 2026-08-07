@@ -649,6 +649,9 @@
               <div class="name-line">
                 <ExchangeBadge v-if="row.exchange" :exchange="row.exchange" />
                 <span class="bond-name">{{ row.bondName }}</span>
+                <el-tag size="small" effect="light" type="info">
+                  第{{ row.threeDayStage || '--' }}日
+                </el-tag>
               </div>
               <div class="code-line">
                 <span class="code-text">{{ row.bondCode }}</span>
@@ -671,6 +674,41 @@
             <span :class="trendClass(row._gainSinceListingRaw)">
               {{ row.gainSinceListing }}
             </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="本月" width="100" align="right">
+          <template #default="{ row }">
+            <span :class="trendClass(row._monthGainRaw)">{{
+              row.monthGain
+            }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="前三日" width="120" align="right">
+          <template #default="{ row }">
+            <el-tooltip
+              placement="top"
+              trigger="hover"
+              effect="light"
+              :show-after="120"
+              popper-class="formula-popper"
+            >
+              <template #content>
+                <div class="formula-tip">
+                  <div class="ft-formula">前三日涨幅 = 阶段价 ÷ 100 − 1</div>
+                  <div class="ft-detail">
+                    阶段价：{{ row.threeDayPrice }}（{{
+                      row.threeDayPriceDate
+                    }}）
+                  </div>
+                  <div class="ft-detail">
+                    已取上市后第 {{ row.threeDayStage || '--' }} 个交易日
+                  </div>
+                </div>
+              </template>
+              <span :class="trendClass(row._threeDayGainRaw)" @click.stop>
+                {{ row.threeDayGain }}
+              </span>
+            </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column label="剩余规模" width="110" align="right">
@@ -715,6 +753,18 @@
               <span class="mc-label">上市以来</span
               ><span :class="trendClass(row._gainSinceListingRaw)">{{
                 row.gainSinceListing
+              }}</span>
+            </div>
+            <div>
+              <span class="mc-label">本月</span
+              ><span :class="trendClass(row._monthGainRaw)">{{
+                row.monthGain
+              }}</span>
+            </div>
+            <div>
+              <span class="mc-label">前三日</span
+              ><span :class="trendClass(row._threeDayGainRaw)">{{
+                row.threeDayGain
               }}</span>
             </div>
             <div>
@@ -2033,7 +2083,7 @@ const guideMap = {
   placement:
     '抢权配售：提前买正股获配债权，百元含权越高越划算，安全垫越高越安全',
   new_listed:
-    '今年新债：观察上市以来真实涨幅、剩余规模与换手率，用于复盘新债弹性与流动性',
+    '今年新债：观察上市以来、本月、前三日涨幅、剩余规模与换手率，用于复盘新债弹性与流动性',
   double_low: '双低值越小投资价值越高，低于150可入场，低于170可关注',
   force_redeem: '溢价率低于10%且价格105-140，接近强赎触发线，关注转股套利机会',
   discount: '溢价率为负说明转债比转股便宜，可研究转股套利空间',

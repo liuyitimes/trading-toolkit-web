@@ -11,7 +11,13 @@ const listedDayOne = normalizeNewListedItem({
   latest_close: 126.66,
   latest_trade_date: '2026-08-03',
   listing_close: 126.66,
+  month_base_close: 126.66,
+  three_day_price: 126.66,
+  three_day_price_date: '2026-08-03',
+  three_day_stage: 1,
   gain_since_listing: 0,
+  month_gain: 0,
+  three_day_gain: 26.66,
   change_pct: 12.34,
   premium_rate: 18.9,
   issue_size: 4.5,
@@ -20,6 +26,11 @@ const listedDayOne = normalizeNewListedItem({
 
 assert.equal(listedDayOne.exchange, '深')
 assert.equal(listedDayOne.gainSinceListing, '+0.00%')
+assert.equal(listedDayOne.monthBaseClose, '126.66')
+assert.equal(listedDayOne.monthGain, '+0.00%')
+assert.equal(listedDayOne.threeDayStage, 1)
+assert.equal(listedDayOne.threeDayGain, '+26.66%')
+assert.equal(listedDayOne.threeDayPrice, '126.66')
 assert.equal(listedDayOne.issueSize, '4.50亿')
 assert.equal(listedDayOne.turnoverRate, '+23.45%')
 
@@ -31,12 +42,22 @@ const listedMissingMarket = normalizeNewListedItem({
   list_date: '2026-07-27',
   latest_close: 132.5,
   listing_close: 121,
-  gain_since_listing: 9.5
+  month_base_close: 118,
+  three_day_price: 130,
+  three_day_price_date: '2026-07-29',
+  three_day_stage: 3,
+  gain_since_listing: 9.5,
+  month_gain: 12.29,
+  three_day_gain: 30
 })
 
 assert.equal(listedMissingMarket.exchange, '沪')
 assert.equal(listedMissingMarket.latestPrice, '132.50')
 assert.equal(listedMissingMarket.listingClose, '121.00')
+assert.equal(listedMissingMarket.monthBaseClose, '118.00')
+assert.equal(listedMissingMarket.monthGain, '+12.29%')
+assert.equal(listedMissingMarket.threeDayStage, 3)
+assert.equal(listedMissingMarket.threeDayGain, '+30.00%')
 assert.equal(listedMissingMarket.issueSize, '--')
 assert.equal(listedMissingMarket.turnoverRate, '--')
 assert.equal(listedMissingMarket.gainSinceListing, '+9.50%')
