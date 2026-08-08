@@ -2,8 +2,12 @@ import api from './index'
 import { apiEndpoints, endpointPath } from './contracts'
 
 export const convertibleApi = {
-  list(params) {
-    return api.get(apiEndpoints.convertible.list.path, { params })
+  list(params = {}) {
+    const { pageSize, ...query } = params
+    if (pageSize !== undefined && query.page_size === undefined) {
+      query.page_size = pageSize
+    }
+    return api.get(apiEndpoints.convertible.list.path, { params: query })
   },
   signals() {
     return api.get(apiEndpoints.convertible.signals.path)

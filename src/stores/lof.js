@@ -282,45 +282,39 @@ export const useLofStore = defineStore('lof', () => {
     loading.value = true
     error.value = null
     try {
-      const [listData, summaryResult] = await Promise.allSettled([
-        lofApi.list(),
-        lofApi.summary()
-      ])
+      const summaryPromise = lofApi.summary().catch(() => null)
+      const listData = await lofApi.list()
+      const raw = listData.items || listData || []
+      const normalized = raw.map(normalizeLofItem)
+      const fallback = computeSummaryFromList(normalized)
+      fundList.value = normalized
+      summary.value = fallback
+      lastUpdated.value = new Date().toISOString()
+      useAppStore().setLastUpdated()
 
-      if (listData.status === 'fulfilled') {
-        const raw = listData.value.items || listData.value || []
-        const normalized = raw.map(normalizeLofItem)
-        fundList.value = normalized
-        lastUpdated.value = new Date().toISOString()
-        useAppStore().setLastUpdated()
-
-        if (summaryResult.status === 'fulfilled' && summaryResult.value) {
-          const s = summaryResult.value
-          const fallback = computeSummaryFromList(normalized)
+      summaryPromise
+        .then((value) => {
+          if (!value) return
           summary.value = {
-            count: s.count ?? normalized.length,
-            premium_avg: s.premium_avg ?? fallback?.premium_avg ?? '--',
-            top_premium: s.top_premium ?? fallback?.top_premium ?? '--',
+            count: value.count ?? normalized.length,
+            premium_avg: value.premium_avg ?? fallback?.premium_avg ?? '--',
+            top_premium: value.top_premium ?? fallback?.top_premium ?? '--',
             positive_count:
-              s.positive_count ?? fallback?.positive_count ?? '--',
-            positive_rate: s.positive_rate ?? fallback?.positive_rate ?? '--',
+              value.positive_count ?? fallback?.positive_count ?? '--',
+            positive_rate:
+              value.positive_rate ?? fallback?.positive_rate ?? '--',
             discount_count: fallback?.discount_count ?? 0,
             sustained_count: fallback?.sustained_count ?? 0,
             limited_count: fallback?.limited_count ?? 0,
-            paused_count: s.paused_count ?? fallback?.paused_count ?? '--',
+            paused_count: value.paused_count ?? fallback?.paused_count ?? '--',
             arbitrage_count: fallback?.arbitrage_count ?? 0,
             avg_net_premium: fallback?.avg_net_premium ?? null,
             total_amount: fallback?.total_amount ?? 0,
-            hot_direction: s.hot_direction ?? fallback?.hot_direction ?? null,
+            hot_direction: value.hot_direction ?? fallback?.hot_direction ?? null,
             daily_subscription:
-              s.daily_subscription ?? fallback?.daily_subscription
+              value.daily_subscription ?? fallback?.daily_subscription
           }
-        } else {
-          summary.value = computeSummaryFromList(normalized)
-        }
-      } else {
-        throw listData.reason
-      }
+        })
     } catch (err) {
       error.value = err?.message || '加载失败'
     } finally {

@@ -1045,6 +1045,17 @@ export const useConvertibleStore = defineStore('convertible', () => {
     marketTemp.value = counts
   }
 
+  function hasMarketTemperature(value) {
+    if (!value || typeof value !== 'object') return false
+    return [
+      'count',
+      'price_median',
+      'premium_median',
+      'double_low_median',
+      'market_status'
+    ].some((key) => value[key] !== undefined && value[key] !== null)
+  }
+
   async function loadAll() {
     loading.value = true
     error.value = null
@@ -1063,6 +1074,10 @@ export const useConvertibleStore = defineStore('convertible', () => {
         console.error('加载市场概览失败:', e)
         return null
       })
+      const temperaturePromise = convertibleApi.temperature().catch((e) => {
+        console.error('加载市场温度失败:', e)
+        return null
+      })
       const pendingPromise = convertibleApi.pending().catch((e) => {
         console.error('加载配售数据失败:', e)
         return null
@@ -1074,11 +1089,29 @@ export const useConvertibleStore = defineStore('convertible', () => {
 
       let bondItems = []
       let pendingData = []
+      let rawSignals = null
+      let overviewData = null
+      let temperatureData = null
 
-      // 信号策略不等待配售、概览、全量列表接口；慢接口返回后再补齐。
-      const rawSignals = await signalsPromise
-      applySignals(rawSignals, pendingData, bondItems)
-      applyMarketTemp(rawSignals, null)
+      function refreshMarketTemp() {
+        const overviewTemperature = overviewData?.convertible_bond
+        const preferredTemperature = hasMarketTemperature(overviewTemperature)
+          ? overviewTemperature
+          : temperatureData
+        applyMarketTemp(
+          rawSignals,
+          preferredTemperature
+            ? { convertible_bond: preferredTemperature }
+            : null
+        )
+      }
+
+      // 首屏不等待任一外部数据源；每个结果到达后独立补齐对应区域。
+      signalsPromise.then((value) => {
+        rawSignals = value
+        applySignals(rawSignals, pendingData, bondItems)
+        refreshMarketTemp()
+      })
 
       listPromise.then((bondListData) => {
         bondItems = bondListData?.items || bondListData?.data?.items || []
@@ -1102,30 +1135,13 @@ export const useConvertibleStore = defineStore('convertible', () => {
       })
 
       overviewPromise.then((overview) => {
-        applyMarketTemp(rawSignals, overview)
+        overviewData = overview
+        refreshMarketTemp()
       })
 
-      // 若 overview 未返回温度，再单独请求温度接口兜底
-      overviewPromise.then(async (overview) => {
-        if (overview?.convertible_bond) return
-        try {
-          const temp = await convertibleApi.temperature()
-          if (temp && marketTemp.value) {
-            marketTemp.value.count = temp.count ?? marketTemp.value.count
-            marketTemp.value.priceMedian =
-              temp.price_median ?? marketTemp.value.priceMedian
-            marketTemp.value.premiumMedian =
-              temp.premium_median !== undefined
-                ? temp.premium_median
-                : marketTemp.value.premiumMedian
-            marketTemp.value.doubleLowMedian =
-              temp.double_low_median ?? marketTemp.value.doubleLowMedian
-            marketTemp.value.marketStatus =
-              temp.market_status ?? marketTemp.value.marketStatus
-          }
-        } catch (e) {
-          /* ignore */
-        }
+      temperaturePromise.then((temperature) => {
+        temperatureData = temperature
+        refreshMarketTemp()
       })
       lastUpdated.value = new Date().toISOString()
       useAppStore().setLastUpdated()

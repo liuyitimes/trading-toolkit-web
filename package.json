@@ -15,6 +15,7 @@
     "verify:convertible-new-listed-browser": "node tests/convertible-new-listed-browser.mjs",
     "verify:placement-export": "node tests/placement-export.mjs",
     "verify:placement-browser": "node tests/verify_default_placement_metrics.mjs",
+    "verify:first-screen-performance": "node tests/first-screen-performance.mjs",
     "verify:lof-market-overview": "node tests/lof-market-overview.mjs",
     "verify:lof-premium-browser": "node tests/lof-premium-browser.mjs",
     "verify:lof-premium-persistence": "node tests/lof-premium-persistence.mjs",
