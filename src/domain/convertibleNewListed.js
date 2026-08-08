@@ -54,7 +54,6 @@ export function normalizeNewListedItem(item) {
   const price = typeof item.price === 'number' ? item.price : latestClose
   const gainSinceListing =
     typeof item.gain_since_listing === 'number' ? item.gain_since_listing : null
-  const monthGain = typeof item.month_gain === 'number' ? item.month_gain : null
   const threeDayGain =
     typeof item.three_day_gain === 'number' ? item.three_day_gain : null
   const changePct = typeof item.change_pct === 'number' ? item.change_pct : null
@@ -75,15 +74,11 @@ export function normalizeNewListedItem(item) {
     latestPrice: formatPrice(price),
     latestClose: formatPrice(latestClose),
     latestTradeDate: item.latest_trade_date || '--',
-    listingClose: formatPrice(item.listing_close),
-    monthBaseClose: formatPrice(item.month_base_close),
     threeDayPrice: formatPrice(item.three_day_price),
     threeDayPriceDate: item.three_day_price_date || '--',
     threeDayStage: item.three_day_stage || 0,
     gainSinceListing: formatPercent(gainSinceListing),
     _gainSinceListingRaw: gainSinceListing,
-    monthGain: formatPercent(monthGain),
-    _monthGainRaw: monthGain,
     threeDayGain: formatPercent(threeDayGain),
     _threeDayGainRaw: threeDayGain,
     changePct: formatPercent(changePct),

@@ -15,9 +15,7 @@ const newListedData = [
     latest_close: 146.72,
     latest_trade_date: '2026-08-06',
     listing_close: 146.72,
-    gain_since_listing: 0,
-    month_base_close: 146.72,
-    month_gain: 0,
+    gain_since_listing: 46.72,
     three_day_price: 146.72,
     three_day_price_date: '2026-08-06',
     three_day_stage: 1,
@@ -75,17 +73,18 @@ try {
   await page.getByRole('button', { name: '今年新债' }).click()
 
   const tableHeader = await page.locator('table').first().innerText()
-  assert.match(tableHeader, /剩余规模/, '新债表格应展示剩余规模列')
+  assert.match(tableHeader, /发行规模/, '新债表格应展示发行规模列')
   assert.match(tableHeader, /换手率/, '新债表格应展示换手率列')
-  assert.match(tableHeader, /本月/, '新债表格应展示本月列')
+  assert.match(tableHeader, /发行以来/, '新债表格应展示发行以来列')
+  assert.doesNotMatch(tableHeader, /本月/, '新债表格不应展示本月列')
   assert.match(tableHeader, /前三日/, '新债表格应展示前三日列')
 
   const firstRow = page.locator('tbody tr').first()
   const rowText = await firstRow.innerText()
-  assert.match(rowText, /80\.00亿/, '剩余规模应显示发行规模（亿元）')
+  assert.match(rowText, /80\.00亿/, '发行规模应显示发行规模（亿元）')
   assert.match(rowText, /\+24\.64%/, '换手率应显示东财换手率')
   assert.match(rowText, /第1日/, '应展示上市前三日阶段标签')
-  assert.match(rowText, /\+0\.00%/, '本月上市的新债本月涨幅应按上市日基准展示')
+  assert.match(rowText, /\+46\.72%/, '发行以来涨幅应以面值 100 元为基准展示')
   assert.match(rowText, /\+46\.72%/, '应展示前三日涨幅')
 
   await firstRow.click()

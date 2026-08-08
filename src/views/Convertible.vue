@@ -669,18 +669,11 @@
             <span class="hl">{{ row.latestPrice }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="上市以来" width="110" align="right">
+        <el-table-column label="发行以来" width="110" align="right">
           <template #default="{ row }">
             <span :class="trendClass(row._gainSinceListingRaw)">
               {{ row.gainSinceListing }}
             </span>
-          </template>
-        </el-table-column>
-        <el-table-column label="本月" width="100" align="right">
-          <template #default="{ row }">
-            <span :class="trendClass(row._monthGainRaw)">{{
-              row.monthGain
-            }}</span>
           </template>
         </el-table-column>
         <el-table-column label="前三日" width="120" align="right">
@@ -711,7 +704,7 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="剩余规模" width="110" align="right">
+        <el-table-column label="发行规模" width="110" align="right">
           <template #default="{ row }">
             <span>{{ row.issueSize }}</span>
           </template>
@@ -750,15 +743,9 @@
               ><span class="hl">{{ row.latestPrice }}</span>
             </div>
             <div>
-              <span class="mc-label">上市以来</span
+              <span class="mc-label">发行以来</span
               ><span :class="trendClass(row._gainSinceListingRaw)">{{
                 row.gainSinceListing
-              }}</span>
-            </div>
-            <div>
-              <span class="mc-label">本月</span
-              ><span :class="trendClass(row._monthGainRaw)">{{
-                row.monthGain
               }}</span>
             </div>
             <div>
@@ -768,7 +755,7 @@
               }}</span>
             </div>
             <div>
-              <span class="mc-label">剩余规模</span
+              <span class="mc-label">发行规模</span
               ><span>{{ row.issueSize }}</span>
             </div>
             <div>
@@ -2083,7 +2070,7 @@ const guideMap = {
   placement:
     '抢权配售：提前买正股获配债权，百元含权越高越划算，安全垫越高越安全',
   new_listed:
-    '今年新债：观察上市以来、本月、前三日涨幅、剩余规模与换手率，用于复盘新债弹性与流动性',
+    '今年新债：观察发行以来、前三日涨幅、发行规模与换手率，用于复盘新债弹性与流动性',
   double_low: '双低值越小投资价值越高，低于150可入场，低于170可关注',
   force_redeem: '溢价率低于10%且价格105-140，接近强赎触发线，关注转股套利机会',
   discount: '溢价率为负说明转债比转股便宜，可研究转股套利空间',
@@ -2106,8 +2093,8 @@ const strategyConditions = {
   ],
   new_listed: [
     { label: '筛选范围', value: '当前自然年上市的可转债' },
-    { label: '上市以来', value: '以上市日收盘价为基准' },
-    { label: '剩余规模', value: '取东财发行规模（亿元）' },
+    { label: '发行以来', value: '以面值 100 元为基准，实时价优先' },
+    { label: '发行规模', value: '取东财发行规模（亿元），非实时流通规模' },
     { label: '换手率', value: '取东财行情换手率（%）' }
   ],
   double_low: [
