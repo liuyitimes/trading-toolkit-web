@@ -146,6 +146,13 @@ export const PLACEMENT_PREMIUM_RATE_OPTIONS = [30, 40, 50, 60, 70, 80, 90, 100]
 export const PLACEMENT_PREMIUM_RATE_STORAGE_KEY =
   'convertiblePlacementPremiumRate'
 
+function strategyRatingFromClass(strategyRatingClass) {
+  if (strategyRatingClass === 'recommend') return '推荐'
+  if (strategyRatingClass === 'watch') return '可关注'
+  if (strategyRatingClass === 'observation') return '待核验'
+  return '谨慎'
+}
+
 function isValidPlacementPremiumRate(value) {
   return (
     Number.isInteger(value) && PLACEMENT_PREMIUM_RATE_OPTIONS.includes(value)
@@ -183,26 +190,26 @@ function calculatePlacementMetrics(item, premiumRate) {
       ? null
       : (placementTotalReturn / cost) * 100
   const issueSize = item._issueSizeRaw || 0
-  const tradableAmount = item._tradableAmountRaw || 0
+  const tradableAmount = item._tradableAmountRaw
   const issueScore = Math.max(0, 1 - issueSize / 10)
   const tradableScore =
-    issueSize > 0 ? Math.max(0, Math.min(1, 1 - tradableAmount / issueSize)) : 0
+    issueSize > 0 && tradableAmount != null
+      ? Math.max(0, Math.min(1, 1 - tradableAmount / issueSize))
+      : null
   const safetyScore = safetyPad == null ? 0 : Math.min(safetyPad / 10, 1)
-  const strategyScore = Math.round(
-    issueScore * 30 + tradableScore * 40 + safetyScore * 30
-  )
+  const strategyScore =
+    tradableScore == null
+      ? null
+      : Math.round(issueScore * 30 + tradableScore * 40 + safetyScore * 30)
   const strategyRatingClass =
-    strategyScore >= 80
-      ? 'recommend'
-      : strategyScore >= 60
-        ? 'watch'
-        : 'caution'
-  const strategyRating =
-    strategyRatingClass === 'recommend'
-      ? '推荐'
-      : strategyRatingClass === 'watch'
-        ? '可关注'
-        : '谨慎'
+    strategyScore == null
+      ? 'observation'
+      : strategyScore >= 80
+        ? 'recommend'
+        : strategyScore >= 60
+          ? 'watch'
+          : 'caution'
+  const strategyRating = strategyRatingFromClass(strategyRatingClass)
 
   return {
     expectedProfit,
@@ -466,7 +473,8 @@ function normalizePendingItem(item) {
   const progress = stripHtml(item.progress) || status
   const issueSize = item.issue_size || 0
   const rating = item.rating || ''
-  const shareholderRatio = item.shareholder_ratio || 0
+  const shareholderRatio = item.shareholder_ratio ?? null
+  const shareholderAmount = item.shareholder_amount ?? null
   const stockPrice = item.stock_price || 0
   const stockChange = item.stock_change || 0
   const conversionPrice = item.conversion_price || 0
@@ -577,14 +585,9 @@ function normalizePendingItem(item) {
   // 首日可交易量 & 策略评级（后端新增字段）
   const tradableAmount =
     item.tradable_amount != null ? item.tradable_amount.toFixed(2) + '亿' : '--'
-  const _tradableAmountRaw = item.tradable_amount ?? 0
+  const _tradableAmountRaw = item.tradable_amount ?? null
   const strategyScore = item.strategy_score ?? 0
-  const strategyRating =
-    item.strategy_rating === 'recommend'
-      ? '推荐'
-      : item.strategy_rating === 'watch'
-        ? '可关注'
-        : '谨慎'
+  const strategyRating = strategyRatingFromClass(item.strategy_rating)
   const strategyRatingClass = item.strategy_rating || 'caution'
 
   // 发行时间轴 — 复用已解析的 stageDateMap，补充申购/上市日期
@@ -632,6 +635,9 @@ function normalizePendingItem(item) {
     shareholderRatio:
       shareholderRatio != null ? shareholderRatio.toFixed(1) + '%' : '--',
     _shareholderRatioRaw: shareholderRatio,
+    shareholderAmount:
+      shareholderAmount != null ? shareholderAmount.toFixed(2) + '亿' : '--',
+    _shareholderAmountRaw: shareholderAmount,
     conversionPrice: conversionPrice ? conversionPrice.toFixed(2) : '--',
     pb: pb ? pb.toFixed(2) : '--',
     cashRatio: cashRatio != null ? cashRatio.toFixed(2) + '元' : '--',
@@ -704,6 +710,12 @@ function normalizePendingItem(item) {
     _apiSafetyPadRaw: apiSafetyPad,
     tradableAmount,
     _tradableAmountRaw,
+    placementDataStatus: item.placement_data_status || 'unavailable',
+    placementDataReason:
+      item.placement_data_reason || '等待巨潮官方配售结果公告',
+    placementAnnouncementId: item.placement_announcement_id || null,
+    placementAnnouncementDate: item.placement_announcement_date || null,
+    placementSourceUrl: item.placement_source_url || null,
     strategyScore,
     strategyRating,
     strategyRatingClass,
@@ -746,6 +758,20 @@ function normalizePendingItem(item) {
       rating: rating || '暂无',
       shareholderRatio:
         shareholderRatio != null ? shareholderRatio.toFixed(1) + '%' : '暂无',
+      shareholderAmount:
+        shareholderAmount != null
+          ? shareholderAmount.toFixed(2) + '亿元'
+          : '暂无',
+      tradableAmount:
+        _tradableAmountRaw != null
+          ? _tradableAmountRaw.toFixed(2) + '亿元'
+          : '暂无',
+      placementDataStatus: item.placement_data_status || 'unavailable',
+      placementDataReason:
+        item.placement_data_reason || '等待巨潮官方配售结果公告',
+      placementAnnouncementId: item.placement_announcement_id || null,
+      placementAnnouncementDate: item.placement_announcement_date || null,
+      placementSourceUrl: item.placement_source_url || null,
       conversionPrice: conversionPrice
         ? conversionPrice.toFixed(2) + '元'
         : '暂无',

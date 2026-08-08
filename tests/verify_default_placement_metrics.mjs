@@ -13,6 +13,11 @@ const pendingCandidates = [
     progress: '同意注册',
     issue_size: 1,
     tradable_amount: 0.1,
+    shareholder_amount: 0.9,
+    shareholder_ratio: 90,
+    placement_data_status: 'verified',
+    placement_announcement_date: '2099-01-01',
+    placement_source_url: 'https://static.cninfo.com.cn/metric-alpha.pdf',
     stock_price: 10,
     registration_date: '2099-01-02',
     placement_observation_state: 'eligible',
@@ -31,7 +36,10 @@ const pendingCandidates = [
     status: '同意注册',
     progress: '同意注册',
     issue_size: 0.5,
-    tradable_amount: 0,
+    tradable_amount: null,
+    shareholder_ratio: null,
+    placement_data_status: 'unavailable',
+    placement_data_reason: '公告已找到但未解析到原股东优先配售合计金额',
     stock_price: 10,
     placement_observation_state: 'registration_unknown',
     shares_for_10_lots: 100,
@@ -176,6 +184,19 @@ try {
   const alphaMetrics = placementMetrics.find(
     (item) => item.stockName === 'MetricAlpha'
   )
+  const alphaPlacementEvidence = await page.evaluate(async () => {
+    const { useConvertibleStore } = await import('/src/stores/convertible.js')
+    const alpha = useConvertibleStore().pendingList.find(
+      (item) => item.stockName === 'MetricAlpha'
+    )
+    return {
+      shareholderAmount: alpha.detail.shareholderAmount,
+      tradableAmount: alpha.detail.tradableAmount,
+      status: alpha.detail.placementDataStatus,
+      date: alpha.detail.placementAnnouncementDate,
+      sourceUrl: alpha.detail.placementSourceUrl
+    }
+  })
   const noCostMetrics = placementMetrics.find(
     (item) => item.stockName === 'MetricNoCost'
   )
@@ -190,6 +211,13 @@ try {
     apiSafetyPad: 88,
     apiStrategyScore: 1,
     placementObservationState: 'eligible'
+  })
+  assert.deepEqual(alphaPlacementEvidence, {
+    shareholderAmount: '0.90亿元',
+    tradableAmount: '0.10亿元',
+    status: 'verified',
+    date: '2099-01-01',
+    sourceUrl: 'https://static.cninfo.com.cn/metric-alpha.pdf'
   })
   assert.deepEqual(noCostMetrics, {
     stockName: 'MetricNoCost',
@@ -225,6 +253,18 @@ try {
     await noCostRow.innerText(),
     /可关注/,
     'missing cost should not inherit the API rating'
+  )
+
+  const unknownPlacementRow = rows.filter({ hasText: 'MetricBeta' })
+  assert.match(
+    await unknownPlacementRow.innerText(),
+    /--/,
+    'missing announcement-backed tradable amount should render as unavailable'
+  )
+  assert.match(
+    await unknownPlacementRow.innerText(),
+    /待核验/,
+    'missing announcement-backed tradable amount should not render a risk rating'
   )
 
   await alphaRow.locator('.hover-value').first().hover()
@@ -326,6 +366,25 @@ try {
     detailText,
     /推荐/,
     'open placement detail should refresh its derived rating'
+  )
+  assert.match(
+    detailText,
+    /已核验/,
+    'detail should retain the verified announcement status'
+  )
+  assert.match(
+    detailText,
+    /2099-01-01/,
+    'detail should display the announcement date'
+  )
+  assert.equal(
+    await page
+      .locator(
+        '.pending-dialog a[href="https://static.cninfo.com.cn/metric-alpha.pdf"]'
+      )
+      .count(),
+    1,
+    'detail should expose the official announcement URL'
   )
 
   await page.keyboard.press('Escape')

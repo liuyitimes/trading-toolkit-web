@@ -513,9 +513,12 @@
                       首日可交易量 =
                       <b>{{ row._tradableAmountRaw.toFixed(2) }}亿</b>
                     </div>
+                    <div class="ft-detail" v-else>
+                      等待巨潮官方公告核验原股东优先配售合计，暂无法计算
+                    </div>
                   </div>
                   <div class="ft-note">
-                    含大股东锁定6个月部分，首日可交易量越小，上市后弹性越大
+                    按原股东优先配售合计扣减，首日可交易量越小，上市后弹性越大
                   </div>
                 </div>
               </template>
@@ -1416,6 +1419,45 @@
               ><span class="detail-value">{{
                 pendingDetail.shareholderRatio
               }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">原股东配售金额</span
+              ><span class="detail-value">{{
+                pendingDetail.shareholderAmount
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">首日可交易量</span
+              ><span class="detail-value">{{
+                pendingDetail.tradableAmount
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">配售数据状态</span
+              ><span class="detail-value">{{
+                pendingDetail.placementDataStatus === 'verified'
+                  ? '已核验'
+                  : pendingDetail.placementDataReason
+              }}</span>
+            </div>
+            <div
+              class="detail-item"
+              v-if="pendingDetail.placementAnnouncementDate"
+            >
+              <span class="detail-label">核验公告日</span
+              ><span class="detail-value">{{
+                pendingDetail.placementAnnouncementDate
+              }}</span>
+            </div>
+            <div class="detail-item" v-if="pendingDetail.placementSourceUrl">
+              <span class="detail-label">公告来源</span
+              ><a
+                class="detail-value"
+                :href="pendingDetail.placementSourceUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                >巨潮官方公告</a
+              >
             </div>
             <div class="detail-item">
               <span class="detail-label">股权登记日</span
