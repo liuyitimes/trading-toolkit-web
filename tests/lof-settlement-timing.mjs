@@ -35,6 +35,19 @@ const staleSettlement = {
   }
 }
 
+const verifiedMinimumOrder = {
+  subscription: {
+    status: 'verified',
+    display_text: '1000 元',
+    source: verifiedSettlement.subscription_confirmation.source
+  },
+  redemption: {
+    status: 'verified',
+    display_text: '100 份',
+    source: verifiedSettlement.redemption_payment.source
+  }
+}
+
 const listItems = [
   {
     name: '时效核验 LOF',
@@ -47,7 +60,12 @@ const listItems = [
     amount: 1000,
     volume: 1000,
     limit_status: '不限',
-    execution: { settlement_timing: verifiedSettlement }
+    subscription_open: true,
+    trade_path_verified: true,
+    execution: {
+      settlement_timing: verifiedSettlement,
+      minimum_order: verifiedMinimumOrder
+    }
   },
   {
     name: '陈旧时效 LOF',
@@ -132,7 +150,8 @@ const detail = {
     custody_transfer: true,
     expected_sell_date: '2026-08-08',
     trade_path_verified: false,
-    settlement_timing: staleSettlement
+    settlement_timing: staleSettlement,
+    minimum_order: verifiedMinimumOrder
   },
   holdings: { available: false, reason: '暂无持仓披露' },
   volatility: {
@@ -197,8 +216,13 @@ try {
     .filter({ hasText: '时效核验 LOF' })
   assert.match(
     await verifiedRow.innerText(),
-    /申 T\+1 个工作日 \/ 赎 T\+2 个工作日/,
+    /申 T\+1 个工作日[\s\S]*赎 T\+2 个工作日/,
     'desktop list should show the service timings'
+  )
+  assert.match(
+    await verifiedRow.innerText(),
+    /申 1000 元[\s\S]*赎 100 份/,
+    'desktop list should preserve the minimum amount and share units'
   )
 
   const legacyRow = page
@@ -206,7 +230,7 @@ try {
     .filter({ hasText: '旧接口 LOF' })
   assert.match(
     await legacyRow.innerText(),
-    /暂缺/,
+    /--/,
     'legacy list responses should explicitly show unavailable timings'
   )
 
@@ -224,7 +248,7 @@ try {
     .filter({ hasText: '无来源 LOF' })
   assert.match(
     await missingEvidenceRow.innerText(),
-    /暂缺/,
+    /--/,
     'verified status without evidence must degrade to unavailable'
   )
 
@@ -235,7 +259,7 @@ try {
   await arbitrageRow.waitFor()
   assert.match(
     await arbitrageRow.innerText(),
-    /申 T\+1 个工作日 \/ 赎 T\+2 个工作日/,
+    /申 T\+1 个工作日[\s\S]*赎 T\+2 个工作日/,
     'arbitrage table should show verified timings'
   )
   assert.equal(
@@ -256,7 +280,7 @@ try {
     .innerText()
   assert.match(
     mobileText,
-    /申 T\+1 个工作日 \/ 赎 T\+2 个工作日/,
+    /申 T\+1 个工作日 \/ 赎 T\+2 个工作日[\s\S]*申 1000 元 \/ 赎 100 份/,
     'mobile cards should show the same service timings'
   )
   const mobileStaleText = await page
@@ -294,13 +318,21 @@ try {
     /核验时间 2026-08-05/,
     'detail should disclose verification time'
   )
+  assert.match(
+    detailText,
+    /最低申购[\s\S]*1000 元[\s\S]*最低赎回[\s\S]*100 份/,
+    'detail should preserve the minimum amount and share units'
+  )
   assert.doesNotMatch(
     detailText,
     /当天可赎|T\+1可赎/,
     'detail must not infer an exchange redemption rule'
   )
 
-  const source = page.getByRole('link', { name: '基金招募说明书' })
+  const source = page
+    .locator('dd.timing-evidence')
+    .filter({ hasText: 'T+1 个工作日' })
+    .getByRole('link', { name: '基金招募说明书' })
   assert.equal(
     await source.getAttribute('href'),
     'https://example.com/prospectus',
@@ -322,7 +354,7 @@ try {
   )
   assert.match(
     partialDetailText,
-    /赎回到账时效[\s\S]*暂缺/,
+    /赎回到账时效[\s\S]*--/,
     'unavailable timing text should not be displayed'
   )
   assert.match(
@@ -336,12 +368,12 @@ try {
   const legacyDetailText = await page.locator('.evidence-list').innerText()
   assert.match(
     legacyDetailText,
-    /申购确认时效[\s\S]*暂缺/,
+    /申购确认时效[\s\S]*--/,
     'legacy detail should show unavailable subscription timing'
   )
   assert.match(
     legacyDetailText,
-    /赎回到账时效[\s\S]*暂缺/,
+    /赎回到账时效[\s\S]*--/,
     'legacy detail should show unavailable redemption timing'
   )
   assert.doesNotMatch(

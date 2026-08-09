@@ -280,13 +280,14 @@
       <el-table-column label="申/赎时效" width="190">
         <template #default="{ row }">
           <div class="settlement-timing">
-            <span>{{ row.settlementTiming.compactText }}</span>
-            <el-tag
-              v-if="row.settlementTiming.hasStale"
-              type="success"
-              size="small"
-              effect="plain"
-              >含陈旧时效</el-tag
+            <span
+              >申
+              {{
+                row.settlementTiming.subscriptionConfirmation.timingText
+              }}</span
+            >
+            <span
+              >赎 {{ row.settlementTiming.redemptionPayment.timingText }}</span
             >
             <el-tag
               v-if="row.settlementTiming.hasStale"
@@ -302,6 +303,14 @@
               effect="plain"
               >未完整核验</el-tag
             >
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="最低申/赎" width="128">
+        <template #default="{ row }">
+          <div class="settlement-timing">
+            <span>申 {{ row.minimumOrder.subscription.displayText }}</span>
+            <span>赎 {{ row.minimumOrder.redemption.displayText }}</span>
           </div>
         </template>
       </el-table-column>
@@ -450,6 +459,10 @@
             <span class="mc-label">申/赎时效</span>
             <span>{{ row.settlementTiming.compactText }}</span>
           </div>
+          <div class="mc-metric mc-settlement-timing">
+            <span class="mc-label">最低申/赎</span>
+            <span>{{ row.minimumOrder.compactText }}</span>
+          </div>
         </div>
         <div
           class="mc-tags"
@@ -573,7 +586,15 @@
       <el-table-column label="申/赎时效" width="190">
         <template #default="{ row }">
           <div class="settlement-timing">
-            <span>{{ row.settlementTiming.compactText }}</span>
+            <span
+              >申
+              {{
+                row.settlementTiming.subscriptionConfirmation.timingText
+              }}</span
+            >
+            <span
+              >赎 {{ row.settlementTiming.redemptionPayment.timingText }}</span
+            >
             <el-tag
               v-if="!row.settlementTiming.isComplete"
               type="warning"
@@ -581,6 +602,14 @@
               effect="plain"
               >未完整核验</el-tag
             >
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="最低申/赎" width="128">
+        <template #default="{ row }">
+          <div class="settlement-timing">
+            <span>申 {{ row.minimumOrder.subscription.displayText }}</span>
+            <span>赎 {{ row.minimumOrder.redemption.displayText }}</span>
           </div>
         </template>
       </el-table-column>
@@ -670,6 +699,10 @@
           <div class="mc-metric mc-settlement-timing">
             <span class="mc-label">申/赎时效</span>
             <span>{{ row.settlementTiming.compactText }}</span>
+          </div>
+          <div class="mc-metric mc-settlement-timing">
+            <span class="mc-label">最低申/赎</span>
+            <span>{{ row.minimumOrder.compactText }}</span>
           </div>
         </div>
         <div

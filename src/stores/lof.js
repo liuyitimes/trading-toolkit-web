@@ -3,7 +3,10 @@ import { ref } from 'vue'
 import { lofApi } from '@/api/lof'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
-import { normalizeLofSettlementTiming } from '@/utils/lofSettlementTiming'
+import {
+  normalizeLofMinimumOrder,
+  normalizeLofSettlementTiming
+} from '@/utils/lofSettlementTiming'
 import {
   formatPremiumPersistenceText,
   isSustainedPremium,
@@ -96,6 +99,7 @@ function normalizeLofItem(raw) {
   const settlementTiming = normalizeLofSettlementTiming(
     raw.execution?.settlement_timing
   )
+  const minimumOrder = normalizeLofMinimumOrder(raw.execution?.minimum_order)
 
   // 成交额/成交量（后端可能缺失）
   const amountRaw = raw.amount != null ? safeNum(raw.amount) : null
@@ -134,7 +138,9 @@ function normalizeLofItem(raw) {
     premium >= 3 &&
     amountInfo.raw >= 100 &&
     !isPaused &&
-    settlementTiming.isComplete
+    settlementTiming.isComplete &&
+    raw.subscription_open === true &&
+    raw.trade_path_verified === true
   const lowLiquidity = amountInfo.raw > 0 && amountInfo.raw < 10
   const sustainedPremium = isSustainedPremium(persistence)
 
@@ -182,6 +188,7 @@ function normalizeLofItem(raw) {
     amountLevel: amountInfo.level,
     volumeText: volumeRaw != null ? formatVolume(volumeRaw) : '--',
     settlementTiming,
+    minimumOrder,
     // 预期收益（按1万元申购估算）= 10000 × 净溢价 / 100
     expectedProfit:
       netPremium != null ? (100 * netPremium).toFixed(0) + '元' : '--',
@@ -292,29 +299,27 @@ export const useLofStore = defineStore('lof', () => {
       lastUpdated.value = new Date().toISOString()
       useAppStore().setLastUpdated()
 
-      summaryPromise
-        .then((value) => {
-          if (!value) return
-          summary.value = {
-            count: value.count ?? normalized.length,
-            premium_avg: value.premium_avg ?? fallback?.premium_avg ?? '--',
-            top_premium: value.top_premium ?? fallback?.top_premium ?? '--',
-            positive_count:
-              value.positive_count ?? fallback?.positive_count ?? '--',
-            positive_rate:
-              value.positive_rate ?? fallback?.positive_rate ?? '--',
-            discount_count: fallback?.discount_count ?? 0,
-            sustained_count: fallback?.sustained_count ?? 0,
-            limited_count: fallback?.limited_count ?? 0,
-            paused_count: value.paused_count ?? fallback?.paused_count ?? '--',
-            arbitrage_count: fallback?.arbitrage_count ?? 0,
-            avg_net_premium: fallback?.avg_net_premium ?? null,
-            total_amount: fallback?.total_amount ?? 0,
-            hot_direction: value.hot_direction ?? fallback?.hot_direction ?? null,
-            daily_subscription:
-              value.daily_subscription ?? fallback?.daily_subscription
-          }
-        })
+      summaryPromise.then((value) => {
+        if (!value) return
+        summary.value = {
+          count: value.count ?? normalized.length,
+          premium_avg: value.premium_avg ?? fallback?.premium_avg ?? '--',
+          top_premium: value.top_premium ?? fallback?.top_premium ?? '--',
+          positive_count:
+            value.positive_count ?? fallback?.positive_count ?? '--',
+          positive_rate: value.positive_rate ?? fallback?.positive_rate ?? '--',
+          discount_count: fallback?.discount_count ?? 0,
+          sustained_count: fallback?.sustained_count ?? 0,
+          limited_count: fallback?.limited_count ?? 0,
+          paused_count: value.paused_count ?? fallback?.paused_count ?? '--',
+          arbitrage_count: fallback?.arbitrage_count ?? 0,
+          avg_net_premium: fallback?.avg_net_premium ?? null,
+          total_amount: fallback?.total_amount ?? 0,
+          hot_direction: value.hot_direction ?? fallback?.hot_direction ?? null,
+          daily_subscription:
+            value.daily_subscription ?? fallback?.daily_subscription
+        }
+      })
     } catch (err) {
       error.value = err?.message || '加载失败'
     } finally {

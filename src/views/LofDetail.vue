@@ -253,6 +253,68 @@
                 >
               </dd>
             </div>
+            <div>
+              <dt>最低申购</dt>
+              <dd class="timing-evidence">
+                <span>{{ minimumOrder.subscription.displayText }}</span>
+                <el-tag
+                  :type="settlementTagType(minimumOrder.subscription.status)"
+                  size="small"
+                  effect="plain"
+                  >{{ minimumOrder.subscription.statusText }}</el-tag
+                >
+                <a
+                  v-if="minimumOrder.subscription.source?.url"
+                  :href="minimumOrder.subscription.source.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ minimumOrder.subscription.source.title || '查看来源' }}</a
+                >
+                <span v-if="minimumOrder.subscription.source"
+                  >生效日期
+                  {{
+                    dateText(minimumOrder.subscription.source.effectiveDate)
+                  }}</span
+                >
+                <span v-if="minimumOrder.subscription.source"
+                  >核验时间
+                  {{
+                    dateText(minimumOrder.subscription.source.verifiedAt)
+                  }}</span
+                >
+              </dd>
+            </div>
+            <div>
+              <dt>最低赎回</dt>
+              <dd class="timing-evidence">
+                <span>{{ minimumOrder.redemption.displayText }}</span>
+                <el-tag
+                  :type="settlementTagType(minimumOrder.redemption.status)"
+                  size="small"
+                  effect="plain"
+                  >{{ minimumOrder.redemption.statusText }}</el-tag
+                >
+                <a
+                  v-if="minimumOrder.redemption.source?.url"
+                  :href="minimumOrder.redemption.source.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ minimumOrder.redemption.source.title || '查看来源' }}</a
+                >
+                <span v-if="minimumOrder.redemption.source"
+                  >生效日期
+                  {{
+                    dateText(minimumOrder.redemption.source.effectiveDate)
+                  }}</span
+                >
+                <span v-if="minimumOrder.redemption.source"
+                  >核验时间
+                  {{
+                    dateText(minimumOrder.redemption.source.verifiedAt)
+                  }}</span
+                >
+              </dd>
+            </div>
           </dl>
         </div>
       </section>
@@ -342,6 +404,7 @@ import { useUserStore } from '@/stores/user'
 import ExchangeBadge from '@/components/ExchangeBadge.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
 import { normalizeLofSettlementTiming } from '@/utils/lofSettlementTiming'
+import { normalizeLofMinimumOrder } from '@/utils/lofSettlementTiming'
 
 const route = useRoute()
 const router = useRouter()
@@ -355,6 +418,9 @@ const isFavorite = computed(() =>
 const history = computed(() => d.value?.premium?.observations || [])
 const settlementTiming = computed(() =>
   normalizeLofSettlementTiming(d.value?.execution?.settlement_timing)
+)
+const minimumOrder = computed(() =>
+  normalizeLofMinimumOrder(d.value?.execution?.minimum_order)
 )
 const executionPathVerified = computed(() =>
   Boolean(
