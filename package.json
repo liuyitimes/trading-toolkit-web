@@ -44,7 +44,7 @@
     "@vitejs/plugin-vue": "^6.0.7",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
-    "playwright": "^1.61.1",
+    "playwright": "^1.62.1",
     "prettier": "^3.9.5",
     "vite": "^8.1.1"
   }
