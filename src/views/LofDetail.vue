@@ -396,11 +396,12 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, ref, onMounted } from 'vue'
+import { computed, defineComponent, h, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Star, StarFilled } from '@element-plus/icons-vue'
 import { lofApi } from '@/api/lof'
 import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
 import ExchangeBadge from '@/components/ExchangeBadge.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
 import { normalizeLofSettlementTiming } from '@/utils/lofSettlementTiming'
@@ -409,6 +410,7 @@ import { normalizeLofMinimumOrder } from '@/utils/lofSettlementTiming'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const appStore = useAppStore()
 const detail = ref(null)
 const loading = ref(true)
 const d = computed(() => detail.value)
@@ -480,14 +482,31 @@ const zeroLine = computed(() => {
   return 140 - ((0 - min) / (max - min || 1)) * 130
 })
 
-onMounted(async () => {
+async function loadDetail({ refresh = false } = {}) {
+  loading.value = true
   try {
-    detail.value = await lofApi.detail(route.params.code)
+    detail.value = await lofApi.detail(
+      route.params.code,
+      refresh ? { refresh: true } : {}
+    )
+    if (detail.value) appStore.setLastUpdated()
+    return Boolean(detail.value)
   } catch {
-    detail.value = null
+    if (!detail.value) detail.value = null
+    return false
   } finally {
     loading.value = false
   }
+}
+
+let unregisterRefresh
+onMounted(() => {
+  unregisterRefresh = appStore.registerPageRefresh(route.path, loadDetail)
+  loadDetail()
+})
+
+onUnmounted(() => {
+  unregisterRefresh?.()
 })
 
 function toggleFavorite() {

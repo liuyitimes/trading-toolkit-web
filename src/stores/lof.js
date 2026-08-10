@@ -285,20 +285,18 @@ export const useLofStore = defineStore('lof', () => {
     }
   }
 
-  async function loadAll() {
+  async function loadAll({ refresh = false } = {}) {
     loading.value = true
     error.value = null
     try {
-      const summaryPromise = lofApi.summary().catch(() => null)
-      const listData = await lofApi.list()
+      const requestParams = refresh ? { refresh: true } : {}
+      const summaryPromise = lofApi.summary(requestParams).catch(() => null)
+      const listData = await lofApi.list(requestParams)
       const raw = listData.items || listData || []
       const normalized = raw.map(normalizeLofItem)
       const fallback = computeSummaryFromList(normalized)
       fundList.value = normalized
       summary.value = fallback
-      lastUpdated.value = new Date().toISOString()
-      useAppStore().setLastUpdated()
-
       summaryPromise.then((value) => {
         if (!value) return
         summary.value = {
@@ -320,8 +318,14 @@ export const useLofStore = defineStore('lof', () => {
             value.daily_subscription ?? fallback?.daily_subscription
         }
       })
+      const summaryValue = refresh ? await summaryPromise : null
+      if (refresh && !summaryValue) return false
+      lastUpdated.value = new Date().toISOString()
+      useAppStore().setLastUpdated()
+      return true
     } catch (err) {
       error.value = err?.message || '加载失败'
+      return false
     } finally {
       loading.value = false
     }

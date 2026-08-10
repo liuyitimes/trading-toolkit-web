@@ -9,19 +9,21 @@ export const convertibleApi = {
     }
     return api.get(apiEndpoints.convertible.list.path, { params: query })
   },
-  signals() {
-    return api.get(apiEndpoints.convertible.signals.path)
+  signals(params = {}) {
+    return api.get(apiEndpoints.convertible.signals.path, { params })
   },
-  temperature() {
-    return api.get(apiEndpoints.convertible.temperature.path)
+  temperature(params = {}) {
+    return api.get(apiEndpoints.convertible.temperature.path, { params })
   },
-  detail(code) {
-    return api.get(endpointPath(apiEndpoints.convertible.detail, { code }))
+  detail(code, params = {}) {
+    return api.get(endpointPath(apiEndpoints.convertible.detail, { code }), {
+      params
+    })
   },
-  pending() {
-    return api.get(apiEndpoints.convertible.pending.path)
+  pending(params = {}) {
+    return api.get(apiEndpoints.convertible.pending.path, { params })
   },
-  newListed() {
-    return api.get(apiEndpoints.convertible.newListed.path)
+  newListed(params = {}) {
+    return api.get(apiEndpoints.convertible.newListed.path, { params })
   }
 }

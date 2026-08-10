@@ -1056,36 +1056,45 @@ export const useConvertibleStore = defineStore('convertible', () => {
     ].some((key) => value[key] !== undefined && value[key] !== null)
   }
 
-  async function loadAll() {
+  async function loadAll({ refresh = false } = {}) {
     loading.value = true
     error.value = null
     try {
-      const signalsPromise = convertibleApi.signals().catch((e) => {
-        console.error('加载信号失败:', e)
-        return null
-      })
+      const requestParams = refresh ? { refresh: true } : {}
+      const signalsPromise = convertibleApi
+        .signals(requestParams)
+        .catch((e) => {
+          console.error('加载信号失败:', e)
+          return null
+        })
       const listPromise = convertibleApi
-        .list({ page: 1, pageSize: 500 })
+        .list({ page: 1, pageSize: 500, ...requestParams })
         .catch((e) => {
           console.error('加载转债列表失败:', e)
           return null
         })
-      const overviewPromise = marketApi.overview().catch((e) => {
+      const overviewPromise = marketApi.overview(requestParams).catch((e) => {
         console.error('加载市场概览失败:', e)
         return null
       })
-      const temperaturePromise = convertibleApi.temperature().catch((e) => {
-        console.error('加载市场温度失败:', e)
-        return null
-      })
-      const pendingPromise = convertibleApi.pending().catch((e) => {
-        console.error('加载配售数据失败:', e)
-        return null
-      })
-      const newListedPromise = convertibleApi.newListed().catch((e) => {
-        console.error('加载今年新债失败:', e)
-        return null
-      })
+      const temperaturePromise = convertibleApi
+        .temperature(requestParams)
+        .catch((e) => {
+          console.error('加载市场温度失败:', e)
+          return null
+        })
+      const pendingPromise = convertibleApi
+        .pending(requestParams)
+        .catch((e) => {
+          console.error('加载配售数据失败:', e)
+          return null
+        })
+      const newListedPromise = convertibleApi
+        .newListed(requestParams)
+        .catch((e) => {
+          console.error('加载今年新债失败:', e)
+          return null
+        })
 
       let bondItems = []
       let pendingData = []
@@ -1108,22 +1117,26 @@ export const useConvertibleStore = defineStore('convertible', () => {
 
       // 首屏不等待任一外部数据源；每个结果到达后独立补齐对应区域。
       signalsPromise.then((value) => {
+        if (value === null) return
         rawSignals = value
         applySignals(rawSignals, pendingData, bondItems)
         refreshMarketTemp()
       })
 
       listPromise.then((bondListData) => {
+        if (!bondListData) return
         bondItems = bondListData?.items || bondListData?.data?.items || []
         applySignals(rawSignals, pendingData, bondItems)
       })
 
       pendingPromise.then((pending) => {
+        if (pending === null) return
         pendingData = pending
         applySignals(rawSignals, pendingData, bondItems)
       })
 
       newListedPromise.then((payload) => {
+        if (payload === null) return
         const arr = Array.isArray(payload)
           ? payload
           : Array.isArray(payload?.items)
@@ -1135,18 +1148,33 @@ export const useConvertibleStore = defineStore('convertible', () => {
       })
 
       overviewPromise.then((overview) => {
+        if (!overview) return
         overviewData = overview
         refreshMarketTemp()
       })
 
       temperaturePromise.then((temperature) => {
+        if (!temperature) return
         temperatureData = temperature
         refreshMarketTemp()
       })
+      if (refresh) {
+        const results = await Promise.all([
+          signalsPromise,
+          listPromise,
+          overviewPromise,
+          temperaturePromise,
+          pendingPromise,
+          newListedPromise
+        ])
+        if (results.some((value) => value === null)) return false
+      }
       lastUpdated.value = new Date().toISOString()
       useAppStore().setLastUpdated()
+      return true
     } catch (err) {
       error.value = err?.message || '加载失败'
+      return false
     } finally {
       loading.value = false
     }

@@ -1415,11 +1415,13 @@ function rowClassName({ row }) {
 }
 
 let mql
+let unregisterRefresh
 function updateMobile(e) {
   isMobile.value = e.matches
 }
 
 onMounted(() => {
+  unregisterRefresh = appStore.registerPageRefresh('/lof', store.loadAll)
   store.loadAll()
   mql = window.matchMedia('(max-width: 768px)')
   isMobile.value = mql.matches
@@ -1431,6 +1433,7 @@ onActivated(() => {
 })
 
 onUnmounted(() => {
+  unregisterRefresh?.()
   if (mql) mql.removeEventListener('change', updateMobile)
 })
 </script>

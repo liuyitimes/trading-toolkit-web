@@ -5,16 +5,18 @@ export const hkipoApi = {
   sync() {
     return api.post(apiEndpoints.hkipo.sync.path)
   },
-  list() {
-    return api.get(apiEndpoints.hkipo.list.path)
+  list(params = {}) {
+    return api.get(apiEndpoints.hkipo.list.path, { params })
   },
-  upcoming() {
-    return api.get(apiEndpoints.hkipo.upcoming.path)
+  upcoming(params = {}) {
+    return api.get(apiEndpoints.hkipo.upcoming.path, { params })
   },
-  summary() {
-    return api.get(apiEndpoints.hkipo.summary.path)
+  summary(params = {}) {
+    return api.get(apiEndpoints.hkipo.summary.path, { params })
   },
-  detail(code) {
-    return api.get(endpointPath(apiEndpoints.hkipo.detail, { code }))
+  detail(code, params = {}) {
+    return api.get(endpointPath(apiEndpoints.hkipo.detail, { code }), {
+      params
+    })
   }
 }

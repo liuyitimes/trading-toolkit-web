@@ -17,7 +17,11 @@
     <div class="market-overview" v-loading="store.loading && !store.summary">
       <div class="overview-header">
         <span class="overview-title">市场概览</span>
-        <TimeStamp v-if="store.lastUpdated" :time="store.lastUpdated" :stale-after="30" />
+        <TimeStamp
+          v-if="store.lastUpdated"
+          :time="store.lastUpdated"
+          :stale-after="30"
+        />
       </div>
       <div class="overview-grid">
         <div class="overview-item">
@@ -25,13 +29,18 @@
           <div class="overview-label">基金数量</div>
         </div>
         <div class="overview-item">
-          <div class="overview-value" :class="{ hl: parseFloat(summary?.avg_discount) > 0 }">
+          <div
+            class="overview-value"
+            :class="{ hl: parseFloat(summary?.avg_discount) > 0 }"
+          >
             {{ formatDiscountStr(summary?.avg_discount) }}
           </div>
           <div class="overview-label">平均折溢价</div>
         </div>
         <div class="overview-item">
-          <div class="overview-value hl">{{ summary?.high_discount_count ?? '--' }}</div>
+          <div class="overview-value hl">
+            {{ summary?.high_discount_count ?? '--' }}
+          </div>
           <div class="overview-label">高折价数</div>
         </div>
         <div class="overview-item">
@@ -51,7 +60,11 @@
         @click="activeTab = tab.key"
       >
         {{ tab.label }}
-        <span class="tab-count" :class="{ hot: tab.key === 'discount' || tab.key === 'highDiscount' }">{{ tabStats[tab.key] }}</span>
+        <span
+          class="tab-count"
+          :class="{ hot: tab.key === 'discount' || tab.key === 'highDiscount' }"
+          >{{ tabStats[tab.key] }}</span
+        >
       </button>
     </div>
 
@@ -82,7 +95,9 @@
             <div class="code-line">
               <span class="code-text">{{ row.code }}</span>
               <span class="code-sep">|</span>
-              <span class="code-change" :class="row.changeClass">{{ row.changePct }}</span>
+              <span class="code-change" :class="row.changeClass">{{
+                row.changePct
+              }}</span>
             </div>
           </div>
         </template>
@@ -95,7 +110,12 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column width="120" align="right" sortable :sort-by="'discountRaw'">
+      <el-table-column
+        width="120"
+        align="right"
+        sortable
+        :sort-by="'discountRaw'"
+      >
         <template #header>
           折价率<FormulaInfo
             formula="(单位净值 - 场内价格) / 单位净值 × 100%"
@@ -104,10 +124,9 @@
           />
         </template>
         <template #default="{ row }">
-          <span
-            class="discount-value"
-            :class="row.discountClass"
-          >{{ row.discount }}</span>
+          <span class="discount-value" :class="row.discountClass">{{
+            row.discount
+          }}</span>
         </template>
       </el-table-column>
       <el-table-column width="110" align="right">
@@ -130,22 +149,55 @@
       <el-table-column label="到期日" width="120" v-if="hasMaturity">
         <template #default="{ row }">{{ row.maturityDate || '--' }}</template>
       </el-table-column>
-      <el-table-column label="剩余年限" width="100" align="right" v-if="hasMaturity">
+      <el-table-column
+        label="剩余年限"
+        width="100"
+        align="right"
+        v-if="hasMaturity"
+      >
         <template #default="{ row }">{{ row.yearsToMaturity }}</template>
       </el-table-column>
       <el-table-column label="标记" width="140">
         <template #default="{ row }">
           <div class="tag-group">
-            <el-tag v-if="row.discountRaw >= 5" type="danger" size="small" effect="dark">高折价</el-tag>
-            <el-tag v-if="row.discountRaw > 0 && row.discountRaw < 5" type="warning" size="small" effect="plain">折价</el-tag>
-            <el-tag v-if="row.discountRaw < 0" type="success" size="small" effect="plain">溢价</el-tag>
-            <el-tag v-if="row.lowLiquidity" type="warning" size="small" effect="plain">流动性差</el-tag>
+            <el-tag
+              v-if="row.discountRaw >= 5"
+              type="danger"
+              size="small"
+              effect="dark"
+              >高折价</el-tag
+            >
+            <el-tag
+              v-if="row.discountRaw > 0 && row.discountRaw < 5"
+              type="warning"
+              size="small"
+              effect="plain"
+              >折价</el-tag
+            >
+            <el-tag
+              v-if="row.discountRaw < 0"
+              type="success"
+              size="small"
+              effect="plain"
+              >溢价</el-tag
+            >
+            <el-tag
+              v-if="row.lowLiquidity"
+              type="warning"
+              size="small"
+              effect="plain"
+              >流动性差</el-tag
+            >
           </div>
         </template>
       </el-table-column>
       <el-table-column label="自选" width="60" align="center">
         <template #default="{ row }">
-          <el-icon class="fav-icon" :class="{ active: row.isFavorite }" @click.stop="toggleFav(row)">
+          <el-icon
+            class="fav-icon"
+            :class="{ active: row.isFavorite }"
+            @click.stop="toggleFav(row)"
+          >
             <StarFilled v-if="row.isFavorite" />
             <Star v-else />
           </el-icon>
@@ -165,14 +217,20 @@
         <div class="mc-head">
           <ExchangeBadge :exchange="row.exchange" />
           <span class="fund-name">{{ row.name }}</span>
-          <el-icon class="fav-icon mc-fav" :class="{ active: row.isFavorite }" @click.stop="toggleFav(row)">
+          <el-icon
+            class="fav-icon mc-fav"
+            :class="{ active: row.isFavorite }"
+            @click.stop="toggleFav(row)"
+          >
             <StarFilled v-if="row.isFavorite" />
             <Star v-else />
           </el-icon>
         </div>
         <div class="mc-code">
           <span>{{ row.code }}</span>
-          <span class="code-change" :class="row.changeClass">{{ row.changePct }}</span>
+          <span class="code-change" :class="row.changeClass">{{
+            row.changePct
+          }}</span>
         </div>
         <div class="mc-metrics">
           <div class="mc-metric">
@@ -185,10 +243,9 @@
           </div>
           <div class="mc-metric">
             <span class="mc-label">折价率</span>
-            <span
-              class="discount-value"
-              :class="row.discountClass"
-            >{{ row.discount }}</span>
+            <span class="discount-value" :class="row.discountClass">{{
+              row.discount
+            }}</span>
           </div>
           <div class="mc-metric">
             <span class="mc-label">年化</span>
@@ -204,11 +261,26 @@
           </div>
         </div>
         <div class="mc-tags" v-if="row.discountRaw >= 5 || row.lowLiquidity">
-          <el-tag v-if="row.discountRaw >= 5" type="danger" size="small" effect="dark">高折价</el-tag>
-          <el-tag v-if="row.lowLiquidity" type="warning" size="small" effect="plain">流动性差</el-tag>
+          <el-tag
+            v-if="row.discountRaw >= 5"
+            type="danger"
+            size="small"
+            effect="dark"
+            >高折价</el-tag
+          >
+          <el-tag
+            v-if="row.lowLiquidity"
+            type="warning"
+            size="small"
+            effect="plain"
+            >流动性差</el-tag
+          >
         </div>
       </el-card>
-      <el-empty v-if="!store.loading && filteredList.length === 0" description="暂无数据" />
+      <el-empty
+        v-if="!store.loading && filteredList.length === 0"
+        description="暂无数据"
+      />
     </div>
 
     <!-- 详情弹窗 -->
@@ -232,11 +304,15 @@
           <div class="detail-grid">
             <div class="detail-item">
               <span class="detail-label">交易所</span>
-              <span class="detail-value">{{ currentItem.exchange || '--' }}</span>
+              <span class="detail-value">{{
+                currentItem.exchange || '--'
+              }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">涨跌幅</span>
-              <span class="detail-value" :class="currentItem.changeClass">{{ currentItem.changePct }}</span>
+              <span class="detail-value" :class="currentItem.changeClass">{{
+                currentItem.changePct
+              }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">基金类型</span>
@@ -263,15 +339,23 @@
             </div>
             <div class="detail-item hl-box">
               <span class="detail-label">折价率</span>
-              <span class="detail-value hl" :class="currentItem.discountClass">{{ currentItem.discount }}</span>
+              <span
+                class="detail-value hl"
+                :class="currentItem.discountClass"
+                >{{ currentItem.discount }}</span
+              >
             </div>
             <div class="detail-item">
               <span class="detail-label">年化折价</span>
-              <span class="detail-value">{{ currentItem.annualizedDiscount }}</span>
+              <span class="detail-value">{{
+                currentItem.annualizedDiscount
+              }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">成交额</span>
-              <span class="detail-value" :class="amountClass(currentItem)">{{ currentItem.amount }}</span>
+              <span class="detail-value" :class="amountClass(currentItem)">{{
+                currentItem.amount
+              }}</span>
             </div>
           </div>
         </div>
@@ -282,11 +366,15 @@
           <div class="detail-grid">
             <div class="detail-item">
               <span class="detail-label">到期日</span>
-              <span class="detail-value">{{ currentItem.maturityDate || '--' }}</span>
+              <span class="detail-value">{{
+                currentItem.maturityDate || '--'
+              }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">剩余年限</span>
-              <span class="detail-value">{{ currentItem.yearsToMaturity }}</span>
+              <span class="detail-value">{{
+                currentItem.yearsToMaturity
+              }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">基金规模</span>
@@ -299,7 +387,13 @@
         <div class="detail-section" v-if="currentItem.topHoldings?.length">
           <div class="detail-section-title">持仓前十大</div>
           <div class="holdings-tags">
-            <el-tag v-for="h in currentItem.topHoldings" :key="h" size="small" effect="plain">{{ h }}</el-tag>
+            <el-tag
+              v-for="h in currentItem.topHoldings"
+              :key="h"
+              size="small"
+              effect="plain"
+              >{{ h }}</el-tag
+            >
           </div>
         </div>
 
@@ -312,10 +406,13 @@
         >
           <template #default>
             <div v-if="currentItem.discountRaw > 0">
-              折价买入，持有至到期折价收敛。当前折价 {{ currentItem.discount }}，年化收益 {{ currentItem.annualizedDiscount }}。
+              折价买入，持有至到期折价收敛。当前折价
+              {{ currentItem.discount }}，年化收益
+              {{ currentItem.annualizedDiscount }}。
             </div>
             <div v-else>
-              当前处于溢价状态，折价率 {{ currentItem.discount }}。溢价买入存在回落风险，请谨慎操作。
+              当前处于溢价状态，折价率
+              {{ currentItem.discount }}。溢价买入存在回落风险，请谨慎操作。
             </div>
           </template>
         </el-alert>
@@ -325,14 +422,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onActivated } from 'vue'
+import { ref, computed, onMounted, onActivated, onUnmounted } from 'vue'
 import { Search, Star, StarFilled } from '@element-plus/icons-vue'
 import { useClosedEndStore } from '@/stores/closedEnd'
 import TierBadge from '@/components/TierBadge.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
 import FormulaInfo from '@/components/FormulaInfo.vue'
 import ExchangeBadge from '@/components/ExchangeBadge.vue'
+import { useAppStore } from '@/stores/app'
 
+const appStore = useAppStore()
 const store = useClosedEndStore()
 const searchKeyword = ref('')
 const activeTab = ref('all')
@@ -351,17 +450,17 @@ const filteredList = computed(() => {
   let list = store.fundList
   if (searchKeyword.value) {
     const kw = searchKeyword.value.toLowerCase()
-    list = list.filter(i =>
-      i.name.toLowerCase().includes(kw) || i.code.includes(kw)
+    list = list.filter(
+      (i) => i.name.toLowerCase().includes(kw) || i.code.includes(kw)
     )
   }
   switch (activeTab.value) {
     case 'discount':
-      return list.filter(i => i.discountRaw > 0)
+      return list.filter((i) => i.discountRaw > 0)
     case 'highDiscount':
-      return list.filter(i => i.discountRaw >= 5)
+      return list.filter((i) => i.discountRaw >= 5)
     case 'premium':
-      return list.filter(i => i.discountRaw < 0)
+      return list.filter((i) => i.discountRaw < 0)
     default:
       return list
   }
@@ -369,15 +468,15 @@ const filteredList = computed(() => {
 
 const tabStats = computed(() => ({
   all: store.fundList.length,
-  discount: store.fundList.filter(i => i.discountRaw > 0).length,
-  highDiscount: store.fundList.filter(i => i.discountRaw >= 5).length,
-  premium: store.fundList.filter(i => i.discountRaw < 0).length
+  discount: store.fundList.filter((i) => i.discountRaw > 0).length,
+  highDiscount: store.fundList.filter((i) => i.discountRaw >= 5).length,
+  premium: store.fundList.filter((i) => i.discountRaw < 0).length
 }))
 
 const summary = computed(() => store.summary)
 
 // 是否有任何基金带到期日
-const hasMaturity = computed(() => store.fundList.some(i => i.maturityDate))
+const hasMaturity = computed(() => store.fundList.some((i) => i.maturityDate))
 
 function formatDiscountStr(val) {
   if (val == null) return '--'
@@ -405,11 +504,17 @@ function openDetail(item) {
   detailVisible.value = true
 }
 
+let unregisterRefresh
 onMounted(() => {
+  unregisterRefresh = appStore.registerPageRefresh('/closed-end', store.loadAll)
   if (!store.fundList.length) store.loadAll()
 })
 onActivated(() => {
   if (!store.fundList.length) store.loadAll()
+})
+
+onUnmounted(() => {
+  unregisterRefresh?.()
 })
 </script>
 
@@ -500,7 +605,9 @@ onActivated(() => {
       align-items: center;
       gap: 6px;
 
-      &:hover { color: var(--el-color-primary); }
+      &:hover {
+        color: var(--el-color-primary);
+      }
 
       &.active {
         color: var(--el-color-primary);
@@ -520,7 +627,10 @@ onActivated(() => {
         font-size: 11px;
         text-align: center;
 
-        &.hot { background: var(--el-color-danger); color: #fff; }
+        &.hot {
+          background: var(--el-color-danger);
+          color: #fff;
+        }
       }
     }
   }
@@ -549,13 +659,24 @@ onActivated(() => {
         flex-wrap: wrap;
       }
 
-      .fund-name { font-weight: 600; color: var(--text-color); }
-      .code-text { color: var(--text-color-secondary); }
-      .code-change {
-        &.up { color: var(--el-color-danger); }
-        &.down { color: var(--el-color-success); }
+      .fund-name {
+        font-weight: 600;
+        color: var(--text-color);
       }
-      .code-sep { color: var(--el-border-color); }
+      .code-text {
+        color: var(--text-color-secondary);
+      }
+      .code-change {
+        &.up {
+          color: var(--el-color-danger);
+        }
+        &.down {
+          color: var(--el-color-success);
+        }
+      }
+      .code-sep {
+        color: var(--el-border-color);
+      }
     }
 
     .price-cell {
@@ -564,8 +685,14 @@ onActivated(() => {
       align-items: flex-end;
     }
 
-    .hl { color: var(--el-color-primary); font-weight: 600; }
-    .price-sub { font-size: 12px; color: var(--text-color-secondary); }
+    .hl {
+      color: var(--el-color-primary);
+      font-weight: 600;
+    }
+    .price-sub {
+      font-size: 12px;
+      color: var(--text-color-secondary);
+    }
 
     .hover-value {
       cursor: help;
@@ -603,12 +730,20 @@ onActivated(() => {
       cursor: pointer;
       color: var(--el-border-color);
       font-size: 16px;
-      &.active { color: #fadb14; }
-      &:hover { color: #fadb14; }
+      &.active {
+        color: #fadb14;
+      }
+      &:hover {
+        color: #fadb14;
+      }
     }
 
-    .up { color: var(--el-color-danger); }
-    .down { color: var(--el-color-success); }
+    .up {
+      color: var(--el-color-danger);
+    }
+    .down {
+      color: var(--el-color-success);
+    }
   }
 
   /* 行高亮 */
@@ -633,7 +768,9 @@ onActivated(() => {
       gap: 6px;
       flex-wrap: wrap;
 
-      .fund-name { font-weight: 600; }
+      .fund-name {
+        font-weight: 600;
+      }
     }
 
     .mc-fav {
@@ -649,8 +786,12 @@ onActivated(() => {
       align-items: center;
 
       .code-change {
-        &.up { color: var(--el-color-danger); }
-        &.down { color: var(--el-color-success); }
+        &.up {
+          color: var(--el-color-danger);
+        }
+        &.down {
+          color: var(--el-color-success);
+        }
       }
     }
 
@@ -679,16 +820,25 @@ onActivated(() => {
     .discount-value {
       font-weight: 600;
 
-      &.high { color: var(--el-color-danger); }
-      &.mid { color: var(--el-color-warning); }
-      &.premium { color: var(--el-color-success); }
+      &.high {
+        color: var(--el-color-danger);
+      }
+      &.mid {
+        color: var(--el-color-warning);
+      }
+      &.premium {
+        color: var(--el-color-success);
+      }
     }
 
     .low-amount {
       color: var(--el-color-warning);
     }
 
-    .hl { color: var(--el-color-primary); font-weight: 600; }
+    .hl {
+      color: var(--el-color-primary);
+      font-weight: 600;
+    }
   }
 
   /* 详情弹窗 */
@@ -731,7 +881,9 @@ onActivated(() => {
         font-weight: 600;
         color: var(--text-color);
 
-        &.hl { color: var(--el-color-primary); }
+        &.hl {
+          color: var(--el-color-primary);
+        }
       }
     }
   }
@@ -751,15 +903,21 @@ onActivated(() => {
     .page-header-flex {
       flex-direction: column;
       align-items: stretch;
-      .search-input { max-width: 100%; }
+      .search-input {
+        max-width: 100%;
+      }
     }
 
     .market-overview .overview-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .desktop-table { display: none; }
-    .mobile-cards { display: block; }
+    .desktop-table {
+      display: none;
+    }
+    .mobile-cards {
+      display: block;
+    }
 
     .detail-grid {
       grid-template-columns: repeat(2, 1fr);

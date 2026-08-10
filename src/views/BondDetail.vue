@@ -290,17 +290,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Star, StarFilled } from '@element-plus/icons-vue'
 import { convertibleApi } from '@/api/convertible'
 import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
 import { formatNumber, formatDate, formatColor } from '@/utils/format'
 import TierBadge from '@/components/TierBadge.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 const raw = ref(null)
 const loading = ref(true)
@@ -312,22 +314,36 @@ const isFav = computed(() =>
   userStore.isFavorite('convertible', route.params.code)
 )
 
-async function loadDetail() {
+async function loadDetail({ refresh = false } = {}) {
   loading.value = true
   loadError.value = false
   try {
-    const data = await convertibleApi.detail(route.params.code)
+    const data = await convertibleApi.detail(
+      route.params.code,
+      refresh ? { refresh: true } : {}
+    )
     raw.value = data && data.bond_code ? data : null
     if (!raw.value) loadError.value = true
+    else appStore.setLastUpdated()
+    return Boolean(raw.value)
   } catch {
-    raw.value = null
+    if (!raw.value) raw.value = null
     loadError.value = true
+    return false
   } finally {
     loading.value = false
   }
 }
 
-onMounted(loadDetail)
+let unregisterRefresh
+onMounted(() => {
+  unregisterRefresh = appStore.registerPageRefresh(route.path, loadDetail)
+  loadDetail()
+})
+
+onUnmounted(() => {
+  unregisterRefresh?.()
+})
 
 function toggleFav() {
   userStore.toggleFavorite(

@@ -17,11 +17,17 @@
     <div class="market-overview" v-loading="store.loading && !store.summary">
       <div class="overview-header">
         <span class="overview-title">市场概览</span>
-        <TimeStamp v-if="store.lastUpdated" :time="store.lastUpdated" :stale-after="30" />
+        <TimeStamp
+          v-if="store.lastUpdated"
+          :time="store.lastUpdated"
+          :stale-after="30"
+        />
       </div>
       <div class="overview-grid">
         <div class="overview-item">
-          <div class="overview-value hl">{{ summary?.upcoming_count ?? '--' }}</div>
+          <div class="overview-value hl">
+            {{ summary?.upcoming_count ?? '--' }}
+          </div>
           <div class="overview-label">申购中</div>
         </div>
         <div class="overview-item">
@@ -49,7 +55,9 @@
         @click="activeTab = tab.key"
       >
         {{ tab.label }}
-        <span class="tab-count" :class="{ hot: tab.key === 'upcoming' }">{{ tabStats[tab.key] }}</span>
+        <span class="tab-count" :class="{ hot: tab.key === 'upcoming' }">{{
+          tabStats[tab.key]
+        }}</span>
       </button>
     </div>
 
@@ -66,7 +74,9 @@
       <template #header>
         <div class="sandbox-header" @click="sandboxOpen = !sandboxOpen">
           <span class="sandbox-title">策略沙盘 · PE 估值分析</span>
-          <el-icon class="sandbox-toggle" :class="{ expanded: sandboxOpen }"><ArrowDown /></el-icon>
+          <el-icon class="sandbox-toggle" :class="{ expanded: sandboxOpen }"
+            ><ArrowDown
+          /></el-icon>
         </div>
       </template>
       <transition name="expand">
@@ -92,24 +102,38 @@
               :min="1000"
               :max="100000"
               :step="1000"
-              :format-fn="v => (v / 10000).toFixed(1) + ' 万'"
+              :format-fn="(v) => (v / 10000).toFixed(1) + ' 万'"
             />
           </div>
           <div class="sandbox-result">
             <div class="result-row">
               <span class="result-label">PE 差值</span>
-              <span class="result-value" :class="{ positive: sandboxPeDiff < 0, negative: sandboxPeDiff > 5 }">
+              <span
+                class="result-value"
+                :class="{
+                  positive: sandboxPeDiff < 0,
+                  negative: sandboxPeDiff > 5
+                }"
+              >
                 {{ sandboxPeDiff > 0 ? '+' : '' }}{{ sandboxPeDiff.toFixed(1) }}
               </span>
             </div>
             <div class="result-row">
               <span class="result-label">估值评级</span>
-              <el-tag :type="sandboxRating.type" size="small" effect="light">{{ sandboxRating.label }}</el-tag>
+              <el-tag :type="sandboxRating.type" size="small" effect="light">{{
+                sandboxRating.label
+              }}</el-tag>
             </div>
             <div class="result-tip">
-              <span v-if="sandboxPeDiff < 0" style="color: var(--el-color-success)">发行 PE 低于行业，有安全边际</span>
+              <span
+                v-if="sandboxPeDiff < 0"
+                style="color: var(--el-color-success)"
+                >发行 PE 低于行业，有安全边际</span
+              >
               <span v-else-if="sandboxPeDiff <= 5">估值合理，接近行业均值</span>
-              <span v-else style="color: var(--el-color-danger)">发行 PE 偏高，注意溢价风险</span>
+              <span v-else style="color: var(--el-color-danger)"
+                >发行 PE 偏高，注意溢价风险</span
+              >
             </div>
           </div>
         </div>
@@ -129,30 +153,42 @@
           <div class="name-cell">
             <div class="name-line">
               <span class="bond-name">{{ row.name }}</span>
-              <el-icon class="fav-icon" :class="{ active: row.isFavorite }" @click.stop="toggleFav(row)">
+              <el-icon
+                class="fav-icon"
+                :class="{ active: row.isFavorite }"
+                @click.stop="toggleFav(row)"
+              >
                 <StarFilled v-if="row.isFavorite" /><Star v-else />
               </el-icon>
             </div>
             <div class="code-line">
               <span class="code-text">{{ row.code }}</span>
               <span class="code-sep" v-if="row.applyCode">|</span>
-              <span class="code-sub" v-if="row.applyCode">申购码 {{ row.applyCode }}</span>
+              <span class="code-sub" v-if="row.applyCode"
+                >申购码 {{ row.applyCode }}</span
+              >
             </div>
           </div>
         </template>
       </el-table-column>
       <el-table-column label="发行价" width="100" align="right">
         <template #default="{ row }">
-          <span v-if="row.ipoPrice > 0" class="hl">{{ formatNumber(row.ipoPrice) }}</span>
+          <span v-if="row.ipoPrice > 0" class="hl">{{
+            formatNumber(row.ipoPrice)
+          }}</span>
           <span v-else class="text-muted">待定</span>
         </template>
       </el-table-column>
       <el-table-column label="顶格市值" width="110" align="right">
-        <template #default="{ row }">{{ row.topValue > 0 ? formatNumber(row.topValue) + '万' : '--' }}</template>
+        <template #default="{ row }">{{
+          row.topValue > 0 ? formatNumber(row.topValue) + '万' : '--'
+        }}</template>
       </el-table-column>
       <el-table-column label="估值" width="90" align="center">
         <template #default="{ row }">
-          <el-tag :type="row.peRating.type" size="small" effect="light">{{ row.peRating.label }}</el-tag>
+          <el-tag :type="row.peRating.type" size="small" effect="light">{{
+            row.peRating.label
+          }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="中签率" width="90" align="right">
@@ -161,13 +197,25 @@
           <span v-else class="text-muted">--</span>
         </template>
       </el-table-column>
-      <el-table-column label="首日涨幅" width="100" align="right" v-if="activeTab === 'listed'">
+      <el-table-column
+        label="首日涨幅"
+        width="100"
+        align="right"
+        v-if="activeTab === 'listed'"
+      >
         <template #default="{ row }">
-          <span v-if="row.firstDayGain" class="text-success">{{ row.firstDayGain }}</span>
+          <span v-if="row.firstDayGain" class="text-success">{{
+            row.firstDayGain
+          }}</span>
           <span v-else class="text-muted">--</span>
         </template>
       </el-table-column>
-      <el-table-column label="连板" width="80" align="center" v-if="activeTab === 'listed'">
+      <el-table-column
+        label="连板"
+        width="80"
+        align="center"
+        v-if="activeTab === 'listed'"
+      >
         <template #default="{ row }">
           <span v-if="row.continuousDays">{{ row.continuousDays }}天</span>
           <span v-else class="text-muted">--</span>
@@ -195,19 +243,29 @@
       >
         <div class="mc-head">
           <span class="bond-name">{{ item.name }}</span>
-          <el-tag :type="item.peRating.type" size="small" effect="light">{{ item.peRating.label }}</el-tag>
-          <el-icon class="fav-icon mc-fav" :class="{ active: item.isFavorite }" @click.stop="toggleFav(item)">
+          <el-tag :type="item.peRating.type" size="small" effect="light">{{
+            item.peRating.label
+          }}</el-tag>
+          <el-icon
+            class="fav-icon mc-fav"
+            :class="{ active: item.isFavorite }"
+            @click.stop="toggleFav(item)"
+          >
             <StarFilled v-if="item.isFavorite" /><Star v-else />
           </el-icon>
         </div>
         <div class="mc-code">
           <span>{{ item.code }}</span>
-          <span v-if="item.applyCode" class="code-sub">申购码 {{ item.applyCode }}</span>
+          <span v-if="item.applyCode" class="code-sub"
+            >申购码 {{ item.applyCode }}</span
+          >
         </div>
         <div class="mc-metrics">
           <div class="mc-metric">
             <span class="mc-label">发行价</span>
-            <span v-if="item.ipoPrice > 0" class="hl">{{ formatNumber(item.ipoPrice) }}</span>
+            <span v-if="item.ipoPrice > 0" class="hl">{{
+              formatNumber(item.ipoPrice)
+            }}</span>
             <span v-else>待定</span>
           </div>
           <div class="mc-metric">
@@ -228,7 +286,10 @@
           <span v-if="item.listDate">上市 {{ item.listDate }}</span>
         </div>
       </el-card>
-      <el-empty v-if="!store.loading && pagedList.length === 0" description="暂无数据" />
+      <el-empty
+        v-if="!store.loading && pagedList.length === 0"
+        description="暂无数据"
+      />
     </div>
 
     <!-- 公式回忆（检索练习） -->
@@ -262,7 +323,9 @@ const isMobile = ref(false)
 // 策略沙盘
 const sandboxOpen = ref(false)
 const sandbox = ref({ peRatio: 20, industryPe: 25, amount: 10000 })
-const sandboxPeDiff = computed(() => sandbox.value.peRatio - sandbox.value.industryPe)
+const sandboxPeDiff = computed(
+  () => sandbox.value.peRatio - sandbox.value.industryPe
+)
 const sandboxRating = computed(() => {
   const diff = sandboxPeDiff.value
   if (diff < 0) return { label: '低估', type: 'success' }
@@ -272,8 +335,16 @@ const sandboxRating = computed(() => {
 
 // 公式回忆
 const recallItems = [
-  { prompt: '一手成本 = ____ × 每手股数', answer: '申购价', placeholder: '缺失的项' },
-  { prompt: 'PE 差 = ____ - 行业平均 PE', answer: '发行 PE', placeholder: '缺失的项' },
+  {
+    prompt: '一手成本 = ____ × 每手股数',
+    answer: '申购价',
+    placeholder: '缺失的项'
+  },
+  {
+    prompt: 'PE 差 = ____ - 行业平均 PE',
+    answer: '发行 PE',
+    placeholder: '缺失的项'
+  }
 ]
 
 const tabs = [
@@ -285,7 +356,8 @@ const tabs = [
 
 const guideTextMap = {
   all: '全部新股列表。关注低估标的（PE 差 < 0）和高中签率机会。',
-  upcoming: '正在申购的新股。发行 PE 低于行业 PE 有安全边际，顶格市值越低资金占用越少。',
+  upcoming:
+    '正在申购的新股。发行 PE 低于行业 PE 有安全边际，顶格市值越低资金占用越少。',
   pending: '已申购待上市的新股。关注上市首日表现预期。',
   listed: '已上市新股。关注首日涨幅和连板天数，评估打新收益。'
 }
@@ -306,15 +378,18 @@ const allList = computed(() => {
 })
 
 const pendingCount = computed(() => {
-  return allList.value.filter(i => i.status === 'pending').length
+  return allList.value.filter((i) => i.status === 'pending').length
 })
 
 // 按 Tab 过滤
 const filteredByTab = computed(() => {
   const list = allList.value
-  if (activeTab.value === 'upcoming') return list.filter(i => i.status === 'upcoming')
-  if (activeTab.value === 'pending') return list.filter(i => i.status === 'pending')
-  if (activeTab.value === 'listed') return list.filter(i => i.status === 'listed')
+  if (activeTab.value === 'upcoming')
+    return list.filter((i) => i.status === 'upcoming')
+  if (activeTab.value === 'pending')
+    return list.filter((i) => i.status === 'pending')
+  if (activeTab.value === 'listed')
+    return list.filter((i) => i.status === 'listed')
   return list
 })
 
@@ -323,10 +398,11 @@ const pagedList = computed(() => {
   let list = filteredByTab.value
   const kw = searchKeyword.value.trim().toLowerCase()
   if (kw) {
-    list = list.filter(i =>
-      i.name.toLowerCase().includes(kw) ||
-      i.code.includes(kw) ||
-      (i.applyCode || '').includes(kw)
+    list = list.filter(
+      (i) =>
+        i.name.toLowerCase().includes(kw) ||
+        i.code.includes(kw) ||
+        (i.applyCode || '').includes(kw)
     )
   }
   return list
@@ -337,9 +413,9 @@ const tabStats = computed(() => {
   const list = allList.value
   return {
     all: list.length,
-    upcoming: list.filter(i => i.status === 'upcoming').length,
-    pending: list.filter(i => i.status === 'pending').length,
-    listed: list.filter(i => i.status === 'listed').length
+    upcoming: list.filter((i) => i.status === 'upcoming').length,
+    pending: list.filter((i) => i.status === 'pending').length,
+    listed: list.filter((i) => i.status === 'listed').length
   }
 })
 
@@ -348,7 +424,9 @@ const summary = computed(() => store.summary)
 function toggleFav(row) {
   userStore.toggleFavorite('hkipo', row.code, row.name)
   store.refreshFavorites()
-  ElMessage.success(userStore.isFavorite('hkipo', row.code) ? '已添加自选' : '已取消自选')
+  ElMessage.success(
+    userStore.isFavorite('hkipo', row.code) ? '已添加自选' : '已取消自选'
+  )
 }
 
 function goDetail(row) {
@@ -357,9 +435,13 @@ function goDetail(row) {
 }
 
 let mql
-function updateMobile(e) { isMobile.value = e.matches }
+let unregisterRefresh
+function updateMobile(e) {
+  isMobile.value = e.matches
+}
 
 onMounted(() => {
+  unregisterRefresh = appStore.registerPageRefresh('/hkipo', store.loadAll)
   store.loadAll()
   mql = window.matchMedia('(max-width: 768px)')
   isMobile.value = mql.matches
@@ -371,6 +453,7 @@ onActivated(() => {
 })
 
 onUnmounted(() => {
+  unregisterRefresh?.()
   if (mql) mql.removeEventListener('change', updateMobile)
 })
 </script>
@@ -457,7 +540,9 @@ onUnmounted(() => {
       align-items: center;
       gap: 6px;
 
-      &:hover { color: var(--el-color-primary); }
+      &:hover {
+        color: var(--el-color-primary);
+      }
 
       &.active {
         color: var(--el-color-primary);
@@ -477,7 +562,10 @@ onUnmounted(() => {
         font-size: 11px;
         text-align: center;
 
-        &.hot { background: var(--el-color-danger); color: #fff; }
+        &.hot {
+          background: var(--el-color-danger);
+          color: #fff;
+        }
       }
     }
   }
@@ -563,11 +651,13 @@ onUnmounted(() => {
     }
   }
 
-  .expand-enter-active, .expand-leave-active {
+  .expand-enter-active,
+  .expand-leave-active {
     transition: all 0.2s ease;
   }
 
-  .expand-enter-from, .expand-leave-to {
+  .expand-enter-from,
+  .expand-leave-to {
     opacity: 0;
     max-height: 0;
   }
@@ -588,10 +678,20 @@ onUnmounted(() => {
       gap: 6px;
     }
 
-    .bond-name { font-weight: 600; color: var(--text-color); }
-    .code-text { color: var(--text-color-secondary); }
-    .code-sub { color: var(--text-color-secondary); font-size: 11px; }
-    .code-sep { color: var(--el-border-color); }
+    .bond-name {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+    .code-text {
+      color: var(--text-color-secondary);
+    }
+    .code-sub {
+      color: var(--text-color-secondary);
+      font-size: 11px;
+    }
+    .code-sep {
+      color: var(--el-border-color);
+    }
   }
 
   .date-cell {
@@ -606,13 +706,26 @@ onUnmounted(() => {
     cursor: pointer;
     color: var(--el-border-color);
     font-size: 16px;
-    &.active { color: #fadb14; }
-    &:hover { color: #fadb14; }
+    &.active {
+      color: #fadb14;
+    }
+    &:hover {
+      color: #fadb14;
+    }
   }
 
-  .hl { color: var(--el-color-primary); font-weight: 600; }
-  .text-muted { color: var(--text-color-secondary); font-size: 13px; }
-  .text-success { color: var(--el-color-success); font-weight: 600; }
+  .hl {
+    color: var(--el-color-primary);
+    font-weight: 600;
+  }
+  .text-muted {
+    color: var(--text-color-secondary);
+    font-size: 13px;
+  }
+  .text-success {
+    color: var(--el-color-success);
+    font-weight: 600;
+  }
 
   .desktop-table {
     cursor: pointer;
@@ -627,14 +740,18 @@ onUnmounted(() => {
     .page-header-flex {
       flex-direction: column;
       align-items: stretch;
-      .search-input { max-width: 100%; }
+      .search-input {
+        max-width: 100%;
+      }
     }
 
     .market-overview .overview-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .desktop-table { display: none; }
+    .desktop-table {
+      display: none;
+    }
     .mobile-cards {
       display: block;
 
@@ -648,8 +765,12 @@ onUnmounted(() => {
         align-items: center;
         gap: 6px;
         flex-wrap: wrap;
-        .bond-name { font-weight: 600; }
-        .mc-fav { margin-left: auto; }
+        .bond-name {
+          font-weight: 600;
+        }
+        .mc-fav {
+          margin-left: auto;
+        }
       }
 
       .mc-code {

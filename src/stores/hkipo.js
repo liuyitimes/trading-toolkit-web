@@ -113,18 +113,22 @@ export const useHkipoStore = defineStore('hkipo', () => {
     }
   }
 
-  async function loadAll() {
+  async function loadAll({ refresh = false } = {}) {
     loading.value = true
     error.value = null
     try {
+      const requestParams = refresh ? { refresh: true } : {}
       // A page visit is the only normal trigger for checking HKEX for new files.
       await hkipoApi.sync().catch(() => null)
       const [listResult, upcomingResult, summaryResult] =
         await Promise.allSettled([
-          hkipoApi.list(),
-          hkipoApi.upcoming(),
-          hkipoApi.summary()
+          hkipoApi.list(requestParams),
+          hkipoApi.upcoming(requestParams),
+          hkipoApi.summary(requestParams)
         ])
+      const loaded = [listResult, upcomingResult, summaryResult].every(
+        (result) => result.status === 'fulfilled'
+      )
 
       if (listResult.status === 'fulfilled') {
         const arr = Array.isArray(listResult.value)
@@ -158,10 +162,13 @@ export const useHkipoStore = defineStore('hkipo', () => {
         }
       }
 
+      if (!loaded) return false
       lastUpdated.value = new Date().toISOString()
       useAppStore().setLastUpdated()
+      return true
     } catch (err) {
       error.value = err?.message || '加载失败'
+      return false
     } finally {
       loading.value = false
     }
