@@ -19,6 +19,7 @@
           :subtitle="card.subtitle"
           :icon="card.icon"
           :color="card.color"
+          :to="card.to"
         />
       </el-col>
     </el-row>
@@ -67,21 +68,24 @@ async function loadAll({ refresh = false } = {}) {
         value: cb.count || '--',
         subtitle: '上市交易',
         icon: 'TrendCharts',
-        color: '#409eff'
+        color: '#409eff',
+        to: '/convertible'
       },
       {
         title: 'LOF 基金',
         value: lof.count || '--',
         subtitle: '套利机会',
         icon: 'Money',
-        color: '#67c23a'
+        color: '#67c23a',
+        to: '/lof'
       },
       {
         title: '市场温度',
         value: cb.double_low_median != null ? cb.double_low_median : '--',
         subtitle: cb.market_status || '当前热度',
         icon: 'DataBoard',
-        color: '#f56c6c'
+        color: '#f56c6c',
+        to: '/convertible'
       }
     ]
   } catch {
@@ -93,21 +97,24 @@ async function loadAll({ refresh = false } = {}) {
           value: '--',
           subtitle: '上市交易',
           icon: 'TrendCharts',
-          color: '#409eff'
+          color: '#409eff',
+          to: '/convertible'
         },
         {
           title: 'LOF 基金',
           value: '--',
           subtitle: '套利机会',
           icon: 'Money',
-          color: '#67c23a'
+          color: '#67c23a',
+          to: '/lof'
         },
         {
           title: '市场温度',
           value: '--',
           subtitle: '当前热度',
           icon: 'DataBoard',
-          color: '#f56c6c'
+          color: '#f56c6c',
+          to: '/convertible'
         }
       ]
     }
@@ -126,13 +133,14 @@ async function loadAll({ refresh = false } = {}) {
   }
 
   try {
-    const flow = await marketApi.fundFlow(requestParams)
+    const cal = await marketApi.calendar(requestParams)
     loaded = true
-    if (flow.items) {
-      calendarEvents.value = flow.items
-        .map((f) => ({ date: f.date, label: f.label || '' }))
-        .filter((f) => f.date)
-    }
+    const events = (cal.events || []).map((e) => ({
+      date: e.date,
+      label: `${e.name}·${e.note}`,
+      type: e.type
+    }))
+    if (events.length) calendarEvents.value = events
   } catch {
     failed = true
   }

@@ -7,7 +7,8 @@ export const apiEndpoints = Object.freeze({
   market: Object.freeze({
     overview: endpoint('GET', '/api/v1/market/overview'),
     sentiment: endpoint('GET', '/api/v1/market/sentiment'),
-    fundFlow: endpoint('GET', '/api/v1/market/fund-flow')
+    fundFlow: endpoint('GET', '/api/v1/market/fund-flow'),
+    calendar: endpoint('GET', '/api/v1/market/calendar')
   }),
   convertible: Object.freeze({
     list: endpoint('GET', '/api/v1/convertible/list'),

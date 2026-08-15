@@ -17,15 +17,37 @@
         </el-button>
       </div>
       <div class="calendar-grid">
-        <div class="calendar-weekday" v-for="w in weekdays" :key="w">{{ w }}</div>
+        <div class="calendar-weekday" v-for="w in weekdays" :key="w">
+          {{ w }}
+        </div>
         <div
           v-for="(day, i) in days"
           :key="i"
           class="calendar-day"
-          :class="{ 'is-today': day.isToday, 'is-event': day.hasEvent, 'is-other': !day.isCurrentMonth }"
+          :class="{
+            'is-today': day.isToday,
+            'is-event': day.hasEvent,
+            'is-other': !day.isCurrentMonth,
+            'is-selected': day.date === selectedDate
+          }"
+          @click="selectDay(day)"
         >
           <span class="day-num">{{ day.num }}</span>
-          <div v-if="day.hasEvent" class="day-event">{{ day.eventLabel }}</div>
+          <div v-if="day.hasEvent" class="day-badges">
+            <span v-for="badge in day.badges" :key="badge" class="day-badge">{{
+              badge
+            }}</span>
+          </div>
+        </div>
+      </div>
+      <div v-if="selectedEvents.length" class="day-events">
+        <div class="day-events-title">{{ selectedDate }} 财经事件</div>
+        <div
+          v-for="(event, i) in selectedEvents"
+          :key="i"
+          class="day-event-item"
+        >
+          {{ event.label }}
         </div>
       </div>
     </div>
@@ -43,9 +65,15 @@ const props = defineProps({
 })
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+const typeBadges = { ipo_apply: '新', ipo_listing: '上', cb_apply: '债' }
 const now = new Date()
 const year = ref(now.getFullYear())
 const month = ref(now.getMonth())
+const selectedDate = ref(null)
+
+function dateKey(yearValue, monthIndex, dayNum) {
+  return `${yearValue}-${String(monthIndex + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
+}
 
 const days = computed(() => {
   const firstDay = new Date(year.value, month.value, 1)
@@ -57,23 +85,54 @@ const days = computed(() => {
 
   const prevMonthLastDay = new Date(year.value, month.value, 0).getDate()
   for (let i = startWeekday - 1; i >= 0; i--) {
-    result.push({ num: prevMonthLastDay - i, isCurrentMonth: false, isToday: false, hasEvent: false })
+    result.push({
+      num: prevMonthLastDay - i,
+      isCurrentMonth: false,
+      isToday: false,
+      hasEvent: false,
+      badges: []
+    })
   }
   for (let i = 1; i <= totalDays; i++) {
-    const isToday = year.value === today.getFullYear() && month.value === today.getMonth() && i === today.getDate()
-    const hasEvent = props.events.some(e => {
-      const d = new Date(e.date)
-      return d.getFullYear() === year.value && d.getMonth() === month.value && d.getDate() === i
+    const isToday =
+      year.value === today.getFullYear() &&
+      month.value === today.getMonth() &&
+      i === today.getDate()
+    const date = dateKey(year.value, month.value, i)
+    const dayEvents = props.events.filter((e) => e.date === date)
+    const hasEvent = dayEvents.length > 0
+    const badges = [
+      ...new Set(dayEvents.map((e) => typeBadges[e.type]).filter(Boolean))
+    ]
+    result.push({
+      num: i,
+      isCurrentMonth: true,
+      isToday,
+      hasEvent,
+      badges,
+      date
     })
-    const eventLabel = hasEvent ? '📌' : ''
-    result.push({ num: i, isCurrentMonth: true, isToday, hasEvent, eventLabel })
   }
   const remaining = 42 - result.length
   for (let i = 1; i <= remaining; i++) {
-    result.push({ num: i, isCurrentMonth: false, isToday: false, hasEvent: false })
+    result.push({
+      num: i,
+      isCurrentMonth: false,
+      isToday: false,
+      hasEvent: false,
+      badges: []
+    })
   }
   return result
 })
+
+const selectedEvents = computed(() =>
+  props.events.filter((e) => e.date === selectedDate.value)
+)
+
+function selectDay(day) {
+  selectedDate.value = day.hasEvent ? day.date : null
+}
 
 function prevMonth() {
   if (month.value === 0) {
@@ -147,9 +206,24 @@ function nextMonth() {
     display: block;
   }
 
-  .day-event {
-    font-size: 10px;
-    line-height: 1;
+  .day-badges {
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+    margin-top: 2px;
+
+    .day-badge {
+      font-size: 10px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 3px;
+      color: #fff;
+      background: var(--el-color-warning);
+    }
+  }
+
+  &.is-selected {
+    outline: 2px solid var(--el-color-primary);
   }
 
   &.is-today .day-num {
@@ -166,6 +240,35 @@ function nextMonth() {
   &.is-other {
     color: var(--text-color-secondary);
     opacity: 0.4;
+  }
+}
+
+.day-events {
+  margin-top: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+
+  .day-events-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .day-event-item {
+    font-size: 13px;
+    color: var(--text-color);
+    padding: 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--el-color-warning);
+    }
   }
 }
 </style>

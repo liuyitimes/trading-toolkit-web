@@ -10,5 +10,8 @@ export const marketApi = {
   },
   fundFlow(params = {}) {
     return api.get(apiEndpoints.market.fundFlow.path, { params })
+  },
+  calendar(params = {}) {
+    return api.get(apiEndpoints.market.calendar.path, { params })
   }
 }

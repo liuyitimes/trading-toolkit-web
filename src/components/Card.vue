@@ -1,5 +1,10 @@
 <template>
-  <el-card shadow="hover" class="stat-card">
+  <el-card
+    shadow="hover"
+    class="stat-card"
+    :class="{ clickable: !!to }"
+    @click="handleClick"
+  >
     <div class="card-content">
       <div class="card-info">
         <div class="card-title">{{ title }}</div>
@@ -16,14 +21,22 @@
 </template>
 
 <script setup>
-defineProps({
+import { useRouter } from 'vue-router'
+
+const props = defineProps({
   title: { type: String, default: '' },
   value: { type: [String, Number], default: '--' },
   subtitle: { type: String, default: '' },
   icon: { type: [String, Object], default: null },
   color: { type: String, default: '' },
-  iconColor: { type: String, default: '' }
+  iconColor: { type: String, default: '' },
+  to: { type: String, default: '' }
 })
+
+const router = useRouter()
+function handleClick() {
+  if (props.to) router.push(props.to)
+}
 </script>
 
 <style lang="scss" scoped>
@@ -52,6 +65,15 @@ defineProps({
     font-size: 12px;
     color: var(--text-color-secondary);
     margin-top: 4px;
+  }
+
+  &.clickable {
+    cursor: pointer;
+    transition: transform 0.15s;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
   }
 }
 </style>
