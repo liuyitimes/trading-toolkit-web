@@ -13,6 +13,7 @@
         text-color="var(--sidebar-text)"
         active-text-color="var(--sidebar-active-text)"
         router
+        @select="onMenuSelect"
       >
         <el-menu-item index="/home">
           <el-icon><HomeFilled /></el-icon>
@@ -52,6 +53,13 @@
         </el-menu-item>
       </el-menu>
     </el-aside>
+
+    <!-- 移动端抽屉遮罩：点击收回菜单 -->
+    <div
+      v-if="isMobile && !isCollapse"
+      class="aside-mask"
+      @click="isCollapse = true"
+    ></div>
 
     <el-container class="layout-content">
       <el-header class="layout-header">
@@ -174,6 +182,10 @@ async function refreshCurrentPage() {
   } catch {
     ElMessage.error('刷新失败，已保留现有数据')
   }
+}
+
+function onMenuSelect() {
+  if (isMobile.value) isCollapse.value = true
 }
 
 let mobileQuery
@@ -303,6 +315,13 @@ watch(
     z-index: 1001;
     height: 100vh;
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.16);
+  }
+
+  .aside-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.4);
   }
 
   .layout-header {
