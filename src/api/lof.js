@@ -5,14 +5,14 @@ export const lofApi = {
   list(params) {
     return api.get(apiEndpoints.lof.list.path, { params })
   },
-  opportunities() {
-    return api.get(apiEndpoints.lof.opportunities.path)
+  opportunities(params = {}) {
+    return api.get(apiEndpoints.lof.opportunities.path, { params })
   },
-  summary() {
-    return api.get(apiEndpoints.lof.summary.path)
+  summary(params = {}) {
+    return api.get(apiEndpoints.lof.summary.path, { params })
   },
-  detail(code) {
-    return api.get(`/api/v1/lof/${code}/detail`)
+  detail(code, params = {}) {
+    return api.get(`/api/v1/lof/${code}/detail`, { params })
   },
   shareHistory(code, params = {}) {
     return api.get(endpointPath(apiEndpoints.lof.shareHistory, { code }), {

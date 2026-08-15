@@ -380,20 +380,29 @@
                     <div
                       class="ft-detail"
                       v-if="
-                        row._actualSharesFor1Lot > 0 && row._stockPriceRaw > 0
+                        row._actualSharesFor1Lot > 0 &&
+                        row._registrationClosePriceRaw > 0
                       "
                     >
-                      配售成本 = {{ row._actualSharesFor1Lot }}股 ×
-                      {{ row._stockPriceRaw.toFixed(2) }}元 =
-                      <b>{{ Math.round(row._costFor10LotsRaw) }}元</b>
+                      固定成本 = {{ row._actualSharesFor1Lot }}股 ×
+                      {{ row._registrationClosePriceRaw.toFixed(2) }}元 =
+                      <b>{{ Math.round(row._registrationCloseCostRaw) }}元</b>
                     </div>
                     <div
                       class="ft-detail"
-                      v-if="row._safetyPadRaw > 0 && row._costFor10LotsRaw > 0"
+                      v-if="row._placementTotalReturnRaw != null"
                     >
-                      安全垫 = {{ Math.round(row._expectedProfitRaw) }} ÷
-                      {{ Math.round(row._costFor10LotsRaw) }} × 100% =
-                      <b>{{ row._safetyPadRaw.toFixed(2) }}%</b>
+                      参与后总收益 = {{ row.placementStockReturn }} +
+                      {{ row.expectedProfit }} =
+                      <b>{{ row.placementTotalReturn }}</b>
+                    </div>
+                    <div
+                      class="ft-detail"
+                      v-if="row._placementTotalReturnRateRaw != null"
+                    >
+                      参与后总收益率 = {{ row.placementTotalReturn }} ÷
+                      {{ Math.round(row._registrationCloseCostRaw) }} × 100% =
+                      <b>{{ row.placementTotalReturnRate }}</b>
                     </div>
                   </div>
                   <div class="ft-note">安全垫越高，正股下跌容错空间越大</div>
@@ -504,9 +513,12 @@
                       首日可交易量 =
                       <b>{{ row._tradableAmountRaw.toFixed(2) }}亿</b>
                     </div>
+                    <div class="ft-detail" v-else>
+                      等待巨潮官方公告核验原股东优先配售合计，暂无法计算
+                    </div>
                   </div>
                   <div class="ft-note">
-                    含大股东锁定6个月部分，首日可交易量越小，上市后弹性越大
+                    按原股东优先配售合计扣减，首日可交易量越小，上市后弹性越大
                   </div>
                 </div>
               </template>
@@ -615,6 +627,146 @@
             >
               导出
             </el-button>
+          </div>
+        </el-card>
+      </div>
+    </div>
+
+    <!-- 今年上市新债 Tab -->
+    <div v-else-if="activeTab === 'new_listed'" class="tab-content">
+      <el-empty
+        v-if="!filteredNewListed.length"
+        description="暂无今年上市新债"
+      />
+
+      <el-table
+        v-else
+        :data="filteredNewListed"
+        class="desktop-table"
+        stripe
+        @row-click="(row) => goDetail(row.bondCode)"
+      >
+        <el-table-column label="转债" min-width="220">
+          <template #default="{ row }">
+            <div class="name-cell">
+              <div class="name-line">
+                <ExchangeBadge v-if="row.exchange" :exchange="row.exchange" />
+                <span class="bond-name">{{ row.bondName }}</span>
+                <el-tag size="small" effect="light" type="info">
+                  第{{ row.threeDayStage || '--' }}日
+                </el-tag>
+              </div>
+              <div class="code-line">
+                <span class="code-text">{{ row.bondCode }}</span>
+                <span class="code-sep">|</span>
+                <span>{{ row.stockName }} {{ row.stockCode }}</span>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="上市日" width="110" align="center">
+          <template #default="{ row }">{{ row.listDate }}</template>
+        </el-table-column>
+        <el-table-column label="最新价" width="100" align="right">
+          <template #default="{ row }">
+            <span class="hl">{{ row.latestPrice }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="发行以来" width="110" align="right">
+          <template #default="{ row }">
+            <span :class="trendClass(row._gainSinceListingRaw)">
+              {{ row.gainSinceListing }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="前三日" width="120" align="right">
+          <template #default="{ row }">
+            <el-tooltip
+              placement="top"
+              trigger="hover"
+              effect="light"
+              :show-after="120"
+              popper-class="formula-popper"
+            >
+              <template #content>
+                <div class="formula-tip">
+                  <div class="ft-formula">前三日涨幅 = 阶段价 ÷ 100 − 1</div>
+                  <div class="ft-detail">
+                    阶段价：{{ row.threeDayPrice }}（{{
+                      row.threeDayPriceDate
+                    }}）
+                  </div>
+                  <div class="ft-detail">
+                    已取上市后第 {{ row.threeDayStage || '--' }} 个交易日
+                  </div>
+                </div>
+              </template>
+              <span :class="trendClass(row._threeDayGainRaw)" @click.stop>
+                {{ row.threeDayGain }}
+              </span>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+        <el-table-column label="发行规模" width="110" align="right">
+          <template #default="{ row }">
+            <span>{{ row.issueSize }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="换手率" width="100" align="right">
+          <template #default="{ row }">
+            <span :class="trendClass(row._turnoverRateRaw)">{{
+              row.turnoverRate
+            }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div class="mobile-cards">
+        <el-card
+          v-for="row in filteredNewListed"
+          :key="row.bondCode"
+          class="mobile-card"
+          shadow="hover"
+          @click="goDetail(row.bondCode)"
+        >
+          <div class="mc-head">
+            <ExchangeBadge v-if="row.exchange" :exchange="row.exchange" />
+            <span class="bond-name">{{ row.bondName }}</span>
+            <el-tag size="small" effect="light" type="info">{{
+              row.listDate
+            }}</el-tag>
+          </div>
+          <div class="mc-code">
+            <span>{{ row.bondCode }}</span>
+            <span>{{ row.stockName }} {{ row.stockCode }}</span>
+          </div>
+          <div class="mc-metrics">
+            <div>
+              <span class="mc-label">最新</span
+              ><span class="hl">{{ row.latestPrice }}</span>
+            </div>
+            <div>
+              <span class="mc-label">发行以来</span
+              ><span :class="trendClass(row._gainSinceListingRaw)">{{
+                row.gainSinceListing
+              }}</span>
+            </div>
+            <div>
+              <span class="mc-label">前三日</span
+              ><span :class="trendClass(row._threeDayGainRaw)">{{
+                row.threeDayGain
+              }}</span>
+            </div>
+            <div>
+              <span class="mc-label">发行规模</span
+              ><span>{{ row.issueSize }}</span>
+            </div>
+            <div>
+              <span class="mc-label">换手率</span
+              ><span :class="trendClass(row._turnoverRateRaw)">{{
+                row.turnoverRate
+              }}</span>
+            </div>
           </div>
         </el-card>
       </div>
@@ -1218,8 +1370,16 @@
               ><span class="detail-value">{{ pendingDetail.ma20Price }}</span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">登记日基准价</span
-              ><span class="detail-value">{{ pendingDetail.recordPrice }}</span>
+              <span class="detail-label">登记日收盘价</span
+              ><span class="detail-value">{{
+                pendingDetail.registrationClosePrice
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">收尾价</span
+              ><span class="detail-value">{{
+                pendingDetail.postRegistrationClosePrice || '--'
+              }}</span>
             </div>
           </div>
         </div>
@@ -1259,6 +1419,45 @@
               ><span class="detail-value">{{
                 pendingDetail.shareholderRatio
               }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">原股东配售金额</span
+              ><span class="detail-value">{{
+                pendingDetail.shareholderAmount
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">首日可交易量</span
+              ><span class="detail-value">{{
+                pendingDetail.tradableAmount
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">配售数据状态</span
+              ><span class="detail-value">{{
+                pendingDetail.placementDataStatus === 'verified'
+                  ? '已核验'
+                  : pendingDetail.placementDataReason
+              }}</span>
+            </div>
+            <div
+              class="detail-item"
+              v-if="pendingDetail.placementAnnouncementDate"
+            >
+              <span class="detail-label">核验公告日</span
+              ><span class="detail-value">{{
+                pendingDetail.placementAnnouncementDate
+              }}</span>
+            </div>
+            <div class="detail-item" v-if="pendingDetail.placementSourceUrl">
+              <span class="detail-label">公告来源</span
+              ><a
+                class="detail-value"
+                :href="pendingDetail.placementSourceUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                >巨潮官方公告</a
+              >
             </div>
             <div class="detail-item">
               <span class="detail-label">股权登记日</span
@@ -1307,6 +1506,18 @@
                 {{ pendingDetail.placementPremiumRate }}%)</span
               ><span class="detail-value hl">{{
                 pendingDetail.expectedProfit
+              }}</span>
+            </div>
+            <div class="detail-item hl-box">
+              <span class="detail-label">参与后总收益</span
+              ><span class="detail-value hl">{{
+                pendingDetail.placementTotalReturn || '--'
+              }}</span>
+            </div>
+            <div class="detail-item hl-box">
+              <span class="detail-label">参与后总收益率</span
+              ><span class="detail-value hl">{{
+                pendingDetail.placementTotalReturnRate || '--'
               }}</span>
             </div>
             <div class="detail-item hl-box">
@@ -1843,6 +2054,7 @@ const userStore = useUserStore()
 
 const tabs = [
   { key: 'placement', label: '配售' },
+  { key: 'new_listed', label: '今年新债' },
   { key: 'double_low', label: '双低' },
   { key: 'force_redeem', label: '强赎' },
   { key: 'discount', label: '折价' },
@@ -1899,6 +2111,8 @@ const cbRecallItems = [
 const guideMap = {
   placement:
     '抢权配售：提前买正股获配债权，百元含权越高越划算，安全垫越高越安全',
+  new_listed:
+    '今年新债：观察发行以来、前三日涨幅、发行规模与换手率，用于复盘新债弹性与流动性',
   double_low: '双低值越小投资价值越高，低于150可入场，低于170可关注',
   force_redeem: '溢价率低于10%且价格105-140，接近强赎触发线，关注转股套利机会',
   discount: '溢价率为负说明转债比转股便宜，可研究转股套利空间',
@@ -1918,6 +2132,12 @@ const strategyConditions = {
       value:
         '配售为规划观察，非确认收益。需自行核实：申购资格、股权登记日、配售条款、缴款时点、公告日期与公告链接'
     }
+  ],
+  new_listed: [
+    { label: '筛选范围', value: '当前自然年上市的可转债' },
+    { label: '发行以来', value: '以面值 100 元为基准，实时价优先' },
+    { label: '发行规模', value: '取东财发行规模（亿元），非实时流通规模' },
+    { label: '换手率', value: '取东财行情换手率（%）' }
   ],
   double_low: [
     { label: '前置过滤', value: '溢价率 ≠ 0，且转股价值 ≥ 10' },
@@ -2082,6 +2302,7 @@ function resetPlacementPremiumRate() {
 function tabCount(key) {
   // 直接从 store 的 signals / pendingList 取数量，不依赖 marketTemp
   if (key === 'placement') return store.pendingList.length
+  if (key === 'new_listed') return store.newListedList.length
   if (key === 'double_low') return (store.signals.double_low || []).length
   if (key === 'force_redeem') return (store.signals.force_redeem || []).length
   if (key === 'discount') return (store.signals.discount || []).length
@@ -2100,6 +2321,8 @@ const placementTabStats = computed(() => {
     ).length
   }
 })
+
+const filteredNewListed = computed(() => matchSearch(store.newListedList))
 
 function filterPendingBySub(list, sub) {
   if (sub === 'subscribing') return list.filter((i) => i._status === '申购中')
@@ -2607,7 +2830,12 @@ function updateMobile(e) {
   isMobile.value = e.matches
 }
 
+let unregisterRefresh
 onMounted(() => {
+  unregisterRefresh = appStore.registerPageRefresh(
+    '/convertible',
+    store.loadAll
+  )
   store.loadAll()
   mql = window.matchMedia('(max-width: 768px)')
   isMobile.value = mql.matches
@@ -2619,6 +2847,7 @@ onActivated(() => {
 })
 
 onUnmounted(() => {
+  unregisterRefresh?.()
   if (mql) mql.removeEventListener('change', updateMobile)
 })
 </script>

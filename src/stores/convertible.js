@@ -5,6 +5,7 @@ import { marketApi } from '@/api/market'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import { downloadPlacementExport } from '@/utils/placementExportDownload'
+import { normalizeNewListedItem } from '@/domain/convertibleNewListed'
 
 // 交易所判定
 function detectExchange(stockCode = '', bondCode = '') {
@@ -145,6 +146,13 @@ export const PLACEMENT_PREMIUM_RATE_OPTIONS = [30, 40, 50, 60, 70, 80, 90, 100]
 export const PLACEMENT_PREMIUM_RATE_STORAGE_KEY =
   'convertiblePlacementPremiumRate'
 
+function strategyRatingFromClass(strategyRatingClass) {
+  if (strategyRatingClass === 'recommend') return '推荐'
+  if (strategyRatingClass === 'watch') return '可关注'
+  if (strategyRatingClass === 'observation') return '待核验'
+  return '谨慎'
+}
+
 function isValidPlacementPremiumRate(value) {
   return (
     Number.isInteger(value) && PLACEMENT_PREMIUM_RATE_OPTIONS.includes(value)
@@ -165,33 +173,50 @@ function readPlacementPremiumRate() {
 
 function calculatePlacementMetrics(item, premiumRate) {
   const expectedProfit = 1000 * (premiumRate / 100)
-  const cost = item._costPerLotRaw || 0
+  const cost = item._registrationCloseCostRaw || item._costPerLotRaw || 0
   const safetyPad = cost > 0 ? (expectedProfit / cost) * 100 : null
+  const stockLegProfit =
+    item._registrationClosePriceRaw > 0 &&
+    item._postRegistrationClosePriceRaw > 0 &&
+    item._actualSharesFor1Lot > 0
+      ? (item._postRegistrationClosePriceRaw -
+          item._registrationClosePriceRaw) *
+        item._actualSharesFor1Lot
+      : null
+  const placementTotalReturn =
+    stockLegProfit == null ? null : stockLegProfit + expectedProfit
+  const placementTotalReturnRate =
+    placementTotalReturn == null || cost <= 0
+      ? null
+      : (placementTotalReturn / cost) * 100
   const issueSize = item._issueSizeRaw || 0
-  const tradableAmount = item._tradableAmountRaw || 0
+  const tradableAmount = item._tradableAmountRaw
   const issueScore = Math.max(0, 1 - issueSize / 10)
   const tradableScore =
-    issueSize > 0 ? Math.max(0, Math.min(1, 1 - tradableAmount / issueSize)) : 0
+    issueSize > 0 && tradableAmount != null
+      ? Math.max(0, Math.min(1, 1 - tradableAmount / issueSize))
+      : null
   const safetyScore = safetyPad == null ? 0 : Math.min(safetyPad / 10, 1)
-  const strategyScore = Math.round(
-    issueScore * 30 + tradableScore * 40 + safetyScore * 30
-  )
+  const strategyScore =
+    tradableScore == null
+      ? null
+      : Math.round(issueScore * 30 + tradableScore * 40 + safetyScore * 30)
   const strategyRatingClass =
-    strategyScore >= 80
-      ? 'recommend'
-      : strategyScore >= 60
-        ? 'watch'
-        : 'caution'
-  const strategyRating =
-    strategyRatingClass === 'recommend'
-      ? '推荐'
-      : strategyRatingClass === 'watch'
-        ? '可关注'
-        : '谨慎'
+    strategyScore == null
+      ? 'observation'
+      : strategyScore >= 80
+        ? 'recommend'
+        : strategyScore >= 60
+          ? 'watch'
+          : 'caution'
+  const strategyRating = strategyRatingFromClass(strategyRatingClass)
 
   return {
     expectedProfit,
     safetyPad,
+    stockLegProfit,
+    placementTotalReturn,
+    placementTotalReturnRate,
     strategyScore,
     strategyRating,
     strategyRatingClass
@@ -203,12 +228,30 @@ function derivePlacementItem(item, premiumRate) {
   const expectedProfit = Math.round(metrics.expectedProfit) + '元'
   const safetyPad =
     metrics.safetyPad == null ? '--' : metrics.safetyPad.toFixed(2) + '%'
+  const placementTotalReturn =
+    metrics.placementTotalReturn == null
+      ? '--'
+      : Math.round(metrics.placementTotalReturn) + '元'
+  const placementTotalReturnRate =
+    metrics.placementTotalReturnRate == null
+      ? '--'
+      : metrics.placementTotalReturnRate.toFixed(2) + '%'
+  const placementStockReturn =
+    metrics.stockLegProfit == null
+      ? '--'
+      : Math.round(metrics.stockLegProfit) + '元'
   return {
     ...item,
     expectedProfit,
     _expectedProfitRaw: metrics.expectedProfit,
     safetyPad,
     _safetyPadRaw: metrics.safetyPad,
+    placementStockReturn,
+    _placementStockReturnRaw: metrics.stockLegProfit,
+    placementTotalReturn,
+    _placementTotalReturnRaw: metrics.placementTotalReturn,
+    placementTotalReturnRate,
+    _placementTotalReturnRateRaw: metrics.placementTotalReturnRate,
     strategyScore: metrics.strategyScore,
     strategyRating: metrics.strategyRating,
     strategyRatingClass: metrics.strategyRatingClass,
@@ -221,6 +264,12 @@ function derivePlacementItem(item, premiumRate) {
           _expectedProfitRaw: metrics.expectedProfit,
           safetyPad,
           _safetyPadRaw: metrics.safetyPad,
+          placementStockReturn,
+          _placementStockReturnRaw: metrics.stockLegProfit,
+          placementTotalReturn,
+          _placementTotalReturnRaw: metrics.placementTotalReturn,
+          placementTotalReturnRate,
+          _placementTotalReturnRateRaw: metrics.placementTotalReturnRate,
           strategyScore: metrics.strategyScore,
           strategyRating: metrics.strategyRating,
           strategyRatingClass: metrics.strategyRatingClass,
@@ -424,7 +473,8 @@ function normalizePendingItem(item) {
   const progress = stripHtml(item.progress) || status
   const issueSize = item.issue_size || 0
   const rating = item.rating || ''
-  const shareholderRatio = item.shareholder_ratio || 0
+  const shareholderRatio = item.shareholder_ratio ?? null
+  const shareholderAmount = item.shareholder_amount ?? null
   const stockPrice = item.stock_price || 0
   const stockChange = item.stock_change || 0
   const conversionPrice = item.conversion_price || 0
@@ -448,7 +498,9 @@ function normalizePendingItem(item) {
       : item.stock_cash_ratio || 0
 
   const riskLevel = item.risk_level || 'mid'
-  const recordPrice = item.record_price || 0
+  const registrationClosePrice = item.registration_close_price ?? null
+  const postRegistrationClosePrice = item.post_registration_close_price ?? null
+  const recordPrice = registrationClosePrice || item.record_price || 0
   const ma20Price = item.ma20_price || 0
 
   // 获配每手（10张债券）所需股数（理论值，不取整）
@@ -461,6 +513,10 @@ function normalizePendingItem(item) {
 
   // 获配每手所需成本（按实际需购买的整数手股数计算）
   const _costPerLotRaw = _actualSharesFor1Lot * stockPrice
+  const _registrationCloseCostRaw =
+    _actualSharesFor1Lot > 0 && registrationClosePrice > 0
+      ? _actualSharesFor1Lot * registrationClosePrice
+      : 0
 
   // 安全垫（用实际股数计算，贴近真实成交成本）
   const apiSafetyPad = item.safety_pad ?? null
@@ -529,14 +585,9 @@ function normalizePendingItem(item) {
   // 首日可交易量 & 策略评级（后端新增字段）
   const tradableAmount =
     item.tradable_amount != null ? item.tradable_amount.toFixed(2) + '亿' : '--'
-  const _tradableAmountRaw = item.tradable_amount ?? 0
+  const _tradableAmountRaw = item.tradable_amount ?? null
   const strategyScore = item.strategy_score ?? 0
-  const strategyRating =
-    item.strategy_rating === 'recommend'
-      ? '推荐'
-      : item.strategy_rating === 'watch'
-        ? '可关注'
-        : '谨慎'
+  const strategyRating = strategyRatingFromClass(item.strategy_rating)
   const strategyRatingClass = item.strategy_rating || 'caution'
 
   // 发行时间轴 — 复用已解析的 stageDateMap，补充申购/上市日期
@@ -584,6 +635,9 @@ function normalizePendingItem(item) {
     shareholderRatio:
       shareholderRatio != null ? shareholderRatio.toFixed(1) + '%' : '--',
     _shareholderRatioRaw: shareholderRatio,
+    shareholderAmount:
+      shareholderAmount != null ? shareholderAmount.toFixed(2) + '亿' : '--',
+    _shareholderAmountRaw: shareholderAmount,
     conversionPrice: conversionPrice ? conversionPrice.toFixed(2) : '--',
     pb: pb ? pb.toFixed(2) : '--',
     cashRatio: cashRatio != null ? cashRatio.toFixed(2) + '元' : '--',
@@ -637,12 +691,31 @@ function normalizePendingItem(item) {
         : '--',
     _stockTrendRaw: stockTrend,
     recordPrice: recordPrice ? recordPrice.toFixed(2) : '--',
+    registrationClosePrice:
+      registrationClosePrice > 0 ? registrationClosePrice.toFixed(2) : '--',
+    _registrationClosePriceRaw: registrationClosePrice,
+    postRegistrationClosePrice:
+      postRegistrationClosePrice > 0
+        ? postRegistrationClosePrice.toFixed(2)
+        : '--',
+    _postRegistrationClosePriceRaw: postRegistrationClosePrice,
+    registrationCloseCost:
+      _registrationCloseCostRaw > 0
+        ? Math.round(_registrationCloseCostRaw) + '元'
+        : '--',
+    _registrationCloseCostRaw,
     oneHandParty,
     safetyPad: apiSafetyPad != null ? apiSafetyPad.toFixed(2) + '%' : '--',
     _safetyPadRaw: apiSafetyPad,
     _apiSafetyPadRaw: apiSafetyPad,
     tradableAmount,
     _tradableAmountRaw,
+    placementDataStatus: item.placement_data_status || 'unavailable',
+    placementDataReason:
+      item.placement_data_reason || '等待巨潮官方配售结果公告',
+    placementAnnouncementId: item.placement_announcement_id || null,
+    placementAnnouncementDate: item.placement_announcement_date || null,
+    placementSourceUrl: item.placement_source_url || null,
     strategyScore,
     strategyRating,
     strategyRatingClass,
@@ -685,6 +758,20 @@ function normalizePendingItem(item) {
       rating: rating || '暂无',
       shareholderRatio:
         shareholderRatio != null ? shareholderRatio.toFixed(1) + '%' : '暂无',
+      shareholderAmount:
+        shareholderAmount != null
+          ? shareholderAmount.toFixed(2) + '亿元'
+          : '暂无',
+      tradableAmount:
+        _tradableAmountRaw != null
+          ? _tradableAmountRaw.toFixed(2) + '亿元'
+          : '暂无',
+      placementDataStatus: item.placement_data_status || 'unavailable',
+      placementDataReason:
+        item.placement_data_reason || '等待巨潮官方配售结果公告',
+      placementAnnouncementId: item.placement_announcement_id || null,
+      placementAnnouncementDate: item.placement_announcement_date || null,
+      placementSourceUrl: item.placement_source_url || null,
       conversionPrice: conversionPrice
         ? conversionPrice.toFixed(2) + '元'
         : '暂无',
@@ -717,6 +804,21 @@ function normalizePendingItem(item) {
           : '暂无',
       _stockTrendRaw: stockTrend,
       recordPrice: recordPrice ? recordPrice.toFixed(2) + '元' : '暂无',
+      registrationClosePrice:
+        registrationClosePrice > 0
+          ? registrationClosePrice.toFixed(2) + '元'
+          : '暂无',
+      _registrationClosePriceRaw: registrationClosePrice,
+      postRegistrationClosePrice:
+        postRegistrationClosePrice > 0
+          ? postRegistrationClosePrice.toFixed(2) + '元'
+          : '暂无',
+      _postRegistrationClosePriceRaw: postRegistrationClosePrice,
+      registrationCloseCost:
+        _registrationCloseCostRaw > 0
+          ? Math.round(_registrationCloseCostRaw) + '元'
+          : '暂无',
+      _registrationCloseCostRaw,
       ma20Price: ma20Price ? ma20Price.toFixed(2) + '元' : '暂无',
       oneHandMinCost:
         _oneHandMinShares > 0
@@ -807,6 +909,7 @@ function emptySignals() {
 export const useConvertibleStore = defineStore('convertible', () => {
   const bondList = ref([])
   const signals = ref(emptySignals())
+  const newListedList = ref([])
   const pendingSourceList = ref([])
   const pendingSnapshotMeta = ref(null)
   const placementPremiumRate = ref(readPlacementPremiumRate())
@@ -942,77 +1045,136 @@ export const useConvertibleStore = defineStore('convertible', () => {
     marketTemp.value = counts
   }
 
-  async function loadAll() {
+  function hasMarketTemperature(value) {
+    if (!value || typeof value !== 'object') return false
+    return [
+      'count',
+      'price_median',
+      'premium_median',
+      'double_low_median',
+      'market_status'
+    ].some((key) => value[key] !== undefined && value[key] !== null)
+  }
+
+  async function loadAll({ refresh = false } = {}) {
     loading.value = true
     error.value = null
     try {
-      const signalsPromise = convertibleApi.signals().catch((e) => {
-        console.error('加载信号失败:', e)
-        return null
-      })
+      const requestParams = refresh ? { refresh: true } : {}
+      const signalsPromise = convertibleApi
+        .signals(requestParams)
+        .catch((e) => {
+          console.error('加载信号失败:', e)
+          return null
+        })
       const listPromise = convertibleApi
-        .list({ page: 1, pageSize: 500 })
+        .list({ page: 1, pageSize: 500, ...requestParams })
         .catch((e) => {
           console.error('加载转债列表失败:', e)
           return null
         })
-      const overviewPromise = marketApi.overview().catch((e) => {
+      const overviewPromise = marketApi.overview(requestParams).catch((e) => {
         console.error('加载市场概览失败:', e)
         return null
       })
-      const pendingPromise = convertibleApi.pending().catch((e) => {
-        console.error('加载配售数据失败:', e)
-        return null
-      })
+      const temperaturePromise = convertibleApi
+        .temperature(requestParams)
+        .catch((e) => {
+          console.error('加载市场温度失败:', e)
+          return null
+        })
+      const pendingPromise = convertibleApi
+        .pending(requestParams)
+        .catch((e) => {
+          console.error('加载配售数据失败:', e)
+          return null
+        })
+      const newListedPromise = convertibleApi
+        .newListed(requestParams)
+        .catch((e) => {
+          console.error('加载今年新债失败:', e)
+          return null
+        })
 
       let bondItems = []
       let pendingData = []
+      let rawSignals = null
+      let overviewData = null
+      let temperatureData = null
 
-      // 信号策略不等待配售、概览、全量列表接口；慢接口返回后再补齐。
-      const rawSignals = await signalsPromise
-      applySignals(rawSignals, pendingData, bondItems)
-      applyMarketTemp(rawSignals, null)
+      function refreshMarketTemp() {
+        const overviewTemperature = overviewData?.convertible_bond
+        const preferredTemperature = hasMarketTemperature(overviewTemperature)
+          ? overviewTemperature
+          : temperatureData
+        applyMarketTemp(
+          rawSignals,
+          preferredTemperature
+            ? { convertible_bond: preferredTemperature }
+            : null
+        )
+      }
+
+      // 首屏不等待任一外部数据源；每个结果到达后独立补齐对应区域。
+      signalsPromise.then((value) => {
+        if (value === null) return
+        rawSignals = value
+        applySignals(rawSignals, pendingData, bondItems)
+        refreshMarketTemp()
+      })
 
       listPromise.then((bondListData) => {
+        if (!bondListData) return
         bondItems = bondListData?.items || bondListData?.data?.items || []
         applySignals(rawSignals, pendingData, bondItems)
       })
 
       pendingPromise.then((pending) => {
+        if (pending === null) return
         pendingData = pending
         applySignals(rawSignals, pendingData, bondItems)
       })
 
-      overviewPromise.then((overview) => {
-        applyMarketTemp(rawSignals, overview)
+      newListedPromise.then((payload) => {
+        if (payload === null) return
+        const arr = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.items)
+            ? payload.items
+            : Array.isArray(payload?.data)
+              ? payload.data
+              : []
+        newListedList.value = arr.map(normalizeNewListedItem).filter(Boolean)
       })
 
-      // 若 overview 未返回温度，再单独请求温度接口兜底
-      overviewPromise.then(async (overview) => {
-        if (overview?.convertible_bond) return
-        try {
-          const temp = await convertibleApi.temperature()
-          if (temp && marketTemp.value) {
-            marketTemp.value.count = temp.count ?? marketTemp.value.count
-            marketTemp.value.priceMedian =
-              temp.price_median ?? marketTemp.value.priceMedian
-            marketTemp.value.premiumMedian =
-              temp.premium_median !== undefined
-                ? temp.premium_median
-                : marketTemp.value.premiumMedian
-            marketTemp.value.doubleLowMedian =
-              temp.double_low_median ?? marketTemp.value.doubleLowMedian
-            marketTemp.value.marketStatus =
-              temp.market_status ?? marketTemp.value.marketStatus
-          }
-        } catch (e) {
-          /* ignore */
-        }
+      overviewPromise.then((overview) => {
+        if (!overview) return
+        overviewData = overview
+        refreshMarketTemp()
       })
+
+      temperaturePromise.then((temperature) => {
+        if (!temperature) return
+        temperatureData = temperature
+        refreshMarketTemp()
+      })
+      if (refresh) {
+        const results = await Promise.all([
+          signalsPromise,
+          listPromise,
+          overviewPromise,
+          temperaturePromise,
+          pendingPromise,
+          newListedPromise
+        ])
+        if (results.some((value) => value === null)) return false
+      }
       lastUpdated.value = new Date().toISOString()
       useAppStore().setLastUpdated()
+      return true
     } catch (err) {
       error.value = err?.message || '加载失败'
+      return false
     } finally {
       loading.value = false
     }
@@ -1037,6 +1199,7 @@ export const useConvertibleStore = defineStore('convertible', () => {
     )
     const mark = (list) =>
       list.map((item) => ({ ...item, isFavorite: favSet.has(item.bondCode) }))
+    newListedList.value = mark(newListedList.value)
     const next = {
       placement: signals.value.placement,
       double_low: mark(signals.value.double_low),
@@ -1050,6 +1213,7 @@ export const useConvertibleStore = defineStore('convertible', () => {
   return {
     bondList,
     signals,
+    newListedList,
     pendingList,
     pendingSnapshotMeta,
     placementPremiumRate,

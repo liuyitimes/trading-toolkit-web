@@ -4,7 +4,10 @@
       <el-button text @click="router.back()">
         <el-icon><ArrowLeft /></el-icon> 返回
       </el-button>
-      <h2>{{ detail?.name || '新股详情' }} <TierBadge tier="beginner" :threshold="10000" /></h2>
+      <h2>
+        {{ detail?.name || '新股详情' }}
+        <TierBadge tier="beginner" :threshold="10000" />
+      </h2>
     </div>
 
     <div v-loading="loading">
@@ -20,22 +23,58 @@
                 </div>
               </template>
               <el-descriptions :column="{ xs: 1, sm: 2 }" border>
-                <el-descriptions-item label="股票代码">{{ detail.code }}</el-descriptions-item>
-                <el-descriptions-item label="股票名称">{{ detail.name }}</el-descriptions-item>
-                <el-descriptions-item label="申购代码">{{ detail.applyCode || '--' }}</el-descriptions-item>
+                <el-descriptions-item label="股票代码">{{
+                  detail.code
+                }}</el-descriptions-item>
+                <el-descriptions-item label="股票名称">{{
+                  detail.name
+                }}</el-descriptions-item>
+                <el-descriptions-item label="申购代码">{{
+                  detail.applyCode || '--'
+                }}</el-descriptions-item>
                 <el-descriptions-item label="发行价格">
-                  <span v-if="detail.ipoPrice > 0">{{ formatNumber(detail.ipoPrice) }} 元</span>
+                  <span v-if="detail.ipoPrice > 0"
+                    >{{ formatNumber(detail.ipoPrice) }} 元</span
+                  >
                   <span v-else class="text-muted">待定</span>
                 </el-descriptions-item>
-                <el-descriptions-item label="发行总量">{{ formatNumber(detail.issueTotal) }} 万股</el-descriptions-item>
-                <el-descriptions-item label="网上发行">{{ formatNumber(detail.onlineIssue) }} 万股</el-descriptions-item>
-                <el-descriptions-item label="申购上限">{{ formatNumber(detail.applyLimit) }} 万股</el-descriptions-item>
-                <el-descriptions-item label="顶格配市值">{{ formatNumber(detail.topValue) }} 万元</el-descriptions-item>
-                <el-descriptions-item label="申购日期">{{ detail.applyDate || '--' }}</el-descriptions-item>
-                <el-descriptions-item label="中签缴款日">{{ detail.payDate || '--' }}</el-descriptions-item>
-                <el-descriptions-item label="上市日期">{{ detail.listDate || '未上市' }}</el-descriptions-item>
+                <el-descriptions-item label="发行总量"
+                  >{{
+                    formatNumber(detail.issueTotal)
+                  }}
+                  万股</el-descriptions-item
+                >
+                <el-descriptions-item label="网上发行"
+                  >{{
+                    formatNumber(detail.onlineIssue)
+                  }}
+                  万股</el-descriptions-item
+                >
+                <el-descriptions-item label="申购上限"
+                  >{{
+                    formatNumber(detail.applyLimit)
+                  }}
+                  万股</el-descriptions-item
+                >
+                <el-descriptions-item label="顶格配市值"
+                  >{{
+                    formatNumber(detail.topValue)
+                  }}
+                  万元</el-descriptions-item
+                >
+                <el-descriptions-item label="申购日期">{{
+                  detail.applyDate || '--'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="中签缴款日">{{
+                  detail.payDate || '--'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="上市日期">{{
+                  detail.listDate || '未上市'
+                }}</el-descriptions-item>
                 <el-descriptions-item label="中签率">
-                  <span v-if="detail.winRate !== ''">{{ detail.winRate }}%</span>
+                  <span v-if="detail.winRate !== ''"
+                    >{{ detail.winRate }}%</span
+                  >
                   <span v-else class="text-muted">暂无</span>
                 </el-descriptions-item>
               </el-descriptions>
@@ -62,24 +101,43 @@
                 <div class="pe-item">
                   <div class="pe-label">差值</div>
                   <div class="pe-value" :class="peDiffClass">
-                    {{ detail.peDiff != null ? (detail.peDiff > 0 ? '+' : '') + detail.peDiff : '--' }}
+                    {{
+                      detail.peDiff != null
+                        ? (detail.peDiff > 0 ? '+' : '') + detail.peDiff
+                        : '--'
+                    }}
                   </div>
                 </div>
                 <div class="pe-item">
                   <div class="pe-label">估值评级</div>
-                  <el-tag :type="detail.peRating.type" size="large" effect="light">{{ detail.peRating.label }}</el-tag>
+                  <el-tag
+                    :type="detail.peRating.type"
+                    size="large"
+                    effect="light"
+                    >{{ detail.peRating.label }}</el-tag
+                  >
                 </div>
               </div>
               <div class="pe-hint">
                 <el-icon><InfoFilled /></el-icon>
-                <span v-if="detail.peDiff < 0">发行 PE 低于行业 PE，估值相对偏低，具有一定安全边际。</span>
-                <span v-else-if="detail.peDiff <= 5">发行 PE 接近行业 PE，估值合理。</span>
-                <span v-else>发行 PE 高于行业 PE，估值偏高，需关注溢价风险。</span>
+                <span v-if="detail.peDiff < 0"
+                  >发行 PE 低于行业 PE，估值相对偏低，具有一定安全边际。</span
+                >
+                <span v-else-if="detail.peDiff <= 5"
+                  >发行 PE 接近行业 PE，估值合理。</span
+                >
+                <span v-else
+                  >发行 PE 高于行业 PE，估值偏高，需关注溢价风险。</span
+                >
               </div>
             </el-card>
 
             <!-- 上市表现（已上市） -->
-            <el-card shadow="hover" style="margin-top: 16px" v-if="detail.status === 'listed'">
+            <el-card
+              shadow="hover"
+              style="margin-top: 16px"
+              v-if="detail.status === 'listed'"
+            >
               <template #header>
                 <div class="section-header">
                   <el-icon><TrendCharts /></el-icon>
@@ -88,15 +146,21 @@
               </template>
               <el-descriptions :column="{ xs: 1, sm: 3 }" border>
                 <el-descriptions-item label="打新收益">
-                  <span v-if="detail.plateGain" class="text-success">{{ detail.plateGain }}</span>
+                  <span v-if="detail.plateGain" class="text-success">{{
+                    detail.plateGain
+                  }}</span>
                   <span v-else class="text-muted">--</span>
                 </el-descriptions-item>
                 <el-descriptions-item label="首日最高涨幅">
-                  <span v-if="detail.firstDayGain" class="text-success">{{ detail.firstDayGain }}</span>
+                  <span v-if="detail.firstDayGain" class="text-success">{{
+                    detail.firstDayGain
+                  }}</span>
                   <span v-else class="text-muted">--</span>
                 </el-descriptions-item>
                 <el-descriptions-item label="连板天数">
-                  <span v-if="detail.continuousDays">{{ detail.continuousDays }} 天</span>
+                  <span v-if="detail.continuousDays"
+                    >{{ detail.continuousDays }} 天</span
+                  >
                   <span v-else class="text-muted">--</span>
                 </el-descriptions-item>
               </el-descriptions>
@@ -156,11 +220,18 @@
               <div class="quick-summary">
                 <div class="summary-row">
                   <span class="label">状态</span>
-                  <el-tag :type="statusTag.type" size="small">{{ statusTag.label }}</el-tag>
+                  <el-tag :type="statusTag.type" size="small">{{
+                    statusTag.label
+                  }}</el-tag>
                 </div>
                 <div class="summary-row">
                   <span class="label">估值</span>
-                  <el-tag :type="detail.peRating.type" size="small" effect="light">{{ detail.peRating.label }}</el-tag>
+                  <el-tag
+                    :type="detail.peRating.type"
+                    size="small"
+                    effect="light"
+                    >{{ detail.peRating.label }}</el-tag
+                  >
                 </div>
                 <div class="summary-row" v-if="detail.winRate">
                   <span class="label">中签率</span>
@@ -172,7 +243,9 @@
                 </div>
                 <div class="summary-row" v-if="detail.applyLimit > 0">
                   <span class="label">申购上限</span>
-                  <span class="value">{{ formatNumber(detail.applyLimit) }}万股</span>
+                  <span class="value"
+                    >{{ formatNumber(detail.applyLimit) }}万股</span
+                  >
                 </div>
               </div>
             </el-card>
@@ -186,20 +259,29 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { hkipoApi } from '@/api/hkipo'
 import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
 import { formatNumber } from '@/utils/format'
 import TierBadge from '@/components/TierBadge.vue'
 import {
-  ArrowLeft, InfoFilled, DataAnalysis, Clock, Operation,
-  Star, StarFilled, Tickets, TrendCharts
+  ArrowLeft,
+  InfoFilled,
+  DataAnalysis,
+  Clock,
+  Operation,
+  Star,
+  StarFilled,
+  Tickets,
+  TrendCharts
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 const detail = ref(null)
 const loading = ref(true)
@@ -215,23 +297,44 @@ const peDiffClass = computed(() => {
 
 const statusTag = computed(() => {
   if (!detail.value) return { type: 'info', label: '--' }
-  if (detail.value.status === 'listed') return { type: 'success', label: '已上市' }
-  if (detail.value.status === 'upcoming') return { type: 'warning', label: '申购中' }
+  if (detail.value.status === 'listed')
+    return { type: 'success', label: '已上市' }
+  if (detail.value.status === 'upcoming')
+    return { type: 'warning', label: '申购中' }
   return { type: 'info', label: '待申购' }
 })
 
 const timeline = computed(() => {
   if (!detail.value) return []
   const items = []
-  if (detail.value.applyDate) items.push({ date: detail.value.applyDate, text: '申购日期', type: 'primary' })
-  if (detail.value.payDate) items.push({ date: detail.value.payDate, text: '中签缴款日', type: 'warning' })
-  if (detail.value.listDate) items.push({ date: detail.value.listDate, text: '上市日期', type: 'success' })
+  if (detail.value.applyDate)
+    items.push({
+      date: detail.value.applyDate,
+      text: '申购日期',
+      type: 'primary'
+    })
+  if (detail.value.payDate)
+    items.push({
+      date: detail.value.payDate,
+      text: '中签缴款日',
+      type: 'warning'
+    })
+  if (detail.value.listDate)
+    items.push({
+      date: detail.value.listDate,
+      text: '上市日期',
+      type: 'success'
+    })
   return items
 })
 
-onMounted(async () => {
+async function loadDetail({ refresh = false } = {}) {
+  loading.value = true
   try {
-    const data = await hkipoApi.detail(route.params.code)
+    const data = await hkipoApi.detail(
+      route.params.code,
+      refresh ? { refresh: true } : {}
+    )
     if (data) {
       const peDiff = data.pe_diff ?? 0
       const getPeRating = (diff) => {
@@ -259,14 +362,28 @@ onMounted(async () => {
         firstDayGain: data.first_day_gain || '',
         plateGain: data.plate_gain || '',
         continuousDays: data.continuous_days || '',
-        status: data.status || 'pending',
+        status: data.status || 'pending'
       }
+      appStore.setLastUpdated()
+      return true
     }
+    return false
   } catch {
-    detail.value = null
+    if (!detail.value) detail.value = null
+    return false
   } finally {
     loading.value = false
   }
+}
+
+let unregisterRefresh
+onMounted(() => {
+  unregisterRefresh = appStore.registerPageRefresh(route.path, loadDetail)
+  loadDetail()
+})
+
+onUnmounted(() => {
+  unregisterRefresh?.()
 })
 
 function toggleFav() {

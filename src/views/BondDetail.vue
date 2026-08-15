@@ -6,8 +6,12 @@
         <el-icon><ArrowLeft /></el-icon> 返回
       </el-button>
       <h2 class="page-title">
-        <el-tag v-if="d" :type="exchangeTagType" size="small" effect="dark">{{ exchangeLabel }}</el-tag>
-        <span class="title-text">{{ d ? `${d.bond_name} ${d.bond_code}` : '可转债详情' }}</span>
+        <el-tag v-if="d" :type="exchangeTagType" size="small" effect="dark">{{
+          exchangeLabel
+        }}</el-tag>
+        <span class="title-text">{{
+          d ? `${d.bond_name} ${d.bond_code}` : '可转债详情'
+        }}</span>
         <TierBadge tier="beginner" :threshold="10000" />
       </h2>
       <el-button
@@ -29,26 +33,48 @@
           <el-card shadow="hover" class="block-card">
             <template #header><span>基础信息</span></template>
             <el-descriptions :column="2" border size="small">
-              <el-descriptions-item label="转债代码">{{ d.bond_code }}</el-descriptions-item>
-              <el-descriptions-item label="转债名称">{{ d.bond_name }}</el-descriptions-item>
-              <el-descriptions-item label="正股代码">{{ d.stock_code || '--' }}</el-descriptions-item>
-              <el-descriptions-item label="正股名称">{{ d.stock_name || '--' }}</el-descriptions-item>
-              <el-descriptions-item label="转债价格">{{ formatNumber(d.price) }}</el-descriptions-item>
-              <el-descriptions-item label="转股价值">{{ formatNumber(d.conversion_value) }}</el-descriptions-item>
+              <el-descriptions-item label="转债代码">{{
+                d.bond_code
+              }}</el-descriptions-item>
+              <el-descriptions-item label="转债名称">{{
+                d.bond_name
+              }}</el-descriptions-item>
+              <el-descriptions-item label="正股代码">{{
+                d.stock_code || '--'
+              }}</el-descriptions-item>
+              <el-descriptions-item label="正股名称">{{
+                d.stock_name || '--'
+              }}</el-descriptions-item>
+              <el-descriptions-item label="转债价格">{{
+                formatNumber(d.price)
+              }}</el-descriptions-item>
+              <el-descriptions-item label="转股价值">{{
+                formatNumber(d.conversion_value)
+              }}</el-descriptions-item>
               <el-descriptions-item label="溢价率">
                 <span :style="{ color: formatColor(d.premium_rate) }">
                   {{ formatNumber(d.premium_rate) }}%
                 </span>
               </el-descriptions-item>
-              <el-descriptions-item label="双低值">{{ formatNumber(d.double_low, 1) }}</el-descriptions-item>
+              <el-descriptions-item label="双低值">{{
+                formatNumber(d.double_low, 1)
+              }}</el-descriptions-item>
               <el-descriptions-item label="到期收益率">
                 {{ d.ytm != null ? formatNumber(d.ytm) + '%' : '--' }}
               </el-descriptions-item>
               <el-descriptions-item label="剩余规模">
-                {{ d.remaining_size != null ? formatNumber(d.remaining_size) + ' 亿' : '--' }}
+                {{
+                  d.remaining_size != null
+                    ? formatNumber(d.remaining_size) + ' 亿'
+                    : '--'
+                }}
               </el-descriptions-item>
-              <el-descriptions-item label="评级">{{ d.rating || '--' }}</el-descriptions-item>
-              <el-descriptions-item label="到期日">{{ formatDate(d.maturity_date) }}</el-descriptions-item>
+              <el-descriptions-item label="评级">{{
+                d.rating || '--'
+              }}</el-descriptions-item>
+              <el-descriptions-item label="到期日">{{
+                formatDate(d.maturity_date)
+              }}</el-descriptions-item>
             </el-descriptions>
           </el-card>
 
@@ -57,11 +83,19 @@
             <template #header><span>强制赎回进度</span></template>
             <div v-if="hasForceRedeemData" class="progress-block">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="转股价">{{ formatNumber(d.conversion_price) }}</el-descriptions-item>
-                <el-descriptions-item label="强赎触发价">{{ formatNumber(forceRedeemPrice) }}</el-descriptions-item>
-                <el-descriptions-item label="正股价">{{ formatNumber(d.stock_price) }}</el-descriptions-item>
+                <el-descriptions-item label="转股价">{{
+                  formatNumber(d.conversion_price)
+                }}</el-descriptions-item>
+                <el-descriptions-item label="强赎触发价">{{
+                  formatNumber(forceRedeemPrice)
+                }}</el-descriptions-item>
+                <el-descriptions-item label="正股价">{{
+                  formatNumber(d.stock_price)
+                }}</el-descriptions-item>
                 <el-descriptions-item label="距强赎线差幅">
-                  <span :class="forceRedeemGap >= 0 ? 'gap-danger' : 'gap-success'">
+                  <span
+                    :class="forceRedeemGap >= 0 ? 'gap-danger' : 'gap-success'"
+                  >
                     {{ formatForceRedeemGap }}
                   </span>
                 </el-descriptions-item>
@@ -69,8 +103,15 @@
               <div class="progress-wrapper">
                 <div class="progress-line">
                   <span class="progress-label">距强赎线进度</span>
-                  <span class="progress-hint" :class="forceRedeemGap >= 0 ? 'gap-danger' : 'gap-success'">
-                    {{ forceRedeemGap >= 0 ? '已接近/触发强赎区域' : '处于安全区域' }}
+                  <span
+                    class="progress-hint"
+                    :class="forceRedeemGap >= 0 ? 'gap-danger' : 'gap-success'"
+                  >
+                    {{
+                      forceRedeemGap >= 0
+                        ? '已接近/触发强赎区域'
+                        : '处于安全区域'
+                    }}
                   </span>
                 </div>
                 <el-progress
@@ -89,9 +130,15 @@
             <template #header><span>下修进度</span></template>
             <div v-if="hasReviseData" class="progress-block">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="转股价">{{ formatNumber(d.conversion_price) }}</el-descriptions-item>
-                <el-descriptions-item label="下修触发价">{{ formatNumber(revisePrice) }}</el-descriptions-item>
-                <el-descriptions-item label="正股价">{{ formatNumber(d.stock_price) }}</el-descriptions-item>
+                <el-descriptions-item label="转股价">{{
+                  formatNumber(d.conversion_price)
+                }}</el-descriptions-item>
+                <el-descriptions-item label="下修触发价">{{
+                  formatNumber(revisePrice)
+                }}</el-descriptions-item>
+                <el-descriptions-item label="正股价">{{
+                  formatNumber(d.stock_price)
+                }}</el-descriptions-item>
                 <el-descriptions-item label="距下修线差幅">
                   <span :class="reviseGap < 0 ? 'gap-warning' : ''">
                     {{ formatReviseGap }}
@@ -101,8 +148,15 @@
               <div class="progress-wrapper">
                 <div class="progress-line">
                   <span class="progress-label">距下修线进度</span>
-                  <span class="progress-hint" :class="reviseGap < 0 ? 'gap-warning' : ''">
-                    {{ reviseGap < 0 ? '正股已跌破下修线，可能触发下修' : '未触发下修' }}
+                  <span
+                    class="progress-hint"
+                    :class="reviseGap < 0 ? 'gap-warning' : ''"
+                  >
+                    {{
+                      reviseGap < 0
+                        ? '正股已跌破下修线，可能触发下修'
+                        : '未触发下修'
+                    }}
                   </span>
                 </div>
                 <el-progress
@@ -122,13 +176,30 @@
             <div class="discount-block">
               <div class="discount-row">
                 <span class="discount-label">折价空间：</span>
-                <span class="discount-value" :class="hasDiscount ? 'gap-success' : ''">
-                  {{ hasDiscount ? Math.abs(d.premium_rate).toFixed(2) + '%' : '无折价' }}
+                <span
+                  class="discount-value"
+                  :class="hasDiscount ? 'gap-success' : ''"
+                >
+                  {{
+                    hasDiscount
+                      ? Math.abs(d.premium_rate).toFixed(2) + '%'
+                      : '无折价'
+                  }}
                 </span>
-                <el-tag v-if="hasDiscount" type="success" size="small" effect="dark">有折价</el-tag>
-                <el-tag v-else type="info" size="small" effect="plain">无折价</el-tag>
+                <el-tag
+                  v-if="hasDiscount"
+                  type="success"
+                  size="small"
+                  effect="dark"
+                  >有折价</el-tag
+                >
+                <el-tag v-else type="info" size="small" effect="plain"
+                  >无折价</el-tag
+                >
               </div>
-              <div class="discount-hint">折价空间 = |溢价率|，当转债折价时存在套利机会</div>
+              <div class="discount-hint">
+                折价空间 = |溢价率|，当转债折价时存在套利机会
+              </div>
             </div>
           </el-card>
 
@@ -174,23 +245,33 @@
               </div>
               <div class="quick-info-row">
                 <span class="quick-info-label">纯债价值</span>
-                <span class="quick-info-value">{{ formatNumber(d.pure_bond_value) }}</span>
+                <span class="quick-info-value">{{
+                  formatNumber(d.pure_bond_value)
+                }}</span>
               </div>
               <div class="quick-info-row">
                 <span class="quick-info-label">转股价</span>
-                <span class="quick-info-value">{{ formatNumber(d.conversion_price) }}</span>
+                <span class="quick-info-value">{{
+                  formatNumber(d.conversion_price)
+                }}</span>
               </div>
               <div class="quick-info-row">
                 <span class="quick-info-label">正股价</span>
-                <span class="quick-info-value">{{ formatNumber(d.stock_price) }}</span>
+                <span class="quick-info-value">{{
+                  formatNumber(d.stock_price)
+                }}</span>
               </div>
               <div class="quick-info-row">
                 <span class="quick-info-label">成交量</span>
-                <span class="quick-info-value">{{ formatVolume(d.volume) }}</span>
+                <span class="quick-info-value">{{
+                  formatVolume(d.volume)
+                }}</span>
               </div>
               <div class="quick-info-row">
                 <span class="quick-info-label">成交额</span>
-                <span class="quick-info-value">{{ formatAmount(d.amount) }}</span>
+                <span class="quick-info-value">{{
+                  formatAmount(d.amount)
+                }}</span>
               </div>
             </div>
           </el-card>
@@ -198,45 +279,78 @@
       </el-row>
     </template>
 
-    <el-empty v-if="!loading && !d" description="未找到该可转债">
+    <el-empty
+      v-if="!loading && !d"
+      :description="loadError ? '详情加载失败，请重试' : '未找到该可转债'"
+    >
+      <el-button type="primary" @click="loadDetail">重试</el-button>
       <el-button type="primary" @click="router.back()">返回列表</el-button>
     </el-empty>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Star, StarFilled } from '@element-plus/icons-vue'
 import { convertibleApi } from '@/api/convertible'
 import { useUserStore } from '@/stores/user'
+import { useAppStore } from '@/stores/app'
 import { formatNumber, formatDate, formatColor } from '@/utils/format'
 import TierBadge from '@/components/TierBadge.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const appStore = useAppStore()
 
 const raw = ref(null)
 const loading = ref(true)
+const loadError = ref(false)
 
 const d = computed(() => raw.value)
 
-const isFav = computed(() => userStore.isFavorite('convertible', route.params.code))
+const isFav = computed(() =>
+  userStore.isFavorite('convertible', route.params.code)
+)
 
-onMounted(async () => {
+async function loadDetail({ refresh = false } = {}) {
+  loading.value = true
+  loadError.value = false
   try {
-    const data = await convertibleApi.detail(route.params.code)
-    raw.value = (data && data.bond_code) ? data : null
+    const data = await convertibleApi.detail(
+      route.params.code,
+      refresh ? { refresh: true } : {}
+    )
+    raw.value = data && data.bond_code ? data : null
+    if (!raw.value) loadError.value = true
+    else appStore.setLastUpdated()
+    return Boolean(raw.value)
   } catch {
-    raw.value = null
+    if (!raw.value) raw.value = null
+    loadError.value = true
+    return false
   } finally {
     loading.value = false
   }
+}
+
+let unregisterRefresh
+onMounted(() => {
+  unregisterRefresh = appStore.registerPageRefresh(route.path, loadDetail)
+  loadDetail()
+})
+
+onUnmounted(() => {
+  unregisterRefresh?.()
 })
 
 function toggleFav() {
-  userStore.toggleFavorite('convertible', route.params.code, raw.value?.bond_name)
+  userStore.toggleFavorite(
+    'convertible',
+    route.params.code,
+    raw.value?.bond_name
+  )
 }
 
 // ---- 交易所 ----
@@ -270,7 +384,7 @@ const forceRedeemPrice = computed(() => {
 const forceRedeemGap = computed(() => {
   if (!hasForceRedeemData.value) return null
   const fp = forceRedeemPrice.value
-  return (raw.value.stock_price - fp) / fp * 100
+  return ((raw.value.stock_price - fp) / fp) * 100
 })
 
 const formatForceRedeemGap = computed(() => {
@@ -282,13 +396,15 @@ const formatForceRedeemGap = computed(() => {
 // 进度条：stockPrice/forcePrice 映射到 0~100%
 const forceRedeemPercent = computed(() => {
   if (!hasForceRedeemData.value) return 0
-  const pct = raw.value.stock_price / forceRedeemPrice.value * 100
+  const pct = (raw.value.stock_price / forceRedeemPrice.value) * 100
   return Math.min(Math.max(pct, 0), 100)
 })
 
 const forceRedeemColor = computed(() => {
   if (forceRedeemGap.value == null) return ''
-  return forceRedeemGap.value >= 0 ? 'var(--el-color-danger)' : 'var(--el-color-success)'
+  return forceRedeemGap.value >= 0
+    ? 'var(--el-color-danger)'
+    : 'var(--el-color-success)'
 })
 
 // ---- 7.3 下修进度 ----
@@ -306,7 +422,7 @@ const revisePrice = computed(() => {
 const reviseGap = computed(() => {
   if (!hasReviseData.value) return null
   const rp = revisePrice.value
-  return (raw.value.stock_price - rp) / rp * 100
+  return ((raw.value.stock_price - rp) / rp) * 100
 })
 
 const formatReviseGap = computed(() => {
@@ -317,13 +433,15 @@ const formatReviseGap = computed(() => {
 // 进度条：revisePrice/stockPrice 映射到 0~100%（正股价越低越接近下修）
 const revisePercent = computed(() => {
   if (!hasReviseData.value) return 0
-  const pct = revisePrice.value / raw.value.stock_price * 100
+  const pct = (revisePrice.value / raw.value.stock_price) * 100
   return Math.min(Math.max(pct, 0), 100)
 })
 
 const reviseColor = computed(() => {
   if (reviseGap.value == null) return ''
-  return reviseGap.value < 0 ? 'var(--el-color-warning)' : 'var(--el-color-primary)'
+  return reviseGap.value < 0
+    ? 'var(--el-color-warning)'
+    : 'var(--el-color-primary)'
 })
 
 // ---- 7.4 折价空间 ----
@@ -412,9 +530,18 @@ function formatAmount(amt) {
   color: var(--text-color-placeholder);
 }
 
-.gap-danger { color: var(--el-color-danger); font-weight: 600; }
-.gap-success { color: var(--el-color-success); font-weight: 600; }
-.gap-warning { color: var(--el-color-warning); font-weight: 600; }
+.gap-danger {
+  color: var(--el-color-danger);
+  font-weight: 600;
+}
+.gap-success {
+  color: var(--el-color-success);
+  font-weight: 600;
+}
+.gap-warning {
+  color: var(--el-color-warning);
+  font-weight: 600;
+}
 
 .discount-block {
   display: flex;

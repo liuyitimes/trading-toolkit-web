@@ -28,4 +28,4 @@ Web MUST 在合并到受保护主分支前通过格式检查、生产构建和�
 
 - **WHEN** Cloudflare Pages 上传完成
 - **THEN** 工作流必须验证 `https://trading-toolkit-web.pages.dev/` 返回 Vite 构建产物引用的 `/assets/` 文件
-- **AND THEN** 生产入口在限定重试时间内未切换时发布失败。
+  - **AND THEN** 生产入口在限定重试时间内未切换时发布失败。

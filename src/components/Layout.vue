@@ -77,6 +77,18 @@
           <span v-if="appStore.lastUpdated" class="header-update">
             更新于 <TimeStamp :time="appStore.lastUpdated" :stale-after="60" />
           </span>
+          <el-tooltip content="刷新当前数据" placement="bottom">
+            <el-button
+              circle
+              text
+              aria-label="刷新当前数据"
+              :loading="appStore.refreshing"
+              :disabled="!appStore.pageRefresh"
+              @click="refreshCurrentPage"
+            >
+              <el-icon><Refresh /></el-icon>
+            </el-button>
+          </el-tooltip>
           <el-tooltip
             :content="appStore.isDarkMode ? '切换明亮' : '切换暗黑'"
             placement="bottom"
@@ -133,8 +145,10 @@ import {
   Coin,
   ChatLineRound,
   Document,
-  Lock
+  Lock,
+  Refresh
 } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import FloatToolbar from '@/components/floating/FloatToolbar.vue'
 import QuoteCarousel from '@/components/QuoteCarousel.vue'
 import TimeStamp from '@/components/TimeStamp.vue'
@@ -151,6 +165,16 @@ const asideWidth = computed(() => {
   if (isMobile.value && isCollapse.value) return '0px'
   return isCollapse.value ? '64px' : '220px'
 })
+
+async function refreshCurrentPage() {
+  try {
+    const refreshed = await appStore.refreshCurrentPage(route.path)
+    if (refreshed) ElMessage.success('数据已刷新')
+    else if (refreshed === false) ElMessage.error('刷新失败，已保留现有数据')
+  } catch {
+    ElMessage.error('刷新失败，已保留现有数据')
+  }
+}
 
 let mobileQuery
 function updateMobileLayout(event) {
@@ -257,6 +281,11 @@ watch(
     .header-action {
       cursor: pointer;
       color: var(--text-color);
+    }
+
+    :deep(.el-button) {
+      color: var(--text-color);
+      margin: 0;
     }
   }
 }

@@ -243,16 +243,22 @@
           >
         </template>
       </el-table-column>
-      <el-table-column label="连续溢价" width="90" align="center">
+      <el-table-column label="连续溢价" width="120" align="center">
         <template #default="{ row }">
-          <span
-            :class="{ hl: row.sustainedPremium }"
-            :title="row.consecutivePremiumReason || ''"
-            >{{ row.consecutivePremiumText }}</span
+          <el-tooltip
+            v-if="row.premiumPersistenceTip"
+            placement="top"
+            trigger="hover"
+            :show-after="120"
           >
-          <span v-if="row.isPartialPremiumPersistence" class="price-sub"
-            >历史不足</span
-          >
+            <template #content>{{ row.premiumPersistenceTip }}</template>
+            <span :class="{ hl: row.sustainedPremium }">{{
+              row.premiumPersistenceText
+            }}</span>
+          </el-tooltip>
+          <span v-else :class="{ hl: row.sustainedPremium }">{{
+            row.premiumPersistenceText
+          }}</span>
         </template>
       </el-table-column>
       <el-table-column
@@ -269,6 +275,43 @@
       <el-table-column label="预期收益(万)" width="120" align="right">
         <template #default="{ row }">
           <span class="expected-return">{{ row.expectedProfit }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="申/赎时效" width="190">
+        <template #default="{ row }">
+          <div class="settlement-timing">
+            <span
+              >申
+              {{
+                row.settlementTiming.subscriptionConfirmation.timingText
+              }}</span
+            >
+            <span
+              >赎 {{ row.settlementTiming.redemptionPayment.timingText }}</span
+            >
+            <el-tag
+              v-if="row.settlementTiming.hasStale"
+              type="success"
+              size="small"
+              effect="plain"
+              >含陈旧时效</el-tag
+            >
+            <el-tag
+              v-if="!row.settlementTiming.isComplete"
+              type="warning"
+              size="small"
+              effect="plain"
+              >未完整核验</el-tag
+            >
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="最低申/赎" width="128">
+        <template #default="{ row }">
+          <div class="settlement-timing">
+            <span>申 {{ row.minimumOrder.subscription.displayText }}</span>
+            <span>赎 {{ row.minimumOrder.redemption.displayText }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="申购状态" width="100" align="center">
@@ -393,23 +436,43 @@
           </div>
           <div class="mc-metric">
             <span class="mc-label">连续溢价</span>
-            <span
-              :class="{ hl: row.sustainedPremium }"
-              :title="row.consecutivePremiumReason || ''"
-              >{{ row.consecutivePremiumText }}</span
+            <el-tooltip
+              v-if="row.premiumPersistenceTip"
+              placement="top"
+              trigger="hover"
+              :show-after="120"
             >
-            <span v-if="row.isPartialPremiumPersistence" class="price-sub"
-              >历史不足</span
-            >
+              <template #content>{{ row.premiumPersistenceTip }}</template>
+              <span :class="{ hl: row.sustainedPremium }">{{
+                row.premiumPersistenceText
+              }}</span>
+            </el-tooltip>
+            <span v-else :class="{ hl: row.sustainedPremium }">{{
+              row.premiumPersistenceText
+            }}</span>
           </div>
           <div class="mc-metric">
             <span class="mc-label">成交额</span>
             <span :class="amountClass(row)">{{ row.amountText }}</span>
           </div>
+          <div class="mc-metric mc-settlement-timing">
+            <span class="mc-label">申/赎时效</span>
+            <span>{{ row.settlementTiming.compactText }}</span>
+          </div>
+          <div class="mc-metric mc-settlement-timing">
+            <span class="mc-label">最低申/赎</span>
+            <span>{{ row.minimumOrder.compactText }}</span>
+          </div>
         </div>
         <div
           class="mc-tags"
-          v-if="row.canArbitrage || row.sustainedPremium || row.lowLiquidity"
+          v-if="
+            row.canArbitrage ||
+            row.sustainedPremium ||
+            row.lowLiquidity ||
+            row.settlementTiming.hasStale ||
+            !row.settlementTiming.isComplete
+          "
         >
           <el-tag
             v-if="row.canArbitrage"
@@ -417,6 +480,20 @@
             size="small"
             effect="dark"
             >可套利</el-tag
+          >
+          <el-tag
+            v-if="row.settlementTiming.hasStale"
+            type="success"
+            size="small"
+            effect="plain"
+            >含陈旧时效</el-tag
+          >
+          <el-tag
+            v-if="!row.settlementTiming.isComplete"
+            type="warning"
+            size="small"
+            effect="plain"
+            >未完整核验</el-tag
           >
           <el-tag
             v-if="row.sustainedPremium"
@@ -506,6 +583,36 @@
           <span class="expected-return">{{ row.expectedProfit }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="申/赎时效" width="190">
+        <template #default="{ row }">
+          <div class="settlement-timing">
+            <span
+              >申
+              {{
+                row.settlementTiming.subscriptionConfirmation.timingText
+              }}</span
+            >
+            <span
+              >赎 {{ row.settlementTiming.redemptionPayment.timingText }}</span
+            >
+            <el-tag
+              v-if="!row.settlementTiming.isComplete"
+              type="warning"
+              size="small"
+              effect="plain"
+              >未完整核验</el-tag
+            >
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="最低申/赎" width="128">
+        <template #default="{ row }">
+          <div class="settlement-timing">
+            <span>申 {{ row.minimumOrder.subscription.displayText }}</span>
+            <span>赎 {{ row.minimumOrder.redemption.displayText }}</span>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="风险提示" width="220">
         <template #default="{ row }">
           <div class="tag-group">
@@ -521,7 +628,7 @@
               type="warning"
               size="small"
               effect="plain"
-              >连续溢价{{ row.consecutivePremiumText }}</el-tag
+              >连续溢价{{ row.consecutivePremium }}天</el-tag
             >
             <el-tag
               v-if="row.limitAmount"
@@ -589,11 +696,39 @@
             <span class="mc-label">预期收益</span>
             <span class="expected-return">{{ row.expectedProfit }}</span>
           </div>
+          <div class="mc-metric mc-settlement-timing">
+            <span class="mc-label">申/赎时效</span>
+            <span>{{ row.settlementTiming.compactText }}</span>
+          </div>
+          <div class="mc-metric mc-settlement-timing">
+            <span class="mc-label">最低申/赎</span>
+            <span>{{ row.minimumOrder.compactText }}</span>
+          </div>
         </div>
         <div
           class="mc-tags"
-          v-if="row.lowLiquidity || row.sustainedPremium || row.limitAmount"
+          v-if="
+            row.lowLiquidity ||
+            row.sustainedPremium ||
+            row.limitAmount ||
+            row.settlementTiming.hasStale ||
+            !row.settlementTiming.isComplete
+          "
         >
+          <el-tag
+            v-if="row.settlementTiming.hasStale"
+            type="success"
+            size="small"
+            effect="plain"
+            >含陈旧时效</el-tag
+          >
+          <el-tag
+            v-if="!row.settlementTiming.isComplete"
+            type="warning"
+            size="small"
+            effect="plain"
+            >未完整核验</el-tag
+          >
           <el-tag
             v-if="row.lowLiquidity"
             type="danger"
@@ -606,7 +741,7 @@
             type="warning"
             size="small"
             effect="plain"
-            >连续溢价{{ row.consecutivePremiumText }}</el-tag
+            >连续溢价{{ row.consecutivePremium }}天</el-tag
           >
           <el-tag
             v-if="row.limitAmount"
@@ -651,9 +786,7 @@
           <div class="detail-grid">
             <div class="detail-item">
               <span class="detail-label">交易所</span>
-              <span class="detail-value">{{
-                detailData.exchange || '--'
-              }}</span>
+              <ExchangeBadge :exchange="detailData.exchange" />
             </div>
             <div class="detail-item">
               <span class="detail-label">涨跌幅</span>
@@ -672,9 +805,15 @@
               }}</span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">赎回规则</span>
+              <span class="detail-label">申购确认时效</span>
               <span class="detail-value">{{
-                detailData.exchange === '深' ? 'T+1可赎' : '当天可赎'
+                detailData.settlementTiming.subscriptionConfirmation.timingText
+              }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">赎回到账时效</span>
+              <span class="detail-value">{{
+                detailData.settlementTiming.redemptionPayment.timingText
               }}</span>
             </div>
           </div>
@@ -790,21 +929,27 @@
             </div>
             <div class="detail-item">
               <span class="detail-label">连续溢价</span>
+              <el-tooltip
+                v-if="detailData.premiumPersistenceTip"
+                placement="top"
+                trigger="hover"
+                :show-after="120"
+              >
+                <template #content>{{
+                  detailData.premiumPersistenceTip
+                }}</template>
+                <span
+                  class="detail-value"
+                  :class="{ hl: detailData.sustainedPremium }"
+                  >{{ detailData.premiumPersistenceText }}</span
+                >
+              </el-tooltip>
               <span
+                v-else
                 class="detail-value"
                 :class="{ hl: detailData.sustainedPremium }"
-                :title="detailData.consecutivePremiumReason || ''"
-                >{{ detailData.consecutivePremiumText }}</span
+                >{{ detailData.premiumPersistenceText }}</span
               >
-              <div v-if="detailData.consecutivePremiumReason" class="price-sub">
-                {{ detailData.consecutivePremiumReason }}
-              </div>
-              <div
-                v-if="detailData.isPartialPremiumPersistence"
-                class="price-sub"
-              >
-                历史不足
-              </div>
             </div>
           </div>
         </div>
@@ -1041,7 +1186,7 @@ const guideTextMap = {
   discount: '折价基金，可考虑持有套利（需≥7天，赎回费0.5%）。注意净值波动。',
   paused: '申购暂停的基金，无法套利。关注恢复申购后的溢价变化。',
   arbitrage:
-    '筛选可套利机会（溢价≥3%且成交额≥100万），按溢价率降序排列。注意流动性风险与限购影响。'
+    '筛选可套利机会（溢价≥3%、成交额≥100万且申购确认与赎回到账时效已核验），按溢价率降序排列。注意流动性风险与限购影响。'
 }
 
 const guideText = computed(() => guideTextMap[activeTab.value])
@@ -1270,11 +1415,13 @@ function rowClassName({ row }) {
 }
 
 let mql
+let unregisterRefresh
 function updateMobile(e) {
   isMobile.value = e.matches
 }
 
 onMounted(() => {
+  unregisterRefresh = appStore.registerPageRefresh('/lof', store.loadAll)
   store.loadAll()
   mql = window.matchMedia('(max-width: 768px)')
   isMobile.value = mql.matches
@@ -1286,6 +1433,7 @@ onActivated(() => {
 })
 
 onUnmounted(() => {
+  unregisterRefresh?.()
   if (mql) mql.removeEventListener('change', updateMobile)
 })
 </script>
@@ -1301,6 +1449,13 @@ onUnmounted(() => {
     .search-input {
       max-width: 280px;
     }
+  }
+
+  .settlement-timing {
+    display: grid;
+    gap: 4px;
+    font-size: 12px;
+    line-height: 1.35;
   }
 
   .market-overview {
@@ -1914,6 +2069,10 @@ onUnmounted(() => {
           color: var(--text-color-secondary);
           margin-right: 4px;
         }
+      }
+
+      .mc-settlement-timing {
+        grid-column: 1 / -1;
       }
 
       .mc-tags {

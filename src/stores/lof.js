@@ -3,7 +3,16 @@ import { ref } from 'vue'
 import { lofApi } from '@/api/lof'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
-import { normalizePremiumPersistence } from '@/domains/lof/premiumPersistence'
+import {
+  normalizeLofMinimumOrder,
+  normalizeLofSettlementTiming
+} from '@/utils/lofSettlementTiming'
+import {
+  formatPremiumPersistenceText,
+  isSustainedPremium,
+  normalizePremiumPersistence,
+  premiumPersistenceTip
+} from '@/domain/lofPremium'
 
 const PURCHASE_FEE = 0.15
 
@@ -44,9 +53,13 @@ function getAdvice(item) {
     return '申购暂停，无法套利。关注恢复申购后的溢价变化。'
   }
 
+  if (!item.settlementTiming.isComplete) {
+    return '申购确认或赎回到账时效未完整核验，仅作观察。'
+  }
+
   if (premium >= 3 && amountRaw >= 100) {
     const parts = [`当前溢价 ${premium.toFixed(2)}%，`]
-    if (consecutivePremium >= 5)
+    if (consecutivePremium != null && consecutivePremium >= 5)
       parts.push(`已连续溢价 ${consecutivePremium} 天，`)
     parts.push('成交额充足。')
     if (amountRaw < 1000)
@@ -77,14 +90,16 @@ function normalizeLofItem(raw) {
   const valuation = safeNum(raw.valuation)
   const premium = safeNum(raw.premium)
   const changePct = safeNum(raw.change_pct)
-  const premiumPersistence = normalizePremiumPersistence(
-    raw.premium_persistence
-  )
-  const consecutivePremium = premiumPersistence.consecutivePremium
+  const persistence = normalizePremiumPersistence(raw.premium_persistence)
+  const consecutivePremium = persistence ? persistence.consecutivePremium : null
   const limitStatus = raw.limit_status || '不限'
   const exchange = raw.exchange || ''
   const code = raw.code || ''
   const name = raw.name || '--'
+  const settlementTiming = normalizeLofSettlementTiming(
+    raw.execution?.settlement_timing
+  )
+  const minimumOrder = normalizeLofMinimumOrder(raw.execution?.minimum_order)
 
   // 成交额/成交量（后端可能缺失）
   const amountRaw = raw.amount != null ? safeNum(raw.amount) : null
@@ -119,9 +134,15 @@ function normalizeLofItem(raw) {
   const changePctText = (changePct >= 0 ? '+' : '') + changePct.toFixed(2) + '%'
 
   // 套利标记
-  const canArbitrage = premium >= 3 && amountInfo.raw >= 100 && !isPaused
+  const canArbitrage =
+    premium >= 3 &&
+    amountInfo.raw >= 100 &&
+    !isPaused &&
+    settlementTiming.isComplete &&
+    raw.subscription_open === true &&
+    raw.trade_path_verified === true
   const lowLiquidity = amountInfo.raw > 0 && amountInfo.raw < 10
-  const sustainedPremium = consecutivePremium != null && consecutivePremium >= 5
+  const sustainedPremium = isSustainedPremium(persistence)
 
   // 申购限额
   let limitAmount = null
@@ -136,7 +157,14 @@ function normalizeLofItem(raw) {
     premium,
     changePct,
     consecutivePremium,
-    ...premiumPersistence,
+    premiumPersistenceStatus: persistence ? persistence.status : 'unavailable',
+    premiumPersistenceReason: persistence ? persistence.reason : null,
+    premiumPersistenceAsOf: persistence ? persistence.asOf : null,
+    premiumPersistenceHistoryStartedOn: persistence
+      ? persistence.historyStartedOn
+      : null,
+    premiumPersistenceText: formatPremiumPersistenceText(persistence),
+    premiumPersistenceTip: premiumPersistenceTip(persistence),
     limitStatus,
     amountRaw: amountInfo.raw,
     priceText: price ? price.toFixed(3) : '--',
@@ -159,6 +187,8 @@ function normalizeLofItem(raw) {
     amountText: amountInfo.text,
     amountLevel: amountInfo.level,
     volumeText: volumeRaw != null ? formatVolume(volumeRaw) : '--',
+    settlementTiming,
+    minimumOrder,
     // 预期收益（按1万元申购估算）= 10000 × 净溢价 / 100
     expectedProfit:
       netPremium != null ? (100 * netPremium).toFixed(0) + '元' : '--',
@@ -255,51 +285,47 @@ export const useLofStore = defineStore('lof', () => {
     }
   }
 
-  async function loadAll() {
+  async function loadAll({ refresh = false } = {}) {
     loading.value = true
     error.value = null
     try {
-      const [listData, summaryResult] = await Promise.allSettled([
-        lofApi.list(),
-        lofApi.summary()
-      ])
-
-      if (listData.status === 'fulfilled') {
-        const raw = listData.value.items || listData.value || []
-        const normalized = raw.map(normalizeLofItem)
-        fundList.value = normalized
-        lastUpdated.value = new Date().toISOString()
-        useAppStore().setLastUpdated()
-
-        if (summaryResult.status === 'fulfilled' && summaryResult.value) {
-          const s = summaryResult.value
-          const fallback = computeSummaryFromList(normalized)
-          summary.value = {
-            count: s.count ?? normalized.length,
-            premium_avg: s.premium_avg ?? fallback?.premium_avg ?? '--',
-            top_premium: s.top_premium ?? fallback?.top_premium ?? '--',
-            positive_count:
-              s.positive_count ?? fallback?.positive_count ?? '--',
-            positive_rate: s.positive_rate ?? fallback?.positive_rate ?? '--',
-            discount_count: fallback?.discount_count ?? 0,
-            sustained_count: fallback?.sustained_count ?? 0,
-            limited_count: fallback?.limited_count ?? 0,
-            paused_count: s.paused_count ?? fallback?.paused_count ?? '--',
-            arbitrage_count: fallback?.arbitrage_count ?? 0,
-            avg_net_premium: fallback?.avg_net_premium ?? null,
-            total_amount: fallback?.total_amount ?? 0,
-            hot_direction: s.hot_direction ?? fallback?.hot_direction ?? null,
-            daily_subscription:
-              s.daily_subscription ?? fallback?.daily_subscription
-          }
-        } else {
-          summary.value = computeSummaryFromList(normalized)
+      const requestParams = refresh ? { refresh: true } : {}
+      const summaryPromise = lofApi.summary(requestParams).catch(() => null)
+      const listData = await lofApi.list(requestParams)
+      const raw = listData.items || listData || []
+      const normalized = raw.map(normalizeLofItem)
+      const fallback = computeSummaryFromList(normalized)
+      fundList.value = normalized
+      summary.value = fallback
+      summaryPromise.then((value) => {
+        if (!value) return
+        summary.value = {
+          count: value.count ?? normalized.length,
+          premium_avg: value.premium_avg ?? fallback?.premium_avg ?? '--',
+          top_premium: value.top_premium ?? fallback?.top_premium ?? '--',
+          positive_count:
+            value.positive_count ?? fallback?.positive_count ?? '--',
+          positive_rate: value.positive_rate ?? fallback?.positive_rate ?? '--',
+          discount_count: fallback?.discount_count ?? 0,
+          sustained_count: fallback?.sustained_count ?? 0,
+          limited_count: fallback?.limited_count ?? 0,
+          paused_count: value.paused_count ?? fallback?.paused_count ?? '--',
+          arbitrage_count: fallback?.arbitrage_count ?? 0,
+          avg_net_premium: fallback?.avg_net_premium ?? null,
+          total_amount: fallback?.total_amount ?? 0,
+          hot_direction: value.hot_direction ?? fallback?.hot_direction ?? null,
+          daily_subscription:
+            value.daily_subscription ?? fallback?.daily_subscription
         }
-      } else {
-        throw listData.reason
-      }
+      })
+      const summaryValue = refresh ? await summaryPromise : null
+      if (refresh && !summaryValue) return false
+      lastUpdated.value = new Date().toISOString()
+      useAppStore().setLastUpdated()
+      return true
     } catch (err) {
       error.value = err?.message || '加载失败'
+      return false
     } finally {
       loading.value = false
     }

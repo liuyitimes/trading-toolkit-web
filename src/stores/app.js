@@ -7,6 +7,8 @@ export const useAppStore = defineStore('app', () => {
   const loading = ref(false)
   const cloudRunUrl = ref('')
   const lastUpdated = ref(null)
+  const pageRefresh = ref(null)
+  const refreshing = ref(false)
 
   const FALLBACK_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -15,7 +17,9 @@ export const useAppStore = defineStore('app', () => {
     if (saved !== null) {
       isDarkMode.value = saved === 'true'
     } else {
-      isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+      isDarkMode.value = window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      ).matches
     }
     document.documentElement.classList.toggle('dark', isDarkMode.value)
   }
@@ -47,6 +51,37 @@ export const useAppStore = defineStore('app', () => {
 
   function setLastUpdated(time = new Date()) {
     lastUpdated.value = time instanceof Date ? time.toISOString() : time
+  }
+
+  function registerPageRefresh(routeKey, handler) {
+    pageRefresh.value = { routeKey, handler }
+    return () => {
+      if (pageRefresh.value?.routeKey === routeKey) {
+        pageRefresh.value = null
+      }
+    }
+  }
+
+  async function refreshCurrentPage(routeKey) {
+    const registered = pageRefresh.value
+    if (
+      refreshing.value ||
+      !registered ||
+      registered.routeKey !== routeKey ||
+      typeof registered.handler !== 'function'
+    ) {
+      return false
+    }
+
+    refreshing.value = true
+    try {
+      const result = await registered.handler({ refresh: true })
+      if (result === false) return false
+      setLastUpdated()
+      return true
+    } finally {
+      refreshing.value = false
+    }
   }
 
   function validateUrl(url) {
@@ -83,8 +118,24 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    isDarkMode, showSandbox, loading, cloudRunUrl, lastUpdated,
-    initTheme, initCloudRunUrl, initShowSandbox, toggleDarkMode, toggleShowSandbox, setLoading, setLastUpdated,
-    setCloudRunUrl, clearCloudRunUrl, getEffectiveBaseUrl
+    isDarkMode,
+    showSandbox,
+    loading,
+    cloudRunUrl,
+    lastUpdated,
+    pageRefresh,
+    refreshing,
+    initTheme,
+    initCloudRunUrl,
+    initShowSandbox,
+    toggleDarkMode,
+    toggleShowSandbox,
+    setLoading,
+    setLastUpdated,
+    registerPageRefresh,
+    refreshCurrentPage,
+    setCloudRunUrl,
+    clearCloudRunUrl,
+    getEffectiveBaseUrl
   }
 })

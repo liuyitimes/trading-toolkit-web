@@ -5,7 +5,7 @@ export const closedEndApi = {
   list(params) {
     return api.get(apiEndpoints.closedEnd.list.path, { params })
   },
-  summary() {
-    return api.get(apiEndpoints.closedEnd.summary.path)
+  summary(params = {}) {
+    return api.get(apiEndpoints.closedEnd.summary.path, { params })
   }
 }
