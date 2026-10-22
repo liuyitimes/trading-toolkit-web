@@ -6,6 +6,11 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: '要发布的提交 SHA 或分支。留空表示发布 main 最新提交；回滚时填写上一个可用提交 SHA。'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -22,54 +27,147 @@ jobs:
       github.event.workflow_run.head_branch == 'main') ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
-      - name: 检出已验证的提交
+      - name: 解析发布目标
+        id: target
+        env:
+          DISPATCH_REF: ${{ inputs.ref }}
+          CI_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -eu
+          target="${DISPATCH_REF:-${CI_HEAD_SHA:-$GITHUB_SHA}}"
+          echo "sha=$target" >> "$GITHUB_OUTPUT"
+          echo "发布目标: $target"
+
+      - name: 检出待发布提交
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ steps.target.outputs.sha }}
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: package-lock.json
+
       - run: npm ci
-      - name: Check deployment configuration
-        id: configuration
+
+      - name: 校验发布配置
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
         run: |
-          if test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" && test -n "$VITE_API_BASE_URL"; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
+          set -eu
+          missing=''
+          [ -n "${CLOUDFLARE_API_TOKEN:-}" ] || missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          [ -n "${VITE_API_BASE_URL:-}" ] || missing="$missing VITE_API_BASE_URL"
+          if [ -n "$missing" ]; then
+            # 缺凭据时显式失败，避免「流水线绿但站点没更新」的假发布。
+            echo "::error::发布凭据缺失:$missing"
+            exit 1
           fi
+
       - run: npm run format:check:delivery
+
       - run: npm run build
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-      - name: Publish
-        id: publish
-        if: steps.configuration.outputs.configured == 'true'
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: trading-toolkit-web
-          directory: dist
-          branch: main
-          wranglerVersion: '4'
-      - name: 验证生产站点已切换到构建产物
-        if: steps.configuration.outputs.configured == 'true'
+
+      - name: 记录构建产物指纹
+        id: artifact
         run: |
           set -eu
-          production_url='https://trading-toolkit-web.pages.dev/'
-          for attempt in $(seq 1 18); do
-            html="$(curl --fail --silent --show-error --max-time 20 "$production_url" || true)"
-            if printf '%s' "$html" | grep -q 'src="/assets/'; then
+          asset="$(grep -oE '/assets/[A-Za-z0-9._-]+\.js' dist/index.html | head -n 1)"
+          test -n "$asset"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "本次构建入口资源: $asset"
+
+      - name: 发布到 Cloudflare Pages
+        id: publish
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -eu
+          # 直接使用 Wrangler 4：旧版 pages-action 固定 Wrangler 2，会忽略 _headers，
+          # 导致带哈希的静态资源拿不到 immutable 缓存策略。
+          npx --yes wrangler@4 pages deploy dist \
+            --project-name=trading-toolkit-web \
+            --branch=main \
+            --commit-dirty=true | tee /tmp/wrangler.log
+          deployment_url="$(grep -Eo 'https://[a-z0-9.-]+\.pages\.dev' /tmp/wrangler.log | tail -n 1 || true)"
+          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
+
+      - name: 验证生产站点已切换到本次构建
+        env:
+          ASSET: ${{ steps.artifact.outputs.asset }}
+        run: |
+          set -eu
+          production_url='https://trading-toolkit-web.pages.dev'
+          for attempt in $(seq 1 30); do
+            html="$(curl --fail --silent --show-error --max-time 20 "$production_url/" || true)"
+            # 只判断「有 /assets/ 引用」不足以证明是新版本：旧版本同样满足。
+            # 必须匹配本次构建独有的哈希文件名。
+            if printf '%s' "$html" | grep -q -- "$ASSET"; then
+              echo "生产站点已引用本次构建入口: $ASSET"
               exit 0
             fi
             sleep 10
           done
-          echo "Cloudflare Pages production URL did not serve the Vite build artifact." >&2
+          echo "::error::生产站点在 300 秒内未引用本次构建入口 $ASSET，判定发布未生效。"
           exit 1
+
+      - name: 验证静态资源缓存策略
+        env:
+          ASSET: ${{ steps.artifact.outputs.asset }}
+        run: |
+          set -eu
+          for attempt in $(seq 1 12); do
+            headers="$(curl --fail --silent --show-error --head --max-time 20 \
+              "https://trading-toolkit-web.pages.dev${ASSET}" || true)"
+            if printf '%s' "$headers" | grep -qi 'cache-control:.*immutable'; then
+              echo '哈希资源缓存策略正确（immutable）'
+              exit 0
+            fi
+            sleep 5
+          done
+          echo '::error::静态资源未返回 immutable 缓存策略，_headers 可能未生效。'
+          exit 1
+
+      - name: 归档发布记录
+        if: always()
+        env:
+          REVISION: ${{ steps.target.outputs.sha }}
+          ASSET: ${{ steps.artifact.outputs.asset }}
+          DEPLOYMENT_URL: ${{ steps.publish.outputs.deployment_url }}
+          JOB_STATUS: ${{ job.status }}
+          TRIGGER: ${{ github.event_name }}
+          DISPATCH_REF: ${{ inputs.ref }}
+        run: |
+          set -eu
+          mkdir -p release-record
+          cat > release-record/release.json <<JSON
+          {
+            "site": "trading-toolkit-web",
+            "revision": "${REVISION}",
+            "entry_asset": "${ASSET}",
+            "deployment_url": "${DEPLOYMENT_URL}",
+            "trigger": "${TRIGGER}",
+            "dispatch_ref": "${DISPATCH_REF}",
+            "workflow_run_id": "${GITHUB_RUN_ID}",
+            "outcome": "${JOB_STATUS}",
+            "recorded_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          JSON
+          cat release-record/release.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 上传发布记录
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-release-record-${{ github.run_id }}
+          path: release-record/release.json
+          retention-days: 90

@@ -6,9 +6,17 @@ on:
   pull_request:
     branches: ['main']
 
+permissions:
+  contents: read
+
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -17,12 +25,13 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
       - name: Install Playwright Chromium
-        run: npx playwright install chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Check formatting
         run: npm run format:check:delivery
@@ -31,6 +40,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: liuyitimes/trading-toolkit-service
+          # 通过仓库变量固定服务端契约版本，避免上游 main 漂移让本仓库 CI 随机变红。
+          # 需要跟进新契约时，显式更新 SERVICE_CONTRACT_REF 变量。
+          ref: ${{ vars.SERVICE_CONTRACT_REF || 'main' }}
           path: service-contract-repository
           sparse-checkout: contracts/http-api.json
 
@@ -45,13 +57,68 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Verify placement browser workflow
+      - name: Assert build artifact
         run: |
-          npm run dev -- --host 127.0.0.1 --port 5175 > /tmp/vite.log 2>&1 &
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:5175; then break; fi
+          set -eu
+          test -f dist/index.html
+          grep -q '/assets/' dist/index.html
+          echo '构建产物已引用哈希化静态资源'
+
+      - name: Verify browser smoke against production build
+        run: |
+          set -eu
+          # 用 vite preview 提供真实构建产物：浏览器校验的对象必须与部署产物一致。
+          npm run preview -- --host 127.0.0.1 --port 5175 --strictPort > /tmp/preview.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:5175/; then
+              ready=1
+              break
+            fi
             sleep 1
           done
-          npm run verify:market-browser
-          npm run verify:placement-browser
-          npm run verify:lof-market-overview
+          if [ "$ready" -ne 1 ]; then
+            echo '预览服务未在 60 秒内就绪，日志如下：' >&2
+            cat /tmp/preview.log >&2 || true
+            exit 1
+          fi
+          WEB_URL=http://127.0.0.1:5175 npm run verify:market-browser
+          WEB_URL=http://127.0.0.1:5175 npm run verify:lof-market-overview
+
+      - name: Verify placement workflow against dev server
+        run: |
+          set -eu
+          # verify_default_placement_metrics.mjs 会直接动态 import `/src/stores/convertible.js`，
+          # 该路径只由 dev server 提供，构建产物中不存在。因此该用例单独在开发服务器上运行，
+          # 作用域是「源码级状态逻辑」，不承担生产构建的浏览器覆盖。
+          npm run dev -- --host 127.0.0.1 --port 5176 --strictPort > /tmp/vite.log 2>&1 &
+          DEV_PID=$!
+          trap 'kill "$DEV_PID" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:5176/; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo '开发服务器未在 60 秒内就绪，日志如下：' >&2
+            cat /tmp/vite.log >&2 || true
+            exit 1
+          fi
+          WEB_URL=http://127.0.0.1:5176 npm run verify:placement-browser
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-ci-diagnostics-${{ github.run_id }}
+          path: |
+            /tmp/preview.log
+            /tmp/vite.log
+            tests/screenshots
+          if-no-files-found: ignore
+          retention-days: 14
